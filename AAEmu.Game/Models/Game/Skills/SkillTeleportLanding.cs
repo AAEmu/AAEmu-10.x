@@ -160,6 +160,7 @@ public static class SkillTeleportLanding
         // zones makes the transform's world position resolve back to the old hull, so the landing is
         // undone and the character stays filed in the zone they left.
         character.StandingOnSlaveId = 0;
+        character.StandingOnTransferId = 0;
         character.Transform.Parent = null;
 
         character.SendPacket(new SCTeleportUnitPacket(reason, 0, x, y, z, yawRad));

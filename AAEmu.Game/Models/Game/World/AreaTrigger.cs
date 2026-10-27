@@ -56,6 +56,12 @@ public class AreaTrigger
     /// </summary>
     public bool HasOccupants => TriggeredUnits.Count > 0;
 
+    /// <summary>
+    /// Set by <see cref="OnDelete"/> so a queued remove cannot re-enter occupants before the
+    /// manager drains its remove list.
+    /// </summary>
+    public bool Deleted { get; private set; }
+
     private void UpdateUnits()
     {
         if (Owner == null || Shape == null)
@@ -140,6 +146,7 @@ public class AreaTrigger
     {
         lock (_tickLock)
         {
+            Deleted = true;
             foreach (var unit in TriggeredUnits.ToList())
                 OnLeave(unit);
         }
@@ -222,6 +229,10 @@ public class AreaTrigger
     {
         lock (_tickLock)
         {
+            // Queued removes stay in the manager list until the tick ends — do not re-enter.
+            if (!AreaTriggerCloutRules.MayTickAfterDelete(Deleted))
+                return;
+
             // Initial-phase clouts arm before Spawn. Do not start the effect clock (or search)
             // until the owner is visible — otherwise _lastTick advances on an empty pulse and a
             // short clout can expire before the first real hit.

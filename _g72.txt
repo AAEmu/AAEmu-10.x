@@ -1,0 +1,10 @@
+﻿C:\Python314\python.exe :   File "<string>", line 7
+At C:\Users\amore\AppData\Local\Temp\ps-script-3b382449-14f8-4693-a640-d57e8f801b15.ps1:93 char:32
++ $env:PYTHONIOENCODING='utf-8'; C:\Python314\python.exe -c "
++                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (  File "<string>", line 7:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+    for r in c.execute(" select id,name from doodad_groups where id between 65 and 80\):
+                       ^
+SyntaxError: unterminated string literal (detected at line 7)

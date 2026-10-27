@@ -25,4 +25,18 @@ public static class OnSpawnPlotWorldGate
             return true;
         return isPriorityMirror && directSkillEffectCount <= 0;
     }
+
+    /// <summary>
+    /// Whether <c>Skill.Use</c> should return after starting the plot (no <c>Cast</c>).
+    /// Content <c>plot_only</c> always does. A non-plot_only OnSpawn with
+    /// <c>target_area_radius &gt; 0</c> must still reach <c>Cast</c> so AoE
+    /// <c>DoodadFuncSkillHit</c> runs (Whalesong start skill — plot despawns spawners, Cast reveals
+    /// nearby curse mines). Lusca-style plot fills with radius 0 stay plot-graph-only.
+    /// </summary>
+    public static bool ShouldForcePlotGraphOnly(bool plotOnly, int targetAreaRadius)
+    {
+        if (plotOnly)
+            return true;
+        return targetAreaRadius <= 0;
+    }
 }

@@ -57,4 +57,12 @@ public class AreaTriggerCloutRulesTests
         await Assert.That(AreaTriggerCloutRules.NeedsPostSpawnPulse(ownerWasVisibleAtArm)).IsEqualTo(expected);
     }
 
+    [Test]
+    public async Task MayTickAfterDelete_BlocksQueuedRemovals()
+    {
+        // SkillHit clears the Clout before the manager drains its remove queue.
+        await Assert.That(AreaTriggerCloutRules.MayTickAfterDelete(deleted: false)).IsTrue();
+        await Assert.That(AreaTriggerCloutRules.MayTickAfterDelete(deleted: true)).IsFalse();
+    }
+
 }

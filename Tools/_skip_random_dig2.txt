@@ -1,0 +1,39 @@
+final 4460 {'id': 4460, 'after': 1, 'respawn': 'f', 'min_time': None, 'max_time': None, 'show_tip': 'f', 'show_end_time': 'f', 'tip': ''}
+final 1655 {'id': 1655, 'after': 0, 'respawn': 'f', 'min_time': 86400000, 'max_time': 86400000, 'show_tip': 'f', 'show_end_time': 'f', 'tip': ''}
+schedule 10712 []
+schedule 3484 []
+schedule 3225 []
+schedule 3085 []
+item_housing_decorations ['id', 'item_id', 'design_id', 'restore']
+ count (2305,)
+ sample3 [(1, 98, 1, 'f'), (2, 99, 2, 'f'), (3, 100, 3, 'f')]
+housing_decorations ['id', 'name', 'allow_on_floor', 'allow_on_wall', 'allow_on_ceiling', 'doodad_id', 'actability_group_id', 'actability_up', 'deco_actability_group_id', 'vertical_aligned', 'collision_by_proxy', 'allow_garden_id', 'expedition']
+ count (2230,)
+ sample3 [(1, '장식 화병', 1, 0, 0, 5450, None, 0, 0, 'f', 'f', 1, 'f'), (2, '토끼풀 장식 철쭉 화병', 1, 0, 0, 5451, None, 0, 0, 'f', 'f', 1, 'f'), (3, '흑단나무 분재 화분', 1, 0, 0, 5452, None, 0, 0, 'f', 'f', 1, 'f')]
+ihd items 36163/36164/36454 [(671, 36163, 649, 'f'), (672, 36164, 650, 'f'), (771, 36454, 751, 'f'), (772, 36455, 750, 'f')]
+hd by doodad_id []
+hd doodad_id 10734 []
+hd doodad_id 10763 []
+hd doodad_id 10740 []
+item cat 7 [(7, '가구')]
+weather 3225 gid 7357 f [] p [('DoodadFuncTimer',)]
+weather 3225 gid 7358 f [] p [('DoodadFuncTimer',)]
+weather 3225 gid 7359 f [] p [('DoodadFuncFinal',), ('DoodadFuncRatioRespawn',)]
+weather 3085 gid 7051 f [] p [('DoodadFuncClout',)]
+weather 3085 gid 7052 f [] p [('DoodadFuncFinal',), ('DoodadFuncRatioRespawn',)]
+weather 3085 gid 7132 f [] p [('DoodadFuncTimer',)]
+weather 3086 gid 7053 f [] p [('DoodadFuncClout',)]
+weather 3086 gid 7054 f [] p [('DoodadFuncFinal',), ('DoodadFuncRatioRespawn',)]
+weather 3086 gid 7139 f [] p [('DoodadFuncTimer',)]
+weather 3226 gid 7360 f [] p [('DoodadFuncTimer',)]
+weather 3226 gid 7361 f [] p [('DoodadFuncTimer',)]
+weather 3226 gid 7362 f [] p [('DoodadFuncFinal',), ('DoodadFuncRatioRespawn',)]
+climates [(1, '모두'), (2, '온대'), (3, '열대'), (4, '냉대'), (5, '건조'), (6, '원대륙')]
+ratio_change 1003 {'id': 1003, 'ratio': 5000, 'next_phase': 8356}
+ratio_change 1004 {'id': 1004, 'ratio': 5000, 'next_phase': 16620}
+10712 json z n= 2187 z<100 2187 z>=100 0 min -0.0001 max 87.4108
+tid 10763 stands 40 unique_xy~1m 40 sample [(3967.0, 4643.0), (3966.0, 4673.0), (3966.0, 4646.0), (3965.0, 4650.0), (3964.0, 4653.0)]
+tid 10734 stands 16 unique_xy~1m 16 sample [(3602.0, 4410.0), (3601.0, 4405.0), (3600.0, 4402.0), (3598.0, 4411.0), (3598.0, 4398.0)]
+tid 3225 stands 38 unique_xy~1m 38 sample [(19049.0, 11986.0), (21076.0, 17152.0), (15828.0, 21988.0), (19924.0, 17734.0), (15959.0, 5887.0)]
+tid 2831 stands 16 unique_xy~1m 16 sample [(10671.0, 16914.0), (14153.0, 14991.0), (11171.0, 11895.0), (14153.0, 14993.0), (15696.0, 15123.0)]
+tid 10712 stands 2187 unique_xy~1m 2187 sample [(14445.0, 25111.0), (22899.0, 19100.0), (27170.0, 18827.0), (17158.0, 13799.0), (13633.0, 20517.0)]

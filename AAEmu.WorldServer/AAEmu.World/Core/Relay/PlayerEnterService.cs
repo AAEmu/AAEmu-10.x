@@ -5,6 +5,7 @@ using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Connections;
 using AAEmu.Game.Core.Packets.G2C.UnitState;
 using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.World.Core.Network;
@@ -47,6 +48,8 @@ public class PlayerEnterService
         SyncUnitFaction(zone, character);
         ActivateNpcSpawnersNearPlayer(zone, character);
         SyncExpedition(zone, character);
+        if (character != null)
+            ZonePlayerAggro.ScheduleSeedNearbyNpcsTowardPlayer(character.ObjId);
         Logger.Info(
             "WZUnitState enter → zoneId={0} ip={1} bcHint={2} bodyLen={3}",
             zone.ZoneId, zone.Ip, bcId, unitStateBody.Length);
@@ -108,6 +111,8 @@ public class PlayerEnterService
         SyncUnitFaction(newZone, character);
         ActivateNpcSpawnersNearPlayer(newZone, character);
         SyncExpedition(newZone, character);
+        if (character != null)
+            ZonePlayerAggro.ScheduleSeedNearbyNpcsTowardPlayer(character.ObjId);
         Logger.Info(
             "Zone handoff enter → newZoneId={0} bcId={1} bodyLen={2}",
             newZone.ZoneId, bcId, unitStateBody.Length);

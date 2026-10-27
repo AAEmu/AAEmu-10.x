@@ -9,16 +9,16 @@ using NLog;
 namespace AAEmu.Game.Core.Managers;
 
 /// <summary>
-/// Schedule-driven world weather cycle. Each configured phase binds one <c>game_schedules</c> row
-/// and names the <see cref="WeatherState"/> that row's window produces, so every timing comes from
-/// content and none ships with the feature. Phases are evaluated against one UTC clock reading:
-/// no open phase means <see cref="WeatherState.Clear"/>, exactly one open phase decides the state,
-/// and an overlapping set is reported loudly while the previous state is kept rather than guessed.
+/// World weather: the schedule-driven Clear/Snow cycle <b>and</b> maritime local FX volumes
+/// (<see cref="MaritimeWeatherRules"/> — cloudy / rainstorm / maelstrom / thundercloud stands).
+/// Global phases bind <c>game_schedules</c> rows; local volumes are content doodads that cycle
+/// Timer→Clout→RatioRespawn among themselves. Both halves live here so orphan salvage does not
+/// own weather.
 /// </summary>
 /// <remarks>
-/// Restart policy: nothing is persisted. Every boot re-derives the state from the configured
-/// phases, their content rows and the current clock — the same policy as the global snow state,
-/// which is likewise re-seeded from its configured source at startup.
+/// Restart policy: nothing is persisted. Every boot re-derives the global state from the
+/// configured phases and the current clock, and re-plants maritime volume stands via
+/// <see cref="EnsureMaritimeVolumes"/>.
 /// </remarks>
 public class WeatherManager : Singleton<WeatherManager>
 {
@@ -38,10 +38,36 @@ public class WeatherManager : Singleton<WeatherManager>
     public WeatherState CurrentState { get; private set; } = WeatherState.Clear;
 
     /// <summary>
+    /// World registers the planter that seeds maritime weather FX stands (json-only
+    /// <c>env.cloud</c> / rainstorm / vortex / raincloud). Classification is
+    /// <see cref="MaritimeWeatherRules"/>; this manager owns the call.
+    /// </summary>
+    public Action EnsureMaritimeVolumeStands { get; set; }
+
+    /// <summary>
     /// Raised once per state change with (previous, current). Handlers run outside the manager
     /// lock and a failing handler is logged instead of aborting the refresh.
     /// </summary>
     public event Action<WeatherState, WeatherState> StateChanged;
+
+    /// <summary>
+    /// Plants maritime local-weather FX stands. Safe to call when no planter is registered
+    /// (no-op). Failures are logged; they do not abort boot.
+    /// </summary>
+    public void EnsureMaritimeVolumes()
+    {
+        var plant = EnsureMaritimeVolumeStands;
+        if (plant == null)
+            return;
+        try
+        {
+            plant();
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Maritime weather volume plant failed");
+        }
+    }
 
     /// <summary>
     /// Binds the phase configuration and the content lookup. Configuration problems (a state name

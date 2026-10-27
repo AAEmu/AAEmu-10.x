@@ -101,4 +101,28 @@ public class OnSpawnPlotWorldGateTests
             plotOnly: true,
             directSkillEffectCount: 0)).IsFalse();
     }
+
+    [Test]
+    public async Task ForcePlotGraphOnly_PlotOnly_Always()
+    {
+        await Assert.That(OnSpawnPlotWorldGate.ShouldForcePlotGraphOnly(
+            plotOnly: true, targetAreaRadius: 100)).IsTrue();
+        await Assert.That(OnSpawnPlotWorldGate.ShouldForcePlotGraphOnly(
+            plotOnly: true, targetAreaRadius: 0)).IsTrue();
+    }
+
+    [Test]
+    public async Task ForcePlotGraphOnly_AreaSkillHit_NeedsCast()
+    {
+        // Whalesong OnSpawn: plot despawns + Cast SkillHits curse mines.
+        await Assert.That(OnSpawnPlotWorldGate.ShouldForcePlotGraphOnly(
+            plotOnly: false, targetAreaRadius: 100)).IsFalse();
+    }
+
+    [Test]
+    public async Task ForcePlotGraphOnly_LuscaStyle_RadiusZero()
+    {
+        await Assert.That(OnSpawnPlotWorldGate.ShouldForcePlotGraphOnly(
+            plotOnly: false, targetAreaRadius: 0)).IsTrue();
+    }
 }

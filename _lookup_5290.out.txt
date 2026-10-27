@@ -1,0 +1,44 @@
+﻿group 72 (72, 'collide check')
+group 69 (69, 'φòÿ∞Ü░∞ºò-Ω░ÇΩ╡¼')
+  (65, '∞û┤Ω╡░')
+  (66, '∞á£∞₧æδîÇ-∞á£∞ºÇ')
+  (67, '∞á£∞₧æδîÇ-∞¥╕∞çä')
+  (68, 'φòÿ∞Ü░∞ºò-δ¼╕/∞░╜δ¼╕')
+  (69, 'φòÿ∞Ü░∞ºò-Ω░ÇΩ╡¼')
+  (70, 'δ¼╝Ω│áΩ╕░ Ω░ÇΩ╡¼')
+  (71, 'δ¼╝Ω│áΩ╕░ φîÉδºñδîÇ')
+  (72, 'collide check')
+  (73, 'o_abyss_gate_mine_A')
+  (74, 'o_abyss_gate_mine_B')
+  (75, 'o_abyss_gate_warning_A')
+  (76, 'o_abyss_gate_warning_B')
+  (77, 'Ω╕░φâÇ - φÇÿ∞èñφè╕_∞ä£δª¼δ░⌐∞ºÇ∞áü∞Ü⌐∞òêδ░¢∞¥î')
+  (78, 'φòÿ∞Ü░∞ºò ∞ºÇ∞ù¡ φæ£∞ï£-δ░Ç∞ºÜδ¬¿∞₧É φùê∞êÿ∞òäδ╣ä φàâδ░¡ ')
+  (79, 'φòÿ∞Ü░∞ºò ∞ºÇ∞ù¡ φæ£∞ï£-∞êÿ∞âü ∞ú╝Ω▒░ ∞ºÇ∞ù¡')
+  (80, '∞ÿü∞ºÇ ∞ä¥∞âü')
+5290 fields (5290, 72, 'f', 0, 'f', 'f')
+sched 5290 0
+scanning G:\AAchina\repos\AAEmu-zone-10.0.2\AAEmu.Game\Data\Worlds\main_world\doodad_spawns.json size 24167055
+  UnitId 5290 count 1
+  near plaza [(0, 11179.07, 12054.33, 145.6736)] total_near 1
+scanning G:\AAchina\repos\AAEmu-map-doodad-pr\AAEmu.Game\Data\Worlds\main_world\doodad_spawns.json size 24167055
+  UnitId 5290 count 1
+  near plaza [(0, 11179.07, 12054.33, 145.6736)] total_near 1
+rules would plant group 72: YES (only skip unused 47)
+C:\Python314\python.exe : Traceback (most recent call last):
+At C:\Users\amore\AppData\Local\Temp\ps-script-ea9aaba5-a80c-4da1-ab1e-0875cd7f1926.ps1:94 char:32
++ ... NG='utf-8'; C:\Python314\python.exe G:\AAchina\repos\AAEmu-map-doodad ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "G:\AAchina\repos\AAEmu-map-doodad-pr\_lookup_5290.py", line 49, in <module>
+    out.write_text("done\n", encoding="utf-8")
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\pathlib\__init__.py", line 814, in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\pathlib\__init__.py", line 776, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+PermissionError: [Errno 13] Permission denied: 'G:\\AAchina\\repos\\AAEmu-map-doodad-pr\\_lookup_5290.out.txt'

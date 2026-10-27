@@ -1,0 +1,674 @@
+20:34:50 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:50 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:50 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:50 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:50 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:50 [INFO] PacketMarshaler - StartSkill extras: skillId=15857 flag=28 count=2 values=[00003B4D 000030E8]
+
+20:34:50 [INFO] PacketMarshaler - StartSkill: Id 15857, flag 28, caster=1345, target=101040, inputDirection=0
+
+20:34:50 [DEBUG] Skill - Created SkillTlId 106 for Skill 15857, Caster Tester (0:1345) with target  (5890:101040)
+
+20:34:50 [INFO] Program - WZSkillStarted → zone skillId=15857 tl=106 caster=1345 target=101040 bodyLen=19 hex=F13D00006A000041050004B08A010000000000
+
+20:34:50 [INFO] Program - WZSkillFired → zone skillId=15857 tl=106 caster=1345 target=101040 bodyLen=16 hex=F13D00006A000041050004B08A010000
+
+20:34:50 [DEBUG] Use - World interaction SkillID: 15857
+
+20:34:50 [WARN] GameObject - Use: TemplateId 5890, Using phase 15181 with SkillId 15857
+
+20:34:50 [TRACE] DoodadFuncTemplate - DoodadFuncAttachment
+
+20:34:50 [DEBUG] PacketMarshaler - GamePacket: S->C type 17E .G2C.SCBondDoodadPacket
+
+20:34:50 [INFO] Program - WZUnitBondToDoodad → zone unit=1345 doodad=101040 root=283 point=2 kind=3
+
+20:34:50 [DEBUG] GameObject - DoFunc Finished execution withOut ToNextPhase = False: TemplateId 5890, Using phase 15181 with SkillId 15857
+
+20:34:50 [INFO] PacketMarshaler - ZoneAuthority Use+WZ skillId=15857 tl=0 plotOnly=False hasPlot=False castMs=0 auto=False caster=1345
+
+20:34:50 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:51 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:51 [DEBUG] PacketMarshaler - GamePacket: S->C type 17F .G2C.SCUnbondDoodadPacket
+
+20:34:51 [INFO] Program - WZUnitUnbondFromDoodad → zone unit=1345
+
+20:34:51 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:51 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:52 [INFO] PacketMarshaler - StartSkill extras: skillId=15857 flag=28 count=2 values=[00003B4D 000030E8]
+
+20:34:52 [INFO] PacketMarshaler - StartSkill: Id 15857, flag 28, caster=1345, target=101040, inputDirection=0
+
+20:34:52 [DEBUG] Skill - Created SkillTlId 107 for Skill 15857, Caster Tester (0:1345) with target  (5890:101040)
+
+20:34:52 [INFO] Program - WZSkillStarted → zone skillId=15857 tl=107 caster=1345 target=101040 bodyLen=19 hex=F13D00006B000041050004B08A010000000000
+
+20:34:52 [INFO] Program - WZSkillFired → zone skillId=15857 tl=107 caster=1345 target=101040 bodyLen=16 hex=F13D00006B000041050004B08A010000
+
+20:34:52 [DEBUG] Use - World interaction SkillID: 15857
+
+20:34:52 [WARN] GameObject - Use: TemplateId 5890, Using phase 15181 with SkillId 15857
+
+20:34:52 [TRACE] DoodadFuncTemplate - DoodadFuncAttachment
+
+20:34:52 [DEBUG] PacketMarshaler - GamePacket: S->C type 17E .G2C.SCBondDoodadPacket
+
+20:34:52 [INFO] Program - WZUnitBondToDoodad → zone unit=1345 doodad=101040 root=283 point=2 kind=3
+
+20:34:52 [DEBUG] GameObject - DoFunc Finished execution withOut ToNextPhase = False: TemplateId 5890, Using phase 15181 with SkillId 15857
+
+20:34:52 [INFO] PacketMarshaler - ZoneAuthority Use+WZ skillId=15857 tl=0 plotOnly=False hasPlot=False castMs=0 auto=False caster=1345
+
+20:34:52 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:53 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:53 [DEBUG] PacketMarshaler - GamePacket: S->C type 17F .G2C.SCUnbondDoodadPacket
+
+20:34:53 [INFO] Program - WZUnitUnbondFromDoodad → zone unit=1345
+
+20:34:53 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:53 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:53 [INFO] PacketMarshaler - StartSkill extras: skillId=15857 flag=28 count=2 values=[00003B4D 000030E8]
+
+20:34:53 [INFO] PacketMarshaler - StartSkill: Id 15857, flag 28, caster=1345, target=101040, inputDirection=0
+
+20:34:53 [DEBUG] Skill - Created SkillTlId 108 for Skill 15857, Caster Tester (0:1345) with target  (5890:101040)
+
+20:34:53 [INFO] Program - WZSkillStarted → zone skillId=15857 tl=108 caster=1345 target=101040 bodyLen=19 hex=F13D00006C000041050004B08A010000000000
+
+20:34:53 [INFO] Program - WZSkillFired → zone skillId=15857 tl=108 caster=1345 target=101040 bodyLen=16 hex=F13D00006C000041050004B08A010000
+
+20:34:53 [DEBUG] Use - World interaction SkillID: 15857
+
+20:34:53 [WARN] GameObject - Use: TemplateId 5890, Using phase 15181 with SkillId 15857
+
+20:34:53 [TRACE] DoodadFuncTemplate - DoodadFuncAttachment
+
+20:34:53 [DEBUG] PacketMarshaler - GamePacket: S->C type 17E .G2C.SCBondDoodadPacket
+
+20:34:53 [INFO] Program - WZUnitBondToDoodad → zone unit=1345 doodad=101040 root=283 point=2 kind=3
+
+20:34:53 [DEBUG] GameObject - DoFunc Finished execution withOut ToNextPhase = False: TemplateId 5890, Using phase 15181 with SkillId 15857
+
+20:34:53 [INFO] PacketMarshaler - ZoneAuthority Use+WZ skillId=15857 tl=0 plotOnly=False hasPlot=False castMs=0 auto=False caster=1345
+
+20:34:53 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:53 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:53 [DEBUG] PacketMarshaler - GamePacket: S->C type 17F .G2C.SCUnbondDoodadPacket
+
+20:34:53 [INFO] Program - WZUnitUnbondFromDoodad → zone unit=1345
+
+20:34:53 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:54 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:54 [INFO] PacketMarshaler - StartSkill extras: skillId=15857 flag=28 count=2 values=[00003B4D 000030E8]
+
+20:34:54 [INFO] PacketMarshaler - StartSkill: Id 15857, flag 28, caster=1345, target=101040, inputDirection=0
+
+20:34:54 [DEBUG] Skill - Created SkillTlId 109 for Skill 15857, Caster Tester (0:1345) with target  (5890:101040)
+
+20:34:54 [INFO] Program - WZSkillStarted → zone skillId=15857 tl=109 caster=1345 target=101040 bodyLen=19 hex=F13D00006D000041050004B08A010000000000
+
+20:34:54 [INFO] Program - WZSkillFired → zone skillId=15857 tl=109 caster=1345 target=101040 bodyLen=16 hex=F13D00006D000041050004B08A010000
+
+20:34:54 [DEBUG] Use - World interaction SkillID: 15857
+
+20:34:54 [WARN] GameObject - Use: TemplateId 5890, Using phase 15181 with SkillId 15857
+
+20:34:54 [TRACE] DoodadFuncTemplate - DoodadFuncAttachment
+
+20:34:54 [DEBUG] PacketMarshaler - GamePacket: S->C type 17E .G2C.SCBondDoodadPacket
+
+20:34:54 [INFO] Program - WZUnitBondToDoodad → zone unit=1345 doodad=101040 root=283 point=2 kind=3
+
+20:34:54 [DEBUG] GameObject - DoFunc Finished execution withOut ToNextPhase = False: TemplateId 5890, Using phase 15181 with SkillId 15857
+
+20:34:54 [INFO] PacketMarshaler - ZoneAuthority Use+WZ skillId=15857 tl=0 plotOnly=False hasPlot=False castMs=0 auto=False caster=1345
+
+20:34:54 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:54 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:54 [DEBUG] PacketMarshaler - GamePacket: S->C type 17F .G2C.SCUnbondDoodadPacket
+
+20:34:54 [INFO] Program - WZUnitUnbondFromDoodad → zone unit=1345
+
+20:34:54 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:54 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:56 [INFO] PacketMarshaler - StartSkill extras: skillId=15857 flag=28 count=2 values=[00003B4D 000030E8]
+
+20:34:56 [INFO] PacketMarshaler - StartSkill: Id 15857, flag 28, caster=1345, target=101040, inputDirection=0
+
+20:34:56 [DEBUG] Skill - Created SkillTlId 110 for Skill 15857, Caster Tester (0:1345) with target  (5890:101040)
+
+20:34:56 [INFO] Program - WZSkillStarted → zone skillId=15857 tl=110 caster=1345 target=101040 bodyLen=19 hex=F13D00006E000041050004B08A010000000000
+
+20:34:56 [INFO] Program - WZSkillFired → zone skillId=15857 tl=110 caster=1345 target=101040 bodyLen=16 hex=F13D00006E000041050004B08A010000
+
+20:34:56 [DEBUG] Use - World interaction SkillID: 15857
+
+20:34:56 [WARN] GameObject - Use: TemplateId 5890, Using phase 15181 with SkillId 15857
+
+20:34:56 [TRACE] DoodadFuncTemplate - DoodadFuncAttachment
+
+20:34:56 [DEBUG] PacketMarshaler - GamePacket: S->C type 17E .G2C.SCBondDoodadPacket
+
+20:34:56 [INFO] Program - WZUnitBondToDoodad → zone unit=1345 doodad=101040 root=283 point=2 kind=3
+
+20:34:56 [DEBUG] GameObject - DoFunc Finished execution withOut ToNextPhase = False: TemplateId 5890, Using phase 15181 with SkillId 15857
+
+20:34:56 [INFO] PacketMarshaler - ZoneAuthority Use+WZ skillId=15857 tl=0 plotOnly=False hasPlot=False castMs=0 auto=False caster=1345
+
+20:34:56 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:56 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:56 [DEBUG] PacketMarshaler - GamePacket: S->C type 17F .G2C.SCUnbondDoodadPacket
+
+20:34:56 [INFO] Program - WZUnitUnbondFromDoodad → zone unit=1345
+
+20:34:56 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:56 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:57 [INFO] PacketMarshaler - StartSkill extras: skillId=15857 flag=28 count=2 values=[00003B4D 000030E8]
+
+20:34:57 [INFO] PacketMarshaler - StartSkill: Id 15857, flag 28, caster=1345, target=101040, inputDirection=0
+
+20:34:57 [DEBUG] Skill - Created SkillTlId 111 for Skill 15857, Caster Tester (0:1345) with target  (5890:101040)
+
+20:34:57 [INFO] Program - WZSkillStarted → zone skillId=15857 tl=111 caster=1345 target=101040 bodyLen=19 hex=F13D00006F000041050004B08A010000000000
+
+20:34:57 [INFO] Program - WZSkillFired → zone skillId=15857 tl=111 caster=1345 target=101040 bodyLen=16 hex=F13D00006F000041050004B08A010000
+
+20:34:57 [DEBUG] Use - World interaction SkillID: 15857
+
+20:34:57 [WARN] GameObject - Use: TemplateId 5890, Using phase 15181 with SkillId 15857
+
+20:34:57 [TRACE] DoodadFuncTemplate - DoodadFuncAttachment
+
+20:34:57 [DEBUG] PacketMarshaler - GamePacket: S->C type 17E .G2C.SCBondDoodadPacket
+
+20:34:57 [INFO] Program - WZUnitBondToDoodad → zone unit=1345 doodad=101040 root=283 point=2 kind=3
+
+20:34:57 [DEBUG] GameObject - DoFunc Finished execution withOut ToNextPhase = False: TemplateId 5890, Using phase 15181 with SkillId 15857
+
+20:34:57 [INFO] PacketMarshaler - ZoneAuthority Use+WZ skillId=15857 tl=0 plotOnly=False hasPlot=False castMs=0 auto=False caster=1345
+
+20:34:57 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:57 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:57 [DEBUG] PacketMarshaler - GamePacket: S->C type 17F .G2C.SCUnbondDoodadPacket
+
+20:34:57 [INFO] Program - WZUnitUnbondFromDoodad → zone unit=1345
+
+20:34:57 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:57 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:58 [INFO] PacketMarshaler - StartSkill extras: skillId=15857 flag=28 count=2 values=[00003B4D 000030E8]
+
+20:34:58 [INFO] PacketMarshaler - StartSkill: Id 15857, flag 28, caster=1345, target=101040, inputDirection=0
+
+20:34:58 [DEBUG] Skill - Created SkillTlId 112 for Skill 15857, Caster Tester (0:1345) with target  (5890:101040)
+
+20:34:58 [INFO] Program - WZSkillStarted → zone skillId=15857 tl=112 caster=1345 target=101040 bodyLen=19 hex=F13D000070000041050004B08A010000000000
+
+20:34:58 [INFO] Program - WZSkillFired → zone skillId=15857 tl=112 caster=1345 target=101040 bodyLen=16 hex=F13D000070000041050004B08A010000
+
+20:34:58 [DEBUG] Use - World interaction SkillID: 15857
+
+20:34:58 [WARN] GameObject - Use: TemplateId 5890, Using phase 15181 with SkillId 15857
+
+20:34:58 [TRACE] DoodadFuncTemplate - DoodadFuncAttachment
+
+20:34:58 [DEBUG] PacketMarshaler - GamePacket: S->C type 17E .G2C.SCBondDoodadPacket
+
+20:34:58 [INFO] Program - WZUnitBondToDoodad → zone unit=1345 doodad=101040 root=283 point=2 kind=3
+
+20:34:58 [DEBUG] GameObject - DoFunc Finished execution withOut ToNextPhase = False: TemplateId 5890, Using phase 15181 with SkillId 15857
+
+20:34:58 [INFO] PacketMarshaler - ZoneAuthority Use+WZ skillId=15857 tl=0 plotOnly=False hasPlot=False castMs=0 auto=False caster=1345
+
+20:34:58 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:58 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:58 [DEBUG] PacketMarshaler - GamePacket: S->C type 17F .G2C.SCUnbondDoodadPacket
+
+20:34:58 [INFO] Program - WZUnitUnbondFromDoodad → zone unit=1345
+
+20:34:58 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:58 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:58 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:58 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:58 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:59 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:59 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:59 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:59 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:59 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:59 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:59 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:59 [INFO] PacketMarshaler - StartSkill extras: skillId=15857 flag=28 count=2 values=[00003B4D 000030E8]
+
+20:34:59 [INFO] PacketMarshaler - StartSkill: Id 15857, flag 28, caster=1345, target=101039, inputDirection=0
+
+20:34:59 [DEBUG] Skill - Created SkillTlId 113 for Skill 15857, Caster Tester (0:1345) with target  (5890:101039)
+
+20:34:59 [INFO] Program - WZSkillStarted → zone skillId=15857 tl=113 caster=1345 target=101039 bodyLen=19 hex=F13D000071000041050004AF8A010000000000
+
+20:34:59 [INFO] Program - WZSkillFired → zone skillId=15857 tl=113 caster=1345 target=101039 bodyLen=16 hex=F13D000071000041050004AF8A010000
+
+20:34:59 [DEBUG] Use - World interaction SkillID: 15857
+
+20:34:59 [WARN] GameObject - Use: TemplateId 5890, Using phase 15181 with SkillId 15857
+
+20:34:59 [TRACE] DoodadFuncTemplate - DoodadFuncAttachment
+
+20:34:59 [DEBUG] PacketMarshaler - GamePacket: S->C type 17E .G2C.SCBondDoodadPacket
+
+20:34:59 [INFO] Program - WZUnitBondToDoodad → zone unit=1345 doodad=101039 root=283 point=2 kind=3
+
+20:34:59 [DEBUG] GameObject - DoFunc Finished execution withOut ToNextPhase = False: TemplateId 5890, Using phase 15181 with SkillId 15857
+
+20:34:59 [INFO] PacketMarshaler - ZoneAuthority Use+WZ skillId=15857 tl=0 plotOnly=False hasPlot=False castMs=0 auto=False caster=1345
+
+20:34:59 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:59 [DEBUG] PacketMarshaler - GamePacket: S->C type 098 .G2C.SCUnitsRemovedPacket - Removed 5: [1138,1279,1297,1303,1332]
+
+20:34:59 [DEBUG] PacketMarshaler - GamePacket: S->C type 098 .G2C.SCUnitsRemovedPacket - Removed bc=1254
+
+20:34:59 [DEBUG] PacketMarshaler - GamePacket: S->C type 098 .G2C.SCUnitsRemovedPacket - Removed 3: [958,282,283]
+
+20:34:59 [DEBUG] PacketMarshaler - GamePacket: S->C type 098 .G2C.SCUnitsRemovedPacket - Removed 2: [909,910]
+
+20:34:59 [DEBUG] PacketMarshaler - GamePacket: S->C type 098 .G2C.SCUnitsRemovedPacket - Removed 2: [1085,1237]
+
+20:34:59 [DEBUG] PacketMarshaler - GamePacket: S->C type 098 .G2C.SCUnitsRemovedPacket - Removed 3: [782,913,914]
+
+20:34:59 [DEBUG] PacketMarshaler - GamePacket: S->C type 098 .G2C.SCUnitsRemovedPacket - Removed 3: [1061,1094,1190]
+
+20:34:59 [DEBUG] PacketMarshaler - GamePacket: S->C type 098 .G2C.SCUnitsRemovedPacket - Removed 2: [1127,1160]
+
+20:34:59 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:34:59 [DEBUG] PacketMarshaler - GamePacket: S->C type 17F .G2C.SCUnbondDoodadPacket
+
+20:34:59 [INFO] Program - WZUnitUnbondFromDoodad → zone unit=1345
+
+20:34:59 [DEBUG] PacketMarshaler - GamePacket: S->C type 097 .G2C.SCUnitStatePacket - Transfer - (282) - 마리아노플~두 왕관 순환 마차
+
+20:34:59 [DEBUG] PacketMarshaler - GamePacket: S->C type 097 .G2C.SCUnitStatePacket - Transfer - (283) - 순환 마차 탑승 부분
+
+20:35:00 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:00 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:00 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:00 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:00 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:01 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:01 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:01 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:01 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:01 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:01 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:01 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:02 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:02 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:02 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:02 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:02 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:05 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:05 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:05 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:05 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:05 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:05 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:05 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:09 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:12 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:15 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:18 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:21 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:24 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:26 [DEBUG] PacketMarshaler - GamePacket: S->C type 098 .G2C.SCUnitsRemovedPacket - Removed bc=282
+
+20:35:27 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:27 [DEBUG] PacketMarshaler - GamePacket: S->C type 098 .G2C.SCUnitsRemovedPacket - Removed bc=283
+
+20:35:30 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:33 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:36 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:39 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:42 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:45 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:48 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:51 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:54 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:35:57 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:00 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:03 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:06 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:09 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:12 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:13 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:13 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:13 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:13 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:13 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:13 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:14 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:14 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:14 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:14 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:14 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:14 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:14 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:14 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:15 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:15 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:15 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:15 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:15 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:15 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:15 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:16 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:16 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:16 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:16 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:16 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:16 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:16 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:16 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:16 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:17 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:17 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:17 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:17 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:17 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:17 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:17 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:17 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:17 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:18 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:18 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:18 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:19 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:20 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:20 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:20 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:20 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:20 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:20 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:20 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:20 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:20 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:21 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:21 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:21 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:21 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:21 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:21 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:21 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:21 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:21 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:22 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:22 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:22 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:22 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:22 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:22 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:22 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:23 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:23 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:23 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:23 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:23 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:23 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:23 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:23 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:23 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:25 [DEBUG] DoodadFuncTemplate - DoodadFuncFakeUse: skillId 13167, nextPhase 6844,  SkillId 0, FakeSkillId 13167, TargetParent False
+
+20:36:26 [DEBUG] DoodadFuncTemplate - DoodadFuncFakeUse: skillId 13166, nextPhase 6845,  SkillId 0, FakeSkillId 13166, TargetParent False
+
+20:36:26 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:27 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:27 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:27 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:27 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:28 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:28 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:28 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:28 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:28 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:28 [INFO] PacketMarshaler - StartSkill extras: skillId=15857 flag=28 count=2 values=[0000381F 00002E2A]
+
+20:36:28 [INFO] PacketMarshaler - StartSkill: Id 15857, flag 28, caster=1345, target=116885, inputDirection=0
+
+20:36:28 [DEBUG] Skill - Created SkillTlId 117 for Skill 15857, Caster Tester (0:1345) with target  (5577:116885)
+
+20:36:28 [INFO] Program - WZSkillStarted → zone skillId=15857 tl=117 caster=1345 target=116885 bodyLen=19 hex=F13D00007500004105000495C8010000000000
+
+20:36:28 [INFO] Program - WZSkillFired → zone skillId=15857 tl=117 caster=1345 target=116885 bodyLen=16 hex=F13D00007500004105000495C8010000
+
+20:36:28 [DEBUG] Use - World interaction SkillID: 15857
+
+20:36:28 [WARN] GameObject - Use: TemplateId 5577, Using phase 14367 with SkillId 15857
+
+20:36:28 [TRACE] DoodadFuncTemplate - DoodadFuncAttachment
+
+20:36:28 [DEBUG] PacketMarshaler - GamePacket: S->C type 17E .G2C.SCBondDoodadPacket
+
+20:36:28 [INFO] Program - WZUnitBondToDoodad → zone unit=1345 doodad=116885 root=0 point=2 kind=2
+
+20:36:28 [DEBUG] GameObject - DoFunc Finished execution withOut ToNextPhase = False: TemplateId 5577, Using phase 14367 with SkillId 15857
+
+20:36:28 [INFO] PacketMarshaler - ZoneAuthority Use+WZ skillId=15857 tl=0 plotOnly=False hasPlot=False castMs=0 auto=False caster=1345
+
+20:36:28 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:31 [TRACE] GameProtocolHandler - C2S RAW opcode=0x10F level=5 -> CSUnbondDoodadPacket
+
+20:36:31 [DEBUG] PacketMarshaler - GamePacket: S->C type 17F .G2C.SCUnbondDoodadPacket
+
+20:36:31 [INFO] Program - WZUnitUnbondFromDoodad → zone unit=1345
+
+20:36:31 [DEBUG] PacketMarshaler - GamePacket: C->S type 10F .C2G.CSUnbondDoodadPacket
+
+20:36:31 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:31 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:32 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:32 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:32 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:32 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:32 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:32 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:32 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:32 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:32 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:35 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:38 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:39 [TRACE] DoodadPhaseFuncTemplate - DoodadFuncRatioChange: Chance 5000, Roll 5890, NextPhase 39355
+
+20:36:42 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+
+20:36:45 [TRACE] GameProtocolHandler - C2S RAW opcode=0x0C8 level=5 -> CSMoveUnitPacket
+

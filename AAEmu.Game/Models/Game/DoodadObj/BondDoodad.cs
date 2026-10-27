@@ -63,12 +63,35 @@ public class BondDoodad : PacketMarshaler
     /// Seat-settle packets often still report residual velocity; only Moving / Jumping mean leave.
     /// CSUnbond is always leave and does not use this.
     /// </summary>
-    public static bool IsIntentionalSeatLeave(MoveTypeFlags flags, ushort actorFlags)
+    /// <param name="carrierSeat">
+    /// True when the seat is parented to a live unit (transfer boarding, slave, house). Walking onto
+    /// a carriage seat leaves the Moving bit on for a second of settle packets — treating that as
+    /// leave instantly SCUnbonds (live: bond → CSMove → unbond ~1 s, no CSUnbond). Carrier seats
+    /// therefore only leave on Jump; free-world furniture still uses Moving.
+    /// </param>
+    public static bool IsIntentionalSeatLeave(
+        MoveTypeFlags flags, ushort actorFlags, bool carrierSeat = false)
     {
         if (((MoveTypeActorFlags)actorFlags).HasFlag(MoveTypeActorFlags.Jumping))
             return true;
+        if (flags.HasFlag(MoveTypeFlags.Jumping))
+            return true;
+        if (carrierSeat)
+            return false;
         // Moving (0x02) and Jumping combo (Moving|Stopping).
         return flags.HasFlag(MoveTypeFlags.Moving);
+    }
+
+    /// <summary>
+    /// True when <paramref name="character"/> is bonded to a seat that rides a unit carrier.
+    /// </summary>
+    public static bool IsCarrierSeat(Character character)
+    {
+        if (character?.Bonding == null)
+            return false;
+        if (character.Transform?.Parent?.GameObject is BaseUnit and not Doodad)
+            return true;
+        return ResolveCarrierUnit(character.Bonding.GetOwner()) != null;
     }
 
     /// <summary>

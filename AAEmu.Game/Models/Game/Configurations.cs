@@ -221,6 +221,16 @@ public class WorldConfig
     /// </summary>
     public bool SpawnDoodads { get; set; } = true;
 
+    /// <summary>
+    /// Open-world map doodad plant source. <c>LevelPack</c> (default) plants from
+    /// <c>cells/*/doodad.g</c>, arms schedule spawners for off-window rows, salvages
+    /// approved json-only orphans, and loads json only when the filename contains
+    /// <c>overlay</c>. <c>LevelPackFill</c> also loads every <c>doodad_spawns*.json</c>
+    /// (legacy dual-source). <c>Json</c> is the pre-level-pack path.
+    /// Values match <c>MapDoodadSourceKind</c>.
+    /// </summary>
+    public string MapDoodadSource { get; set; } = "LevelPack";
+
 
     /// <summary>
     /// When false, transfers (carriages, airships) are not spawned at world load. Diagnostic

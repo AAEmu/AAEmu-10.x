@@ -52,6 +52,36 @@ public static partial class ZoneSpawnerPlacementCatalog
         return ByZone.GetOrAdd(zoneId, LoadZone);
     }
 
+    /// <summary>
+    /// Placement ids present in each candidate zone's <c>npc_spawners.g</c> (for event routing).
+    /// </summary>
+    public static Dictionary<uint, IReadOnlyCollection<uint>> PlacementIdsByZone(
+        IEnumerable<uint> zoneIds)
+    {
+        var map = new Dictionary<uint, IReadOnlyCollection<uint>>();
+        if (zoneIds == null)
+            return map;
+
+        foreach (var zoneId in zoneIds)
+        {
+            if (zoneId == 0 || map.ContainsKey(zoneId))
+                continue;
+            var all = GetAll(zoneId);
+            if (all.Count == 0)
+            {
+                map[zoneId] = [];
+                continue;
+            }
+
+            var ids = new HashSet<uint>(all.Count);
+            foreach (var p in all)
+                ids.Add(p.PlacementId);
+            map[zoneId] = ids;
+        }
+
+        return map;
+    }
+
     public static void Invalidate(uint zoneId = 0)
     {
         if (zoneId == 0)

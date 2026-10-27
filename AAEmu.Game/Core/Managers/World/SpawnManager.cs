@@ -59,6 +59,24 @@ public class SpawnManager(WorldInstance parentWorld)
     private List<Doodad> PlayerDoodads { get; } = [];
 
     private uint _nextId = 1u;
+
+    /// <summary>
+    /// Registers a map / orphan / schedule doodad spawner so cron wake and TreasureMap
+    /// can find it. Does not spawn; the caller runs <see cref="DoodadSpawner.Spawn"/>.
+    /// </summary>
+    public uint AddDoodadSpawner(DoodadSpawner spawner)
+    {
+        ArgumentNullException.ThrowIfNull(spawner);
+        lock (_lockSpawner)
+        {
+            spawner.ParentWorld = World;
+            spawner.Id = _nextId;
+            if (!DoodadSpawners.TryAdd(_nextId, spawner))
+                return 0;
+            _nextId++;
+            return spawner.Id;
+        }
+    }
     // Shared across all SpawnManager instances � all write into the global NpcGameData singleton
     private static uint s_fakeSpawnerId = 9000001u;
 
@@ -342,12 +360,21 @@ public class SpawnManager(WorldInstance parentWorld)
             return false;
         }
         doodadFiles = ReverseSpawnFiles(doodadFiles);
+        var mapDoodadSource = AppConfiguration.Instance.World.MapDoodadSource;
         var duplicateIndex = new DoodadSpawnDuplicateIndex();
         foreach (var jsonFileName in doodadFiles)
         {
+            var fileName = Path.GetFileName(jsonFileName);
+            if (!MapDoodadPlantRules.ShouldLoadJsonSpawnFile(mapDoodadSource, fileName))
+            {
+                Logger.Info(
+                    "World {0}: skipping {1} (MapDoodadSource={2})",
+                    World, fileName, mapDoodadSource ?? MapDoodadSourceKind.Json);
+                continue;
+            }
             if (!File.Exists(jsonFileName))
             {
-                Logger.Info($"World {World} is missing {Path.GetFileName(jsonFileName)}");
+                Logger.Info($"World {World} is missing {fileName}");
                 continue;
             }
             var contents = FileManager.GetFileContents(jsonFileName);

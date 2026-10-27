@@ -1,6 +1,6 @@
-﻿using AAEmu.Game.Models.Game.Units;
+﻿using System.Linq;
+using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Utils;
-
 
 namespace AAEmu.Game.Models.Game.Skills;
 
@@ -124,4 +124,74 @@ public static class SkillAreaRules
     /// </summary>
     public static bool IsHittableAreaCenter(BaseUnit centerUnit)
         => centerUnit is { ObjId: > 0 and not uint.MaxValue };
+
+    /// <summary>
+    /// Whether a <c>target_type = self</c> AoE should drop the caster from the counted hit list
+    /// before <c>target_area_count</c> is applied.
+    /// </summary>
+    /// <remarks>
+    /// Self is the gather origin, not a neighbour hit. With <c>target_relation = any</c> and
+    /// <c>target_area_count = 1</c>, keeping the caster sorts it to distance 0 and consumes the only
+    /// slot — nearby doodads never receive <c>OnSkillHit</c> (Whalesong curse-mine reveal).
+    /// Source-applied effects still use the caster directly; this only trims <c>possibleTargets</c>.
+    /// </remarks>
+    public static bool ExcludeCasterFromSelfAreaHits(SkillTargetType targetType, float areaRadius)
+        => targetType == SkillTargetType.Self && areaRadius > 0f;
+
+    /// <summary>
+    /// Whether <c>target_area_count</c> should also truncate doodad hits.
+    /// </summary>
+    /// <remarks>
+    /// Never. The count column caps unit effect slots (damage, buff paint). Doodads only receive
+    /// <c>OnSkillHit</c> / skill-less Use, and their matching rows already gate on skill id — a
+    /// combined cap lets nearer mines steal slots from the peace pad (Whalesong 36659: count 4 +
+    /// BuffEffect, SkillHit on doodad 12312). Effectless mine openers (count 1) need the same
+    /// split. <paramref name="skillEffectCount"/> is kept so call sites stay stable.
+    /// </remarks>
+    public static bool TargetAreaCountCapsDoodads(int skillEffectCount) => false;
+
+    /// <summary>
+    /// Applies <paramref name="targetAreaCount"/> to units only; doodads in the gather stay.
+    /// Returns the input list when no unit cap is needed.
+    /// </summary>
+    public static List<BaseUnit> ApplyTargetAreaCount(
+        IReadOnlyList<BaseUnit> targets,
+        BaseUnit sortOrigin,
+        int targetAreaCount,
+        int skillEffectCount)
+    {
+        if (targets == null || targets.Count == 0 || targetAreaCount <= 0)
+            return targets as List<BaseUnit> ?? targets?.ToList() ?? [];
+
+        // skillEffectCount is unused: doodads are never count-capped (TargetAreaCountCapsDoodads).
+        _ = skillEffectCount;
+
+        var units = new List<BaseUnit>();
+        var doodads = new List<BaseUnit>();
+        foreach (var t in targets)
+        {
+            if (t == null)
+                continue;
+            if (t is Unit)
+                units.Add(t);
+            else
+                doodads.Add(t);
+        }
+
+        if (units.Count <= targetAreaCount)
+        {
+            if (units.Count + doodads.Count == targets.Count)
+                return targets as List<BaseUnit> ?? targets.ToList();
+            units.AddRange(doodads);
+            return units;
+        }
+
+        if (sortOrigin != null)
+            units = units.OrderBy(t => t.GetDistanceTo(sortOrigin)).Take(targetAreaCount).ToList();
+        else
+            units = units.Take(targetAreaCount).ToList();
+
+        units.AddRange(doodads);
+        return units;
+    }
 }

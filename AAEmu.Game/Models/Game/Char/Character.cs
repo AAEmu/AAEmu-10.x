@@ -28,7 +28,9 @@ using AAEmu.Game.Models.Game.StreamAoi;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Buffs;
 using AAEmu.Game.Models.Game.Skills.SkillControllers;
+using AAEmu.Game.Models.Game.Slaves;
 using AAEmu.Game.Models.Game.Static;
+using AAEmu.Game.Models.Game.Transfers;
 using AAEmu.Game.Models.Game.Quests.Static;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.Units.Static;
@@ -350,6 +352,41 @@ public partial class Character : Unit, ICharacter
     public uint StandingOnSlaveId { get; set; }
 
     /// <summary>
+    /// Transfer (carriage / boarding) last reported as the standing carrier, same role as
+    /// <see cref="StandingOnSlaveId"/> for ships.
+    /// </summary>
+    public uint StandingOnTransferId { get; set; }
+
+    /// <summary>
+    /// True when seated on or standing on <paramref name="transfer"/> (motor or boarding body).
+    /// </summary>
+    public bool IsOccupyingTransfer(Transfer transfer)
+    {
+        if (transfer == null || transfer.ObjId == 0)
+            return false;
+
+        if (Bonding != null &&
+            ReferenceEquals(Transform?.Parent?.GameObject, transfer))
+            return true;
+
+        var parent = Transform?.Parent;
+        var parentObjId = (parent?.GameObject as Transfer)?.ObjId ?? 0;
+        var parentOfParentObjId = (parent?.Parent?.GameObject as Transfer)?.ObjId ?? 0;
+        if (TransferAttachmentMoveRules.IsOnTransfer(parentObjId, parentOfParentObjId, transfer.ObjId))
+            return true;
+
+        return StandingOnTransferId == transfer.ObjId &&
+               TransferAttachmentMoveRules.RecordedTransferIsStillReached(
+                   StandingOnTransferId, parentObjId, parentOfParentObjId);
+    }
+
+    private bool IsSummonerKeepingSpawnStream(Slave slave) =>
+        slave != null
+        && slave.Summoner?.ObjId == ObjId
+        && SlaveSpawnPortalRules.ShouldKeepStreamedDuringSpawn(
+            slave.PendingSpawnPortal, slave.SpawnTime, DateTime.UtcNow);
+
+    /// <summary>
     /// True when this hull may receive SCUnitState now. Equipment (Part) is always inside.
     /// Does not share the NPC MAX cap — boats are not mirrors.
     /// </summary>
@@ -365,6 +402,8 @@ public partial class Character : Unit, ICharacter
         if (StreamedSlaveIds.ContainsKey(slave.ObjId))
             return false;
         if (BoatHelmSeatRules.ShouldKeepStreamedHullForRider(IsOccupyingSlave(slave)))
+            return true;
+        if (IsSummonerKeepingSpawnStream(slave))
             return true;
         var d2 = DistanceSq(Transform.World.Position, slave.Transform.World.Position);
         return StreamAoiTable.IsInside(slave.StreamAoiCategory, d2, alreadyStreamed: false);
@@ -382,6 +421,8 @@ public partial class Character : Unit, ICharacter
         if (slave.StreamAoiCategory == StreamAoiCategory.Part)
             return false;
         if (BoatHelmSeatRules.ShouldKeepStreamedHullForRider(IsOccupyingSlave(slave)))
+            return true;
+        if (IsSummonerKeepingSpawnStream(slave))
             return true;
         if (!StreamedSlaveIds.ContainsKey(slave.ObjId))
             return false;
@@ -438,10 +479,13 @@ public partial class Character : Unit, ICharacter
         {
             var slave = ParentWorld?.GetSlaveByObjId(objId);
             // Despawning hulls stay listed for the portal window; do not soft-cull them or the
-            // SCUnitsRemoved cancels the portal fx.
+            // SCUnitsRemoved cancels the portal fx. Fresh summons use the same grace — a soft-cull
+            // before the portal finishes leaves a pop-in (or an invisible hull after a bad pose).
             if (slave is { IsDespawning: true })
                 continue;
             if (BoatHelmSeatRules.ShouldKeepStreamedHullForRider(IsOccupyingSlave(slave)))
+                continue;
+            if (IsSummonerKeepingSpawnStream(slave))
                 continue;
             if (slave == null || slave.ObjId == 0)
             {

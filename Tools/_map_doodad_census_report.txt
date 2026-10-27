@@ -1,0 +1,304 @@
+doodad_funcs columns: ['id', 'doodad_func_group_id', 'actual_func_id', 'actual_func_type', 'next_phase', 'sound_id', 'func_skill_id', 'perm_id', 'act_count', 'popup_warn', 'forbid_on_climb', 'popup_desc', 'reset_first_interaction']
+func type samples (quest/resident/evidence): [('DoodadFuncQuest',), ('DoodadFuncEvidenceItemLoot',), ('DoodadFuncResidentTownhallUiOpen',)]
+tower tables: ['guard_tower_steps', 'tower_def_prog_spawn_targets', 'tower_def_progs', 'tower_def_map_events', 'guard_tower_settings', 'tower_defs', 'competition_tower_defs']
+tower almighty template ids: 0
+parsing doodad.g …
+level-pack placements: 80357 templates: 5166
+level-pack rows with schedule template: 8414 (counted SkipSchedule offline)
+loading doodad_spawns.json …
+json rows: 88821
+
+========================================================================
+MAIN_WORLD MAP DOODAD CENSUS (LevelPack vs doodad_spawns.json)
+========================================================================
+json authority rows:     88821
+level-pack .g rows:      80357
+  -> Plant (permanent):   66640
+  -> SkipSchedule*:       8161  (*all scheduled templates offline)
+  -> SkipIgnoredPermanent:2490
+  -> SkipTowerAlmighty:   0
+  -> SkipUnusedGroup:     287
+  -> SkipUnknownTemplate: 2779
+json orphan salvage Plant:2854
+approx total permanent:  69494
+  (json was 88821; delta vs json = -19327)
+
+--- LevelPack .g decisions ---
+  Plant: 66640
+  SkipSchedule: 8161
+  SkipUnknownTemplate: 2779
+  SkipIgnoredPermanent: 2490
+  SkipUnusedGroup: 287
+
+--- LevelPack Plant by group (top 20) ---
+   24 Interaction            21812
+   11 Quest                  12205
+    2 Deforestation          6388
+   12 Agriculture            5728
+   25 Level                  4243
+    3 Picking                2709
+    4 Mining                 2607
+   39 Excavation             1717
+   65 SportFishing           1221
+   40 MarineAgriculture      771
+    5 Livestock              769
+   15 group_15               499
+    6 group_6                388
+   34 group_34               294
+   36 group_36               277
+   55 DigTreasureNormal      256
+   20 group_20               248
+   17 group_17               247
+   51 group_51               240
+   19 group_19               238
+
+--- Orphan salvage decisions (every json row) ---
+  SkipJsonOrphanCoveredByLevelPack: 81392
+  SkipRandomPlacement: 3234
+  Plant: 2854
+  SkipUnknownTemplate: 529
+  SkipStandOccupied: 253
+  SkipHousingOrphan: 252
+  SkipRuntimeEvidence: 210
+  SkipJsonOrphanUnhandled: 96
+  SkipUnusedGroup: 1
+
+--- Orphan Plant by group ---
+   26 Sale                   915
+    5 Livestock              582
+   12 Agriculture            434
+    3 Picking                383
+    2 Deforestation          250
+   11 Quest                  146
+   13 SkillVolume            36
+   24 Interaction            29
+   25 Level                  27
+   71 FishSale               21
+   43 PortalWorldgate        13
+   44 PortalMirage           9
+   40 MarineAgriculture      8
+   45 PortalInstance         1
+
+--- NO LONGER LOADED from json (not covered by .g template, not salvaged) ---
+    (excludes SkipJsonOrphanCoveredByLevelPack + SkipStandOccupied)
+  total rows: 4322
+   24 Interaction            3444
+    0 group_0                529
+   69 HousingFurniture       186
+   68 HousingDoorWindow      66
+   54 group_54               50
+   34 group_34               22
+   46 group_46               7
+   72 group_72               5
+  101 group_101              2
+   70 group_70               2
+   35 group_35               2
+   53 group_53               1
+   86 group_86               1
+   80 group_80               1
+   47 Unused                 1
+   16 group_16               1
+   98 group_98               1
+   36 group_36               1
+
+--- Lost examples by decision|group ---
+  SkipRandomPlacement|24 (sample 8):
+    tpl=10712 'Sunken Treasure Chest' @ (14445.5,25110.8)
+    tpl=10712 'Sunken Treasure Chest' @ (22898.7,19099.9)
+    tpl=10712 'Sunken Treasure Chest' @ (27170.4,18827.3)
+    tpl=10712 'Sunken Treasure Chest' @ (17158.3,13798.9)
+    tpl=10712 'Sunken Treasure Chest' @ (13632.7,20516.9)
+    tpl=10712 'Sunken Treasure Chest' @ (18749.7,15837.9)
+    tpl=10712 'Sunken Treasure Chest' @ (20073.1,25700.7)
+    tpl=2831 'Barrel' @ (10671.4,16913.5)
+  SkipRuntimeEvidence|24 (sample 8):
+    tpl=877 'Small Bloodstain' @ (19144.2,27186.1)
+    tpl=877 'Small Bloodstain' @ (19076.4,27197.4)
+    tpl=5912 'Small Bloodstain' @ (16242.5,12145.0)
+    tpl=877 'Small Bloodstain' @ (8620.2,10342.7)
+    tpl=877 'Small Bloodstain' @ (8623.0,10359.1)
+    tpl=877 'Small Bloodstain' @ (8623.6,10347.5)
+    tpl=877 'Small Bloodstain' @ (8621.4,10345.2)
+    tpl=877 'Small Bloodstain' @ (8619.0,10341.8)
+  SkipUnknownTemplate|0 (sample 8):
+    tpl=1378003 '' @ (4849.0,11807.0)
+    tpl=9900004 '' @ (28383.2,18025.3)
+    tpl=5524 'Signpost' @ (7604.2,8755.6)
+    tpl=5522 'Signpost' @ (7615.7,9915.4)
+    tpl=5523 'Signpost' @ (7929.2,9571.1)
+    tpl=2330 '(테스트)서랍장' @ (8938.5,8163.5)
+    tpl=2330 '(테스트)서랍장' @ (8837.6,8248.1)
+    tpl=2330 '(테스트)서랍장' @ (8871.4,8279.4)
+  SkipJsonOrphanUnhandled|54 (sample 8):
+    tpl=11672 'Signpost' @ (6780.8,12191.8)
+    tpl=2426 'Stolen Glider' @ (6161.2,13056.4)
+    tpl=11691 'Signpost' @ (6237.7,12822.0)
+    tpl=2519 'Footbare Pass Task Board' @ (6950.9,13360.2)
+    tpl=11605 'Signpost' @ (7736.9,13272.6)
+    tpl=11930 'Signpost' @ (7213.7,13625.1)
+    tpl=11595 'Signpost' @ (8482.0,13280.7)
+    tpl=11596 'Signpost' @ (8345.7,13363.0)
+  SkipJsonOrphanUnhandled|34 (sample 8):
+    tpl=5429 'Waterlogged Corpse' @ (7677.8,9385.5)
+    tpl=5429 'Waterlogged Corpse' @ (7676.7,9426.7)
+    tpl=5429 'Waterlogged Corpse' @ (7612.3,9400.3)
+    tpl=4614 'Sealstone' @ (10493.5,13391.1)
+    tpl=5429 'Waterlogged Corpse' @ (7744.5,9224.8)
+    tpl=5429 'Waterlogged Corpse' @ (7785.1,9410.1)
+    tpl=5429 'Waterlogged Corpse' @ (7590.6,9342.6)
+    tpl=5429 'Waterlogged Corpse' @ (7752.3,9376.0)
+  SkipHousingOrphan|69 (sample 8):
+    tpl=6016 'Hound of Kyrios Statue' @ (2.8,0.4)
+    tpl=7828 'Veroe Throne' @ (20872.8,13185.4)
+    tpl=7828 'Veroe Throne' @ (20873.3,13188.8)
+    tpl=7828 'Veroe Throne' @ (20873.9,13192.2)
+    tpl=6016 'Hound of Kyrios Statue' @ (2.0,4.6)
+    tpl=11265 'Chibi Elephant' @ (0.0,0.3)
+    tpl=974 'Brown Hardwood Bed' @ (1.6,1.6)
+    tpl=2610 'Basic Storage Chest' @ (2.0,6.7)
+  SkipHousingOrphan|68 (sample 8):
+    tpl=4561 'Door' @ (0.0,4.1)
+    tpl=4565 'Small Window' @ (2.8,4.1)
+    tpl=4337 'Door' @ (0.0,4.1)
+    tpl=4339 'Small Window' @ (2.8,4.1)
+    tpl=4561 'Door' @ (4.2,4.1)
+    tpl=4565 'Small Window' @ (7.0,4.2)
+    tpl=4565 'Small Window' @ (1.4,4.2)
+    tpl=8585 'Spired Chateau Large Window' @ (3451.6,4340.5)
+  SkipJsonOrphanUnhandled|46 (sample 7):
+    tpl=12290 'Golden Ruins Specialty Workbench' @ (17300.0,27457.0)
+    tpl=12291 'Whalesong Specialty Workbench' @ (18058.0,28675.0)
+    tpl=7701 'Fellowship Workbench' @ (9600.0,9312.1)
+    tpl=7701 'Fellowship Workbench' @ (10111.5,19040.1)
+    tpl=7701 'Fellowship Workbench' @ (32640.0,23677.0)
+    tpl=7701 'Fellowship Workbench' @ (3457.4,4302.2)
+    tpl=12290 'Golden Ruins Specialty Workbench' @ (17260.5,27534.6)
+  SkipJsonOrphanUnhandled|72 (sample 5):
+    tpl=6591 'Traveler's Campfire' @ (14514.0,26862.4)
+    tpl=5288 'Arcane Grace Feast Table' @ (21599.1,10514.5)
+    tpl=5290 'Ample Mana Appetizer Table' @ (11179.1,12054.3)
+    tpl=2032 'Any-Post Owl' @ (26042.4,6784.8)
+    tpl=6591 'Traveler's Campfire' @ (13218.6,14250.1)
+  SkipJsonOrphanUnhandled|101 (sample 2):
+    tpl=10053 'Purification Area: Sungold Fields' @ (22054.5,26554.9)
+    tpl=10054 'Purification Area: Exeloch' @ (22730.0,24622.7)
+  SkipJsonOrphanUnhandled|70 (sample 2):
+    tpl=7019 'Gargantuan Kraken Tentacle' @ (1.9,6.8)
+    tpl=7019 'Gargantuan Kraken Tentacle' @ (1.1,7.9)
+  SkipJsonOrphanUnhandled|35 (sample 2):
+    tpl=1693 'Trap Door' @ (10711.0,17081.9)
+    tpl=2121 'Onion (Housing)' @ (15230.5,30772.3)
+  SkipJsonOrphanUnhandled|53 (sample 1):
+    tpl=12343 'Player Nation Base Memory Tome' @ (17183.6,28530.3)
+  SkipJsonOrphanUnhandled|86 (sample 1):
+    tpl=5900 'Hasla's Forgotten Memories' @ (29830.3,7026.9)
+  SkipJsonOrphanUnhandled|80 (sample 1):
+    tpl=7232 'Territory Statue: Gon' @ (19643.9,25094.2)
+  SkipUnusedGroup|47 (sample 1):
+    tpl=11252 'Ynys Sacred Calf' @ (17181.5,14857.2)
+  SkipJsonOrphanUnhandled|16 (sample 1):
+    tpl=12251 'Mirage Salvage Forge' @ (3718.9,4534.7)
+  SkipJsonOrphanUnhandled|98 (sample 1):
+    tpl=9696 'Terena Noble's Fence Pillar' @ (3.0,0.0)
+  SkipJsonOrphanUnhandled|36 (sample 1):
+    tpl=2037 'Iron Arena Gate' @ (17651.9,2436.2)
+
+--- CARE buckets (quest / community / portals) ---
+  quest_group11:
+    covered_or_occupied: 10179
+    json: 10325
+    levelpack_plant: 12205
+    salvaged: 146
+    LOST: 0
+  interaction_quest_func:
+    covered_or_occupied: 2345
+    json: 3033
+    levelpack_plant: 2625
+    salvaged: 621
+    LOST (not covered, not salvaged):
+      SkipJsonOrphanUnhandled: 65
+      SkipHousingOrphan: 1
+      SkipUnknownTemplate: 1
+  resident_townhall:
+    json: 29
+    levelpack_plant: 34
+    salvaged: 29
+    LOST: 0
+  portal:
+    covered_or_occupied: 202
+    json: 225
+    levelpack_plant: 228
+    salvaged: 23
+    LOST: 0
+  skill_volume:
+    covered_or_occupied: 432
+    json: 468
+    levelpack_plant: 219
+    salvaged: 36
+    LOST: 0
+  level:
+    covered_or_occupied: 3266
+    json: 3293
+    levelpack_plant: 4243
+    salvaged: 27
+    LOST: 0
+
+--- ResidentTownhall templates ---
+  templates with ResidentTownhall: 41
+  11665 'Resident Board' in_g=False g_rows=0 json_rows=29
+  12852 'Resident Board Fabric' in_g=False g_rows=0 json_rows=0
+  13131 'Resident Board Leather' in_g=False g_rows=0 json_rows=0
+  13132 'Resident Board Iron Ingot' in_g=False g_rows=0 json_rows=0
+  13133 '553231 DO NOT TRANSLATE' in_g=False g_rows=0 json_rows=0
+  13134 'Resident Board Lumber' in_g=False g_rows=0 json_rows=0
+  13357 '' in_g=False g_rows=0 json_rows=0
+  13509 'Gweonid Resident Board' in_g=True g_rows=1 json_rows=0
+  13520 'Marianople Resident Board' in_g=True g_rows=1 json_rows=0
+  13521 'Dewstone Resident Board' in_g=True g_rows=1 json_rows=0
+  13522 '' in_g=True g_rows=1 json_rows=0
+  13523 'Solzreed Resident Board' in_g=True g_rows=1 json_rows=0
+  13524 'Lilyut Resident Board' in_g=True g_rows=1 json_rows=0
+  13525 'Arcum Resident Board' in_g=True g_rows=1 json_rows=0
+  13526 'Two Crowns Resident Board' in_g=True g_rows=1 json_rows=0
+  13527 'Mahadevi Resident Board' in_g=True g_rows=1 json_rows=0
+  13528 'Airain Resident Board' in_g=True g_rows=1 json_rows=0
+  13529 'Falcorth Resident Board' in_g=True g_rows=1 json_rows=0
+  13530 'Villanelle Resident Board' in_g=True g_rows=1 json_rows=0
+  13531 'Sunbite Resident Board' in_g=True g_rows=1 json_rows=0
+  13532 'Windscour Resident Board' in_g=True g_rows=1 json_rows=0
+  13533 'Perinoor Resident Board' in_g=True g_rows=1 json_rows=0
+  13534 'Rookborne Resident Board' in_g=True g_rows=1 json_rows=0
+  13535 'Ynystere Resident Board' in_g=True g_rows=1 json_rows=0
+  13536 'White Arden Resident Board' in_g=True g_rows=1 json_rows=0
+  13537 'Karkasse Resident Board' in_g=True g_rows=1 json_rows=0
+  13538 'Cinderstone Resident Board' in_g=True g_rows=1 json_rows=0
+  13539 'Aubre Resident Board' in_g=True g_rows=1 json_rows=0
+  13540 'Halcyona Resident Board' in_g=True g_rows=1 json_rows=0
+  13541 'Hasla Resident Board' in_g=True g_rows=1 json_rows=0
+  13542 'Tigerspine Resident Board' in_g=True g_rows=1 json_rows=0
+  13543 'Silent Forest Resident Board' in_g=True g_rows=1 json_rows=0
+  13544 'Hellswamp Resident Board' in_g=True g_rows=1 json_rows=0
+  13545 'Sanddeep Resident Board' in_g=True g_rows=1 json_rows=0
+  13546 'Ahnimar Resident Board' in_g=True g_rows=1 json_rows=0
+  13547 'Rokhala Resident Board' in_g=True g_rows=1 json_rows=0
+  16130 'Aegis Resident Board' in_g=True g_rows=1 json_rows=0
+  16131 'Whalesong Resident Board' in_g=True g_rows=1 json_rows=0
+  16132 'Golden Ruins Resident Board' in_g=True g_rows=1 json_rows=0
+  16133 'Sungold Resident Board' in_g=True g_rows=1 json_rows=0
+
+--- Portal templates: json-only (not in any .g) ---
+  json-only portal templates: 11 rows: 31
+  4895 g44 x9 'Mirage Isle Portal'
+  8593 g43 x7 'Golden Plains Battle Worldgate'
+  8033 g43 x4 'Diamond Shores Worldgate'
+  8034 g43 x3 'Diamond Shores Worldgate'
+  10331 g45 x2 'Mistsong Summit Entrance'
+  8583 g43 x1 'Golden Plains Battle Worldgate'
+  8592 g43 x1 'Golden Plains Battle Worldgate'
+  7448 g45 x1 'Pirate/Player Nation Encyclopedia Room Door'
+  7449 g45 x1 'Nuia Encyclopedia Room Door'
+  7447 g45 x1 'Haranya Encyclopedia Room Door'
+  6605 g43 x1 'Diamond Shores Worldgate'
+
+--- Scheduled templates in .g (arm cron / plant when live) ---
+  templates: 975 rows: 8414

@@ -11,6 +11,7 @@ using AAEmu.Game.Models.Game.DoodadObj.Static;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Buffs;
 using AAEmu.Game.Models.Game.Skills.SkillControllers;
+using AAEmu.Game.Models.Game.Transfers;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.Units.Movements;
 using AAEmu.Game.Models.StaticValues;
@@ -167,12 +168,15 @@ public class CSMoveUnitPacket() : GamePacket(CSOffsets.CSMoveUnitPacket, 1)
 
                 // Seats under zone authority: clear remove_on_move only when not bonded, or when
                 // the move is leave (walk/jump). Residual settle velocity must not unseat.
+                // Carriage/slave/house carrier seats: Moving settle after walk-on must not unbond.
+                var carrierSeat = BondDoodad.IsCarrierSeat(character);
                 if (character.Bonding == null)
                     RemoveEffects(character, _moveType);
-                else if (BondDoodad.IsIntentionalSeatLeave(umt.Flags, umt.ActorFlags))
+                else if (BondDoodad.IsIntentionalSeatLeave(umt.Flags, umt.ActorFlags, carrierSeat))
                 {
                     RemoveEffects(character, _moveType);
                     BondDoodad.TryRelease(character);
+                    carrierSeat = false;
                 }
 
                 // Mast / ladder hang (StickyParent) and BindSlave seats: ZoneAuthority used to
@@ -197,6 +201,18 @@ public class CSMoveUnitPacket() : GamePacket(CSOffsets.CSMoveUnitPacket, 1)
                 // world XYZ is not applied as local under a moving parent.
                 if (character.Bonding != null && character.Transform.Parent?.GameObject is Doodad)
                     character.Transform.Parent = null;
+
+                // Seated on a transfer/slave/house: the bond owns the attach offset. Applying CSMove
+                // world XYZ under the moving parent composed the character kilometres away (AOI thrash
+                // + "joined guild" re-stream). Hold Local; the client poses the seat itself.
+                if (carrierSeat && character.Bonding != null &&
+                    character.Transform.Parent?.GameObject is BaseUnit and not Doodad)
+                {
+                    character.Transform.FinalizeTransform();
+                    character.SetPlayerMoved();
+                    character.BroadcastPacket(new SCOneUnitMovementPacket(_objId, umt), false);
+                    return;
+                }
 
                 // A mount rider and a ladder/mast hang report WORLD coordinates while parented, so they
                 // are converted through GetLocalFromWorld (the #1566 rule). A "standing on" move is
@@ -555,11 +571,30 @@ public class CSMoveUnitPacket() : GamePacket(CSOffsets.CSMoveUnitPacket, 1)
                 // an ordinary move in between reports none — without this the parent, and with it the
                 // hull's stream keep-alive, was dropped while the player was still on the deck.
                 if (reported is Slave carrierSlave)
+                {
                     character.StandingOnSlaveId = carrierSlave.ObjId;
+                    character.StandingOnTransferId = 0;
+                }
                 else if (reported?.Transform?.Parent?.GameObject is Slave carrierHull)
+                {
                     character.StandingOnSlaveId = carrierHull.ObjId;
-                else
+                    character.StandingOnTransferId = 0;
+                }
+                else if (reported is Transfer carrierTransfer)
+                {
+                    character.StandingOnTransferId = carrierTransfer.ObjId;
                     character.StandingOnSlaveId = 0;
+                }
+                else if (reported?.Transform?.Parent?.GameObject is Transfer boarding)
+                {
+                    character.StandingOnTransferId = boarding.ObjId;
+                    character.StandingOnSlaveId = 0;
+                }
+                else
+                {
+                    character.StandingOnSlaveId = 0;
+                    character.StandingOnTransferId = 0;
+                }
                 return;
             }
         }
@@ -583,6 +618,7 @@ public class CSMoveUnitPacket() : GamePacket(CSOffsets.CSMoveUnitPacket, 1)
                 character.Transform.Parent = null;
 
             character.StandingOnSlaveId = 0;
+            character.StandingOnTransferId = 0;
             return;
         }
 
@@ -590,18 +626,32 @@ public class CSMoveUnitPacket() : GamePacket(CSOffsets.CSMoveUnitPacket, 1)
         // reports that state with the hull underfoot, so adopt the nearest boat within reach. Without a
         // parent the deck-stander is governed only by the hull's AOI band, which culls and re-sends the
         // ship under them — the "ship vanishes and drops me in the water" failure.
+        // Same for carriages: adopt the nearest transfer when the standing flag is set without a usable
+        // gcId (sentinel 1), otherwise the wagon drives away and the character is left behind.
         if (IsStandingOnSomething(umt))
         {
             var hull = FindStandingHull(character);
-            if (hull == null)
+            if (hull != null)
+            {
+                if (character.Transform.Parent == null)
+                    character.Transform.Parent = hull.Transform;
+                character.StandingOnSlaveId = hull.ObjId;
+                character.StandingOnTransferId = 0;
+                return;
+            }
+
+            var transfer = FindStandingTransfer(character);
+            if (transfer == null)
             {
                 character.StandingOnSlaveId = 0;
+                character.StandingOnTransferId = 0;
                 return;
             }
 
             if (character.Transform.Parent == null)
-                character.Transform.Parent = hull.Transform;
-            character.StandingOnSlaveId = hull.ObjId;
+                character.Transform.Parent = transfer.Transform;
+            character.StandingOnTransferId = transfer.ObjId;
+            character.StandingOnSlaveId = 0;
         }
     }
 
@@ -652,6 +702,37 @@ public class CSMoveUnitPacket() : GamePacket(CSOffsets.CSMoveUnitPacket, 1)
 
             bestDistanceSq = distanceSq;
             best = slave;
+        }
+
+        return best;
+    }
+
+    /// <summary>
+    /// Nearest live transfer (motor or boarding) within
+    /// <see cref="TransferAttachmentMoveRules.StandingHintRadiusMetres"/>.
+    /// </summary>
+    private static Transfer FindStandingTransfer(Character character)
+    {
+        var transfers = character.ParentWorld?.TransferManager?.GetTransfers();
+        if (transfers == null || transfers.Length == 0)
+            return null;
+
+        var here = character.Transform.World.Position;
+        Transfer best = null;
+        var bestDistanceSq = TransferAttachmentMoveRules.StandingHintRadiusSquared;
+        foreach (var transfer in transfers)
+        {
+            if (transfer == null || transfer.ObjId == 0)
+                continue;
+
+            var offset = transfer.Transform.World.Position - here;
+            var distanceSq = (offset.X * offset.X) + (offset.Y * offset.Y) + (offset.Z * offset.Z);
+            if (!TransferAttachmentMoveRules.IsWithinStandingReach(distanceSq) ||
+                distanceSq > bestDistanceSq)
+                continue;
+
+            bestDistanceSq = distanceSq;
+            best = transfer;
         }
 
         return best;

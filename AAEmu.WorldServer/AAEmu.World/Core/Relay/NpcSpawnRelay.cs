@@ -36,7 +36,32 @@ public class NpcSpawnRelay
     /// </summary>
     private static readonly ConcurrentDictionary<uint, byte> PendingObjectIdReleases = new();
 
+    /// <summary>
+    /// Last ZWSpawnNpc body for a bc that Zone removed. Kept briefly so a leaked dedicate AI
+    /// cast (<c>ZWStartSkill</c> after remove) can rematerialize the World mirror instead of
+    /// timing out — Whalesong continuous-summon NPCs are the measured case.
+    /// </summary>
+    private static readonly ConcurrentDictionary<uint, RecentZoneNpcRemoval> RecentRemovals = new();
+
     private static readonly int ObjectIdHoldMs = ParseObjectIdHoldMs();
+
+    private static readonly int RecentRemovalHoldMs = ParseRecentRemovalHoldMs();
+
+    private readonly record struct RecentZoneNpcRemoval(
+        uint ZoneId,
+        uint InstanceId,
+        ZwSpawnNpcParsed Spawn,
+        byte[] RawBody,
+        long ExpiryUnixMs);
+
+    private static int ParseRecentRemovalHoldMs()
+    {
+        var raw = Environment.GetEnvironmentVariable("AAEMU_ZONE_ORPHAN_CASTER_HOLD_MS");
+        if (int.TryParse(raw, out var n) && n >= 0)
+            return n;
+        // Longer than a typical AI skill-start timeout loop; shorter than ObjectId hold.
+        return 120_000;
+    }
 
     private static int ParseObjectIdHoldMs()
     {
@@ -453,6 +478,9 @@ public class NpcSpawnRelay
             // Faction is synchronized separately from the initial unit state.
             SyncNpcFactionToZone(connection, bcId);
             TrySendFlyingState(connection, bcId, parsed.TemplateId);
+            // Zone sight does not reliably pick Characters for aggressive tower / almighty waves;
+            // seed NPC→player aggro the same way sport-fish handoff does.
+            ZonePlayerAggro.ScheduleSeedNpcTowardNearbyPlayers(bcId);
 
             if (_npcStateOk <= 3 || _npcStateOk % 100 == 0)
             {
@@ -580,11 +608,92 @@ public class NpcSpawnRelay
             return;
 
         if (trackedSpawn != null)
+        {
             ZoneNpcSpawnerCatalog.SetState(connection, trackedSpawn, active: false);
+            RememberRemoval(connection, bcId, trackedSpawn, trackedBody);
+        }
+
         NpcStateSent.TryRemove(MarkerKey(connection.ZoneId, connection.InstanceId, bcId), out _);
         WorldIntegration.OnZoneNpcRemove?.Invoke(bcId);
         if (wasZoneAuthoredNpc || hadMirror)
             ScheduleObjectIdRelease(bcId);
+    }
+
+    private static void RememberRemoval(
+        ZoneConnection connection,
+        uint bcId,
+        ZwSpawnNpcParsed spawn,
+        byte[] rawBody)
+    {
+        if (RecentRemovalHoldMs <= 0 || bcId == 0 || rawBody is not { Length: > 0 })
+            return;
+
+        RecentRemovals[bcId] = new RecentZoneNpcRemoval(
+            connection.ZoneId,
+            connection.InstanceId,
+            spawn,
+            rawBody,
+            DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + RecentRemovalHoldMs);
+    }
+
+    /// <summary>
+    /// True while a recent <c>ZWRemoveNpc</c> still has spawn meta cached for rematerialize.
+    /// </summary>
+    public static bool HasRecentRemoval(uint bcId)
+    {
+        if (bcId == 0 || !RecentRemovals.TryGetValue(bcId, out var entry))
+            return false;
+        if (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() <= entry.ExpiryUnixMs)
+            return true;
+        RecentRemovals.TryRemove(bcId, out _);
+        return false;
+    }
+
+    /// <summary>
+    /// Rebuild the World mirror + zone unit registry entry for a bc Zone already removed but whose
+    /// AI is still casting. Cancels a pending ObjectId release so the id is not recycled under the
+    /// rematerialized unit. Does not re-send <c>WZNpcState</c> — Zone already Created the unit.
+    /// </summary>
+    public static bool TryRematerializeRemovedCaster(ZoneConnection connection, uint bcId)
+    {
+        if (bcId == 0 || connection == null)
+            return false;
+        if (!RecentRemovals.TryGetValue(bcId, out var entry))
+            return false;
+        if (DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() > entry.ExpiryUnixMs)
+        {
+            RecentRemovals.TryRemove(bcId, out _);
+            return false;
+        }
+
+        if (entry.ZoneId != connection.ZoneId || entry.InstanceId != connection.InstanceId)
+            return false;
+
+        if (WorldIntegration.FindUnitAcrossWorlds(bcId) is Npc { IsZoneMirror: true })
+            return true;
+
+        // Hold the id: rematerialize must not race a deferred ReleaseId.
+        PendingObjectIdReleases.TryRemove(bcId, out _);
+
+        connection.Units.RegisterWithId(bcId, entry.RawBody);
+
+        var spawn = entry.Spawn;
+        var mirrored = WorldIntegration.OnZoneNpcSpawn?.Invoke(
+            connection.ZoneId, connection.InstanceId, bcId, spawn.TemplateId,
+            spawn.X, spawn.Y, spawn.Z, spawn.ZRot, spawn.Scale) ?? false;
+        if (!mirrored)
+        {
+            connection.Units.TryRemove(bcId);
+            Logger.Warn(
+                "TryRematerializeRemovedCaster: mirror failed bc={0} tpl={1}",
+                bcId, spawn.TemplateId);
+            return false;
+        }
+
+        Logger.Info(
+            "Rematerialized orphan zone caster bc={0} tpl={1} zoneId={2} for ZWStartSkill",
+            bcId, spawn.TemplateId, connection.ZoneId);
+        return true;
     }
 
     /// <summary>

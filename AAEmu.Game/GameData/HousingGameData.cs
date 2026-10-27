@@ -31,6 +31,11 @@ public class HousingGameData : Singleton<HousingGameData>, IGameDataLoader
     /// supervision post, altar, and their grade-2 rows). The client only loads this table.
     /// </summary>
     private HashSet<uint> _dominionHousingTemplateIds = [];
+    /// <summary>
+    /// Every <c>housing_binding_doodads.doodad_id</c> — fixtures the house Create path owns
+    /// (plaza specialty workbench, doors, …). Map-orphan salvage must not plant these free-standing.
+    /// </summary>
+    private HashSet<uint> _housingBoundDoodadTemplateIds = [];
 
     public void Load(SqliteConnection connection)
     {
@@ -40,6 +45,7 @@ public class HousingGameData : Singleton<HousingGameData>, IGameDataLoader
         _housingItemHousingDecorations = [];
         _housingSizes = [];
         _butlerGardenTemplatesByItemId = [];
+        _housingBoundDoodadTemplateIds = [];
         _underwaterHousingCategoryIds = LoadUnderwaterHousingCategoryIds(connection);
 
         // var houseTaxes = new Dictionary<uint, HouseTax>();
@@ -311,6 +317,25 @@ public class HousingGameData : Singleton<HousingGameData>, IGameDataLoader
             _housingItemHousings, _housingTemplates, _underwaterHousingCategoryIds);
 
         ResolveBindingPositionsFromClientData();
+        RebuildHousingBoundDoodadIndex();
+    }
+
+    private void RebuildHousingBoundDoodadIndex()
+    {
+        var ids = new HashSet<uint>();
+        foreach (var (_, template) in _housingTemplates)
+        {
+            if (template.HousingBindingDoodad == null)
+                continue;
+            foreach (var binding in template.HousingBindingDoodad)
+            {
+                if (binding.DoodadId != 0)
+                    ids.Add(binding.DoodadId);
+            }
+        }
+
+        _housingBoundDoodadTemplateIds = ids;
+        Logger.Info("Housing binding doodad templates indexed: {0}", ids.Count);
     }
 
     private static HashSet<uint> LoadUnderwaterHousingCategoryIds(SqliteConnection connection)
@@ -623,6 +648,13 @@ public class HousingGameData : Singleton<HousingGameData>, IGameDataLoader
     }
 
     public bool IsDominionHousingTemplate(uint templateId) => _dominionHousingTemplateIds.Contains(templateId);
+
+    /// <summary>
+    /// True when any house template lists this doodad in <c>housing_binding_doodads</c>
+    /// (spawned with the house, not as a free map plant).
+    /// </summary>
+    public bool IsHousingBoundDoodadTemplate(uint doodadTemplateId) =>
+        doodadTemplateId != 0 && _housingBoundDoodadTemplateIds.Contains(doodadTemplateId);
 
     /// <summary>
     /// Guild residence designs: every <c>housings</c> row whose <c>family</c> is the shipped
