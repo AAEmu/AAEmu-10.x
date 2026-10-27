@@ -480,7 +480,8 @@ public static class MapDoodadPlant
                     if (DoodadManager.Instance.GetFuncTemplate(func.FuncId, func.FuncType)
                             is DoodadFuncFakeUse fakeUse)
                     {
-                        if (SkillSpawnsGimmick(fakeUse.SkillId) || SkillSpawnsGimmick(fakeUse.FakeSkillId))
+                        if (FakeUseSkillSpawnsSomething(fakeUse.SkillId) ||
+                            FakeUseSkillSpawnsSomething(fakeUse.FakeSkillId))
                             hasSalvageGimmickFakeUse = true;
                         if (SkillGrantsTransferTelescope(fakeUse.SkillId) ||
                             SkillGrantsTransferTelescope(fakeUse.FakeSkillId))
@@ -502,9 +503,10 @@ public static class MapDoodadPlant
     }
 
     /// <summary>
-    /// Sunken-treasure FakeUse rows arm a skill whose payload is <c>SpawnGimmickEffect</c>.
+    /// FakeUse salvage signal: sunken chests arm <c>SpawnGimmickEffect</c>; ritual props
+    /// like Ancestor's Altar arm <c>SpawnEffect</c> (e.g. Tahyang's Spirit for 15 s).
     /// </summary>
-    private static bool SkillSpawnsGimmick(uint skillId)
+    private static bool FakeUseSkillSpawnsSomething(uint skillId)
     {
         if (skillId == 0)
             return false;
@@ -513,7 +515,7 @@ public static class MapDoodadPlant
             return false;
         foreach (var effect in skill.Effects)
         {
-            if (effect?.Template is SpawnGimmickEffect)
+            if (effect?.Template is SpawnGimmickEffect or SpawnEffect)
                 return true;
         }
         return false;

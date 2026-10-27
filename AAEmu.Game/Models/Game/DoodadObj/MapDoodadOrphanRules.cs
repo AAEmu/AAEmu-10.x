@@ -73,7 +73,8 @@ public static class MapDoodadOrphanRules
             return MapDoodadPlantDecision.Plant;
 
         // Interaction (24): plant permanent world systems + breakable flavor (barrels /
-        // crates with FakeUse + RatioRespawn — Freedich crate pit, sea wrecks via Use/…).
+        // crates with FakeUse + RatioRespawn — Freedich crate pit, sea wrecks via Use/…)
+        // and FakeUse that spawns a gimmick/NPC (sunken chests, Ancestor's Altar).
         // Maritime weather volumes are WeatherManager, not orphan salvage. Leave SkipRandom
         // for attachment-only seats and empty cosmetic/no-func props.
         if (groupId == (uint)DoodadGroupId.Interaction)

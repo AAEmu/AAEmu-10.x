@@ -272,6 +272,7 @@ public class MapDoodadPlantRulesTests
     [Test]
     public async Task Orphan_InteractionSystems_Plant_EmptyCosmeticsSkipped()
     {
+        // Sunken gimmick FakeUse and Ancestor's Altar SpawnEffect FakeUse share this flag.
         await Assert.That(MapDoodadOrphanRules.Decide(
             templateExists: true,
             templateInLevelPack: false,
