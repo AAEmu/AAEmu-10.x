@@ -88,6 +88,15 @@ public class CSResurrectCharacterPacket() : GamePacket(CSOffsets.CSResurrectChar
         if (defendantCourt != null)
             portal = defendantCourt;
 
+        // Accepting another player's resurrection comes back where the character fell, not at the point found
+        // above. Without an offer the in-place flag still lands at the return point, so a modified client cannot
+        // use it to skip the walk back.
+        var whereFallen = CharacterDeathRules.ResurrectsWhereFallen(
+            inPlace, character.ResurrectOfferPending, defendantCourt != null);
+        character.ResurrectOfferPending = false;
+        if (whereFallen)
+            portal = null;
+
         var oldHp = character.Hp;
 
         // Resolve spawn point before restoring vitals. Historically we only told the *client*
@@ -180,8 +189,8 @@ public class CSResurrectCharacterPacket() : GamePacket(CSOffsets.CSResurrectChar
             character.PostUpdateCurrentHp(character, oldHp, character.Hp, KillReason.Unknown);
 
         Logger.Info(
-            "ResurrectCharacter {0} inPlace={1} hp={2}/{3} mp={4}/{5} pos=({6:F1},{7:F1},{8:F1})",
-            character.Name, inPlace, character.Hp, character.MaxHp, character.Mp, character.MaxMp,
+            "ResurrectCharacter {0} inPlace={1} whereFallen={2} hp={3}/{4} mp={5}/{6} pos=({7:F1},{8:F1},{9:F1})",
+            character.Name, inPlace, whereFallen, character.Hp, character.MaxHp, character.Mp, character.MaxMp,
             rx, ry, rz);
 
         // Defendant resurrections get the courthouse state and the imprison-or-trial offer here,

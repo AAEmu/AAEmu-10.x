@@ -29,6 +29,7 @@ public class Resurrection : SpecialEffectAction
             character.SendPacket(new SCNotifyResurrectionPacket(casterObj));
             character.ResurrectHpPercent = (uint)value2;
             character.ResurrectMpPercent = (uint)value3;
+            character.ResurrectOfferPending = true;
         }
     }
 }
