@@ -197,9 +197,13 @@ public class ItemEvolving : SpecialEffectAction
 
         // Gear bonuses are totalled when a piece is equipped and not again, so a change made to a
         // piece already being worn never reached the character sheet. Re-total here; the piece is
-        // only in the sum at all while it sits in the equipment container.
+        // only in the sum at all while it sits in the equipment container. The cached gear score counts
+        // the piece's grade as well, and nothing else clears it after a step in place.
         if (equipItem.SlotType == SlotType.Equipment)
+        {
             owner.UpdateGearBonuses(null, null);
+            owner.InvalidateGearScore();
+        }
 
         // The result carries the grades themselves, new one first - not a success code and not a
         // "did it step" flag. Equal grades are the quiet outcome for an attempt that only banked

@@ -320,6 +320,21 @@ public class SkillObjectExtraValues : SkillObject
 {
     public const int ValueCount = 13;
 
+    public SkillObjectExtraValues()
+    {
+    }
+
+    /// <summary>
+    /// A block built on the server, read exactly as if a client had sent <paramref name="values"/>: for example
+    /// a bot's free effect swap naming the line it replaces (<c>ItemEvolvingReRollRules.SlotIndexValue</c>).
+    /// </summary>
+    public SkillObjectExtraValues(params int[] values)
+    {
+        ArgumentNullException.ThrowIfNull(values);
+        ReadCount = System.Math.Min(ValueCount, values.Length);
+        Array.Copy(values, Values, ReadCount);
+    }
+
     public int[] Values { get; set; } = new int[ValueCount];
 
     /// <summary>How many of <see cref="Values"/> the sender actually supplied.</summary>
