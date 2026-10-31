@@ -1,4 +1,5 @@
-﻿using AAEmu.Game.Core.Managers;
+﻿using System.Numerics;
+using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
@@ -48,9 +49,10 @@ public class Escape : SpecialEffectAction
                 portal = PortalManager.Instance.GetClosestReturnPortal(character);
             }
 
-            // force transported out. Not movement: the speed check forgets the spot it last saw, or the client's
-            // first move at the return point is measured from where the character stood
-            SusManager.Instance.ResetAnalyzePlayerDeltaMovement(character.Id);
+            // force transported out. The client makes the jump, so the speed check is told where it lands: the
+            // client's first move at the return point is not measured from where the character stood. Anywhere else
+            // is still judged - anyone out of combat can cast this at will, and it must not clear the check.
+            SusManager.Instance.ExpectPlayerLanding(character.Id, new Vector3(portal.X, portal.Y, portal.Z));
             character.BroadcastPacket(
                 new SCCharacterResurrectedPacket(
                     character.ObjId,

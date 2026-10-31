@@ -3483,9 +3483,10 @@ public partial class Character : Unit, ICharacter
                 ParentWorld.MateManager.RemoveAndDespawnAllActiveOwnedMates(this);
                 await Task.Delay(200);
                 var portal = PortalManager.Instance.GetClosestReturnPortal(Connection.ActiveChar);
-                // force transported out. Not movement: the speed check forgets the spot it last saw, or the
-                // client's first move at the return point is measured from inside the closed zone
-                SusManager.Instance.ResetAnalyzePlayerDeltaMovement(Id);
+                // force transported out. The client makes the jump, so the speed check is told where it lands:
+                // the client's first move at the return point is not measured from inside the closed zone, while
+                // anywhere else still is
+                SusManager.Instance.ExpectPlayerLanding(Id, new System.Numerics.Vector3(portal.X, portal.Y, portal.Z));
                 Connection.ActiveChar.BroadcastPacket(
                     new SCCharacterResurrectedPacket(
                         Connection.ActiveChar.ObjId,

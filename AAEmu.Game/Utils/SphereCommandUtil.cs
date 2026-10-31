@@ -289,8 +289,9 @@ public class SphereCommandUtil
                         if (sphere.Id == jsonId)
                         {
                             found = true;
-                            // A GM teleport, not movement: forget the speed check's last spot before the client jumps
-                            SusManager.Instance.ResetAnalyzePlayerDeltaMovement(character.Id);
+                            // A GM teleport the client makes: the speed check is told where it lands, so the client's
+                            // first move there is not measured as movement
+                            SusManager.Instance.ExpectPlayerLanding(character.Id, sphere.Position.AsVector3());
                             character.SendPacket(new SCTeleportUnitPacket(0, 0, sphere.Position.X, sphere.Position.Y, sphere.Position.Z, 0));
                             break;
                         }

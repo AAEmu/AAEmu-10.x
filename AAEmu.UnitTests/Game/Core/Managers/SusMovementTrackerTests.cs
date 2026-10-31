@@ -201,6 +201,177 @@ public class SusMovementTrackerTests
         await Assert.That(tracker.TryGet(Id + 1, out _, out _)).IsFalse();
     }
 
+    /// <summary>Where the server sent the client in the landing tests: 3 km off, 600 m/s over one check.</summary>
+    private static readonly Vector3 Landing = new(3000f, 0f, 0f);
+
+    [Test]
+    public async Task ExpectLanding_TheObservationThatReachesIt_IsNotJudged_ThenChecksGoOnFromThere()
+    {
+        var tracker = new SusMovementTracker();
+        tracker.Analyze(Id, Vector3.Zero, true, Cadence, SusManager.PlayerCheckSpeed);
+
+        tracker.ExpectLanding(Id, Landing);
+        // The client walked on a little after it made the jump; the height it settled at does not count.
+        var arrival = tracker.Analyze(Id, Landing + new Vector3(30f, 40f, -2f), true, Cadence, SusManager.PlayerCheckSpeed);
+        tracker.TryGet(Id, out var position, out var skipTime);
+        var stillExpected = tracker.TryGetExpectedLanding(Id, out _);
+        // 200 m in the next 5 s is judged from the arrival.
+        var tooFast = tracker.Analyze(Id, Landing + new Vector3(230f, 40f, -2f), true, Cadence, SusManager.PlayerCheckSpeed);
+
+        await Assert.That(arrival).IsNull();
+        await Assert.That(position).IsEqualTo(Landing + new Vector3(30f, 40f, -2f));
+        await Assert.That(skipTime).IsEqualTo(-5f);
+        await Assert.That(stillExpected).IsFalse();
+        await Assert.That(tooFast).IsEqualTo(40f);
+    }
+
+    /// <summary>
+    /// Moves the client sent before it made the jump arrive after the server expected the landing. One the check
+    /// falls on is judged from the old spot as usual and does not use the landing up.
+    /// </summary>
+    [Test]
+    public async Task ExpectLanding_AMoveStillInFlightFromTheOldSpot_IsJudgedAsUsual_AndTheLandingIsStillReached()
+    {
+        var tracker = new SusMovementTracker();
+        tracker.Analyze(Id, Vector3.Zero, true, Cadence, SusManager.PlayerCheckSpeed);
+
+        tracker.ExpectLanding(Id, Landing);
+        var inFlight = tracker.Analyze(Id, new Vector3(50f, 0f, 0f), true, Cadence, SusManager.PlayerCheckSpeed);
+        tracker.TryGet(Id, out var afterInFlight, out _);
+        var expectedAfterInFlight = tracker.TryGetExpectedLanding(Id, out var landing);
+        var arrival = tracker.Analyze(Id, Landing, true, Cadence, SusManager.PlayerCheckSpeed);
+
+        await Assert.That(inFlight).IsNull();
+        await Assert.That(afterInFlight).IsEqualTo(new Vector3(50f, 0f, 0f));
+        await Assert.That(expectedAfterInFlight).IsTrue();
+        await Assert.That(landing).IsEqualTo(Landing);
+        await Assert.That(arrival).IsNull();
+        await Assert.That(tracker.TryGetExpectedLanding(Id, out _)).IsFalse();
+    }
+
+    /// <summary>With no entry yet, the move still in flight only seeds and the arrival is still not judged.</summary>
+    [Test]
+    public async Task ExpectLanding_WithNothingRecorded_TheMoveInFlightSeeds_AndTheArrivalIsNotJudged()
+    {
+        var tracker = new SusMovementTracker();
+
+        tracker.ExpectLanding(Id, Landing);
+        var inFlight = tracker.Analyze(Id, Vector3.Zero, true, Cadence, SusManager.PlayerCheckSpeed);
+        var arrival = tracker.Analyze(Id, Landing, true, Cadence, SusManager.PlayerCheckSpeed);
+        tracker.TryGet(Id, out var position, out _);
+
+        await Assert.That(inFlight).IsNull();
+        await Assert.That(arrival).IsNull();
+        await Assert.That(position).IsEqualTo(Landing);
+    }
+
+    /// <summary>
+    /// A client that is sent somewhere and goes elsewhere gains nothing: anywhere but the landing is judged from the
+    /// spot it was last seen at, as if nothing had been expected.
+    /// </summary>
+    [Test]
+    public async Task ExpectLanding_AJumpAnywhereElse_IsJudgedAsBefore()
+    {
+        var tracker = new SusMovementTracker();
+        tracker.Analyze(Id, Vector3.Zero, true, Cadence, SusManager.PlayerCheckSpeed);
+
+        tracker.ExpectLanding(Id, Landing);
+        // 1 km off the old spot and 2 km short of the landing.
+        var elsewhere = tracker.Analyze(Id, new Vector3(1000f, 0f, 0f), true, Cadence, SusManager.PlayerCheckSpeed);
+
+        await Assert.That(elsewhere).IsEqualTo(200f);
+    }
+
+    /// <summary>
+    /// The landing is a packet the client cannot send, but some server moves can be triggered at will (an escape
+    /// cast out of combat). Expecting a landing before every check changes nothing for a client that never goes
+    /// there: the same speeds are reported at the same checks as with no landing at all.
+    /// </summary>
+    [Test]
+    public async Task ExpectLanding_BeforeEveryCheck_ReportsAClientThatNeverGoesThereExactlyAsBefore()
+    {
+        var withLandings = new SusMovementTracker();
+        var without = new SusMovementTracker();
+        withLandings.Analyze(Id, Vector3.Zero, true, Cadence, SusManager.PlayerCheckSpeed);
+        without.Analyze(Id, Vector3.Zero, true, Cadence, SusManager.PlayerCheckSpeed);
+        var reportedWith = new List<float?>();
+        var reportedWithout = new List<float?>();
+
+        // 200 m/s along X, with the landing 3 km to the side of the route every time.
+        for (var check = 1; check <= 8; check++)
+        {
+            var position = new Vector3(check * 1000f, 0f, 0f);
+            withLandings.ExpectLanding(Id, position + new Vector3(0f, 3000f, 0f));
+            reportedWith.Add(withLandings.Analyze(Id, position, true, Cadence, SusManager.PlayerCheckSpeed));
+            reportedWithout.Add(without.Analyze(Id, position, true, Cadence, SusManager.PlayerCheckSpeed));
+        }
+
+        await Assert.That(reportedWith.SequenceEqual(reportedWithout)).IsTrue();
+        // Checks 1, 4 and 7: each report leaves the id alone for the two checks after it.
+        await Assert.That(reportedWith.Count(speed => speed == 200f)).IsEqualTo(3);
+    }
+
+    [Test]
+    public async Task ExpectLanding_IsGivenUpAfterThreeChecksThatDoNotReachIt()
+    {
+        var tracker = new SusMovementTracker();
+        tracker.Analyze(Id, Vector3.Zero, true, Cadence, SusManager.PlayerCheckSpeed);
+
+        tracker.ExpectLanding(Id, Landing);
+        for (var check = 1; check < SusMovementTracker.ExpectedLandingChecks; check++)
+            tracker.Analyze(Id, new Vector3(check * 10f, 0f, 0f), true, Cadence, SusManager.PlayerCheckSpeed);
+        var expectedBeforeTheLast = tracker.TryGetExpectedLanding(Id, out _);
+        tracker.Analyze(Id, Vector3.Zero, true, Cadence, SusManager.PlayerCheckSpeed);
+        var expectedAfterTheLast = tracker.TryGetExpectedLanding(Id, out _);
+        // A jump there now is a jump like any other.
+        var late = tracker.Analyze(Id, Landing, true, Cadence, SusManager.PlayerCheckSpeed);
+
+        await Assert.That(expectedBeforeTheLast).IsTrue();
+        await Assert.That(expectedAfterTheLast).IsFalse();
+        await Assert.That(late).IsEqualTo(600f);
+    }
+
+    [Test]
+    public async Task ExpectLanding_ANewOneReplacesTheOneStillExpected()
+    {
+        var tracker = new SusMovementTracker();
+        tracker.Analyze(Id, Vector3.Zero, true, Cadence, SusManager.PlayerCheckSpeed);
+
+        tracker.ExpectLanding(Id, Landing);
+        tracker.ExpectLanding(Id, new Vector3(0f, 3000f, 0f));
+        var atTheFirst = tracker.Analyze(Id, Landing, true, Cadence, SusManager.PlayerCheckSpeed);
+
+        await Assert.That(atTheFirst).IsEqualTo(600f);
+    }
+
+    [Test]
+    public async Task Reset_AlsoForgetsAnExpectedLanding()
+    {
+        var tracker = new SusMovementTracker();
+        tracker.Analyze(Id, Vector3.Zero, true, Cadence, SusManager.PlayerCheckSpeed);
+        tracker.ExpectLanding(Id, Landing);
+
+        tracker.Reset(Id);
+
+        await Assert.That(tracker.TryGetExpectedLanding(Id, out _)).IsFalse();
+        await Assert.That(tracker.Count).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task ExpectLanding_IsPerId()
+    {
+        var tracker = new SusMovementTracker();
+        tracker.Analyze(1, Vector3.Zero, true, Cadence, SusManager.PlayerCheckSpeed);
+        tracker.Analyze(2, Vector3.Zero, true, Cadence, SusManager.PlayerCheckSpeed);
+
+        tracker.ExpectLanding(1, Landing);
+        var one = tracker.Analyze(1, Landing, true, Cadence, SusManager.PlayerCheckSpeed);
+        var two = tracker.Analyze(2, Landing, true, Cadence, SusManager.PlayerCheckSpeed);
+
+        await Assert.That(one).IsNull();
+        await Assert.That(two).IsEqualTo(600f);
+    }
+
     [Test]
     public async Task Analyze_UsesTheGivenDeltaTime()
     {

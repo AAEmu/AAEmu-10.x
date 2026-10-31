@@ -108,6 +108,19 @@ public class SusManager(IWorldManager worldManager) : Singleton<SusManager>, ISu
     }
 
     /// <summary>
+    /// The server sent the player's client to <paramref name="landing"/> and the client makes the jump itself (an
+    /// escape, a closed zone, a battlefield respawn, a GM goto). The check that falls on its arrival there only
+    /// remembers the spot, while any other spot is still judged as movement. A move the server writes itself under
+    /// the position lock is forgotten with a reset instead.
+    /// </summary>
+    /// <param name="playerId"></param>
+    /// <param name="landing">World position the client was sent to</param>
+    public void ExpectPlayerLanding(uint playerId, Vector3 landing)
+    {
+        LastPlayerPositions.ExpectLanding(playerId, landing);
+    }
+
+    /// <summary>
     /// Do some analysis on mount movement
     /// </summary>
     /// <param name="pet"></param>

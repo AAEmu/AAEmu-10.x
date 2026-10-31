@@ -11,20 +11,23 @@ using AAEmu.Game.Core.Packets.C2G;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Skills;
+using AAEmu.Game.Models.Game.Skills.Effects.SpecialEffects;
 using AAEmu.Game.Models.Game.Teleport;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.UnitTests.Utils;
 
 using GameTransform = AAEmu.Game.Models.Game.World.Transform.Transform;
+using WorldSpawnPosition = AAEmu.Game.Models.Game.World.Transform.WorldSpawnPosition;
 
 namespace AAEmu.UnitTests.Game.Core.Managers;
 
 /// <summary>
-/// The movement speed check against the moves the server makes itself: a teleport landing and a resurrection at a
-/// return point are not movement and are not reported, while what the client walks is still checked as before.
-/// The check that falls on such a move only remembers the new spot. Runs the real landing and the real packets on a
-/// character in a test world, with a <see cref="SusManager"/> that keeps its reports instead of writing them.
+/// The movement speed check against the moves the server makes itself: a teleport landing, a resurrection at a
+/// return point, an escape the client is sent on and a relog after a removal from the world are not movement and
+/// are not reported, while what the client walks is still checked as before. The check that falls on such a move
+/// only remembers the new spot. Runs the real landing, effect and packets on a character in a test world, with a
+/// <see cref="SusManager"/> that keeps its reports instead of writing them.
 /// </summary>
 [NotInParallel]
 public sealed class SusServerMoveTests
@@ -178,8 +181,9 @@ public sealed class SusServerMoveTests
 
         var reports = _sus.Reports;
         await Assert.That(reports.Count).IsEqualTo(1);
+        // The numbers are formatted as the log formats them, in the culture the test runs under ("40.0", "40,0").
         await Assert.That(reports[0]).IsEqualTo(
-            $"{SusManager.CategoryCheating}|{character.Id}|Player {character.Name} seems to be moving a bit fast 40.0 m/s (max 25.0)");
+            $"{SusManager.CategoryCheating}|{character.Id}|Player {character.Name} seems to be moving a bit fast {40f:F1} m/s (max {SusManager.PlayerCheckSpeed:F1})");
         await Assert.That(_sus.LastPlayerPositions.TryGet(character.Id, out var position, out var skipTime)).IsTrue();
         await Assert.That(position).IsEqualTo(Departure + new Vector3(200f, 0f, 0f));
         // 15 s left alone after a report, less the 5 s of this check.
@@ -204,6 +208,86 @@ public sealed class SusServerMoveTests
         await Assert.That(_sus.LastPlayerPositions.TryGet(character.Id, out _, out _)).IsTrue();
     }
 
+    /// <summary>
+    /// The escape (everyone's default skill, cast at will out of combat) sends the client to a return point and the
+    /// client makes the jump. A move it sent before it made the jump and its arrival at the return point are not
+    /// reported, and the check goes on from the return point.
+    /// </summary>
+    [Test]
+    public async Task Escape_TheClientsArrivalAtTheReturnPoint_IsNotReported()
+    {
+        var character = NewCharacter(8517);
+        EnterTheCopy(character, spawn: Landing);
+        _sus.AnalyzePlayerDeltaMovement(character, 5f);
+
+        CastEscape(character);
+        // Still in flight when the escape ran: 20 m on from where the character stood.
+        Walk(character, Departure + new Vector3(20f, 0f, 0f));
+        Walk(character, OnTheGround(Landing) + new Vector3(5f, 0f, 0f));
+
+        await Assert.That(_sus.Reports).IsEmpty();
+        await Assert.That(_sus.LastPlayerPositions.TryGet(character.Id, out var position, out _)).IsTrue();
+        await Assert.That(position).IsEqualTo(OnTheGround(Landing) + new Vector3(5f, 0f, 0f));
+        await Assert.That(_sus.LastPlayerPositions.TryGetExpectedLanding(character.Id, out _)).IsFalse();
+    }
+
+    /// <summary>
+    /// A speed hacker who casts the escape before every check and ignores it is reported as without the escape: the
+    /// cast does not clear the check.
+    /// </summary>
+    [Test]
+    public async Task Escape_CastBeforeTheCheck_DoesNotClearIt()
+    {
+        var character = NewCharacter(8518);
+        EnterTheCopy(character, spawn: Landing);
+        _sus.AnalyzePlayerDeltaMovement(character, 5f);
+
+        CastEscape(character);
+        // 1 km in the 5 s a check covers is 200 m/s, and nowhere near the return point.
+        Walk(character, Departure + new Vector3(0f, 1000f, 0f));
+
+        var reports = _sus.Reports;
+        await Assert.That(reports.Count).IsEqualTo(1);
+        await Assert.That(reports[0]).IsEqualTo(
+            $"{SusManager.CategoryCheating}|{character.Id}|Player {character.Name} seems to be moving a bit fast {200f:F1} m/s (max {SusManager.PlayerCheckSpeed:F1})");
+    }
+
+    /// <summary>
+    /// A crash or a dropped connection inside a copy never takes the logout's position lock. The save puts the
+    /// character back outside, kilometres away in open-world coordinates, and the first move after the relog is
+    /// there: it is not reported.
+    /// </summary>
+    [Test]
+    public async Task RemovalFromTheWorld_ForgetsTheCheck_SoTheFirstMoveAfterARelogIsNotReported()
+    {
+        var character = NewCharacter(8519);
+        _sus.AnalyzePlayerDeltaMovement(character, 5f);
+
+        using (new SingletonScope<RadarManager>(NewRadarManager()))
+        {
+            // The held gate refuses the save instead of it reaching MySQL. The gate is thread-bound: nothing awaits
+            // while it is held.
+            PersistenceGate.EnterOperation();
+            try
+            {
+                GameConnection.SaveAndRemoveFromWorld(character);
+            }
+            finally
+            {
+                PersistenceGate.ExitOperation();
+            }
+        }
+
+        var tracked = _sus.LastPlayerPositions.TryGet(character.Id, out _, out _);
+        var relogged = NewCharacter(8519, at: Landing);
+        Walk(relogged, Landing + new Vector3(5f, 0f, 0f));
+
+        await Assert.That(tracked).IsFalse();
+        await Assert.That(_sus.Reports).IsEmpty();
+        await Assert.That(_sus.LastPlayerPositions.TryGet(character.Id, out var position, out _)).IsTrue();
+        await Assert.That(position).IsEqualTo(Landing + new Vector3(5f, 0f, 0f));
+    }
+
     [Test]
     public async Task LockingAMate_ForgetsItsCheckEveryTime()
     {
@@ -217,11 +301,12 @@ public sealed class SusServerMoveTests
         await Assert.That(_sus.LastPetPositions.TryGet(mount.Id, out _, out _)).IsFalse();
     }
 
-    private TestCharacter NewCharacter(uint id, int hp = 100)
+    private TestCharacter NewCharacter(uint id, int hp = 100, Vector3? at = null)
     {
         var character = new TestCharacter { Id = id, ObjId = id, Name = $"Lander{id}", Hp = hp };
         character.ParentWorld = _world;
-        character.Transform.Local.SetPosition(Departure.X, Departure.Y, Departure.Z);
+        var start = at ?? Departure;
+        character.Transform.Local.SetPosition(start.X, start.Y, start.Z);
         character.Transform.KeepZoneQuietly(DepartureZone);
         var region = new Region(_world, 1, 1, DepartureZone);
         region.AddObject(character);
@@ -238,6 +323,27 @@ public sealed class SusServerMoveTests
         priestess.Transform.Local.SetPosition(at.X, at.Y, at.Z);
         priestess.Transform.KeepZoneQuietly(LandingZone);
         _world.SetNpc(priestess.ObjId, priestess);
+    }
+
+    /// <summary>Inside a copy the escape goes to the copy's spawn point.</summary>
+    private void EnterTheCopy(Character character, Vector3 spawn)
+    {
+        _world.Template.SpawnPosition = new WorldSpawnPosition { X = spawn.X, Y = spawn.Y, Z = spawn.Z };
+        character.Transform.InstanceId = WorldId;
+    }
+
+    /// <summary>The escape special effect as the escape skill applies it to its caster.</summary>
+    private static void CastEscape(Character character) =>
+        new Escape().Execute(character, null, character, null, null, null, null, DateTime.UtcNow, 0, 0, 0, 0);
+
+    /// <summary>A radar manager with its registration table, as <c>Initialize</c> leaves it (without the tick).</summary>
+    private static RadarManager NewRadarManager()
+    {
+        var radar = new RadarManager();
+        var registrations = typeof(RadarManager)
+            .GetProperty("Registrations", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        registrations.SetValue(radar, Activator.CreateInstance(registrations.PropertyType));
+        return radar;
     }
 
     /// <summary>Where a client stands after a landing: the server's spot, settled half a metre onto the ground.</summary>
