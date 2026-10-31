@@ -35,6 +35,12 @@ public class CSCreateCharacterPacket() : GamePacket(CSOffsets.CSCreateCharacterP
         var level = stream.ReadByte();
         _ = stream.ReadUInt32(); // introZoneId
 
-        CharacterManager.Instance.Create(Connection, name, race, gender, items, customModel, ability1, ability2, ability3, level);
+        // A normal client always sends level 1; any other level is a modified client choosing its own. A player's
+        // character is made at level 1 whatever arrives (bots call Create themselves, at their configured level).
+        if (level != CharacterManager.PlayerCreationLevel)
+            Logger.Warn($"User tried to create a character at level {level}; creating it at level {CharacterManager.PlayerCreationLevel}. Account {Connection.AccountId}, Name {name}");
+
+        CharacterManager.Instance.Create(Connection, name, race, gender, items, customModel, ability1, ability2, ability3,
+            CharacterManager.PlayerCreationLevel);
     }
 }
