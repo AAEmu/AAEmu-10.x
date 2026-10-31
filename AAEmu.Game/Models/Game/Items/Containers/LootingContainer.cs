@@ -605,33 +605,19 @@ public class LootingContainer(IBaseUnit owner)
             targetPlayer?.SendPacket(new SCLootDiceSummaryPacket(LootOwnerType, LootOwner.ObjId, itemEntry.ItemIndex, itemEntry.PlayerRolls));
         }
 
-        // Find the highest rolled value
-        var highestResult = itemEntry.PlayerRolls
-            .Where(x => x.Value > 0)
-            .OrderBy(x => x.Value)
-            .Select(x => x.Value)
-            .FirstOrDefault();
-
-        // Find highest roller(s)
-        var highestEntries = itemEntry.PlayerRolls
-            .Where(x => x.Value >= highestResult)
-            .OrderBy(x => x.Value)
-            .ToList();
-
-        if (highestEntries.Count <= 0)
+        // The highest roll wins; a random pick only settles members who rolled the same highest number. This used
+        // to take the lowest roll as the bar, which let every member who rolled at all win at random.
+        var winner = LootDiceRules.PickWinner(itemEntry.PlayerRolls, Random.Shared.Next);
+        if (winner == null)
         {
             // Everybody passed or didn't roll, set it to public
             itemEntry.PlayerRolls.Clear();
             return;
         }
 
-        // Select random winner (if multiple people roll the same)
-        var pickIndex = Random.Shared.Next(highestEntries.Count);
-        var highestEntry = highestEntries[pickIndex];
-
         // Mark winner
-        itemEntry.HighestRoller = highestEntry.Key.Id;
-        TryDistributeLootToPlayer(highestEntry.Key, itemEntry, false);
+        itemEntry.HighestRoller = winner.Id;
+        TryDistributeLootToPlayer(winner, itemEntry, false);
     }
 
     private bool TryDistributeLootToPlayer(Character player, LootingContainerItemEntry itemEntry, bool didLootAll)
