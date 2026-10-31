@@ -62,7 +62,8 @@ public class SusManager(IWorldManager worldManager) : Singleton<SusManager>, ISu
         return true;
     }
 
-    public bool LogActivity(string category, Character player, string description)
+    // Virtual so a test can see what the movement checks report without writing to the audit table
+    public virtual bool LogActivity(string category, Character player, string description)
     {
         return LogActivity(category, player?.AccountId ?? 0, player?.Id ?? 0, player?.Transform?.ZoneId ?? 0, player?.Transform?.World?.Position ?? Vector3.Zero, description);
     }

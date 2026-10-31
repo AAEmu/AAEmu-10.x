@@ -1,4 +1,5 @@
-﻿using AAEmu.Game.Core.Managers.World;
+﻿using AAEmu.Game.Core.Managers;
+using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj;
@@ -119,6 +120,12 @@ public static class SkillTeleportLanding
         // re-blink the character to the old landing.
         character.ClearBlinkMoveSuppress();
         character.SkillTask?.Skill?.NoteCasterSoftMoved();
+
+        // A landing is not movement. The speed check forgets the spot it last saw before the landing is written,
+        // or the check that falls on the landing measures the jump and reports the character as moving too fast.
+        // Only the server's own moves come here (a recall or portal cast with its cost and cooldown, a GM, the
+        // court, a bot's travel), and each ends at a spot the server picked.
+        SusManager.Instance.ResetAnalyzePlayerDeltaMovement(character.Id);
 
         var loadedInstance = !stayInZone &&
                              ReturnTeleportRules.NeedsInstanceLoad(character.Transform.InstanceId, instanceId);

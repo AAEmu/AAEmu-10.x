@@ -22,16 +22,18 @@ public class GameObject : IGameObject
         get => _disabledSetPosition;
         set
         {
-            if (_disabledSetPosition == value)
-                return;
             _disabledSetPosition = value;
-            if (value)
-            {
-                if (this is Character character)
-                    SusManager.Instance.ResetAnalyzePlayerDeltaMovement(character.Id);
-                if (this is Units.Mate pet)
-                    SusManager.Instance.ResetAnalyzeMountDeltaMovement(pet.Id);
-            }
+            if (!value)
+                return;
+
+            // Only the server locks a position, around a move it makes itself (a landing, an instance load, a GM
+            // freeze or teleport), so the speed check forgets the last spot on every lock. Also when the lock was
+            // already held: a landing applied under it leaves the old spot recorded, and the move the client
+            // confirms afterwards would be judged against that spot.
+            if (this is Character character)
+                SusManager.Instance.ResetAnalyzePlayerDeltaMovement(character.Id);
+            if (this is Units.Mate pet)
+                SusManager.Instance.ResetAnalyzeMountDeltaMovement(pet.Id);
         }
     }
 

@@ -3483,7 +3483,9 @@ public partial class Character : Unit, ICharacter
                 ParentWorld.MateManager.RemoveAndDespawnAllActiveOwnedMates(this);
                 await Task.Delay(200);
                 var portal = PortalManager.Instance.GetClosestReturnPortal(Connection.ActiveChar);
-                // force transported out
+                // force transported out. Not movement: the speed check forgets the spot it last saw, or the
+                // client's first move at the return point is measured from inside the closed zone
+                SusManager.Instance.ResetAnalyzePlayerDeltaMovement(Id);
                 Connection.ActiveChar.BroadcastPacket(
                     new SCCharacterResurrectedPacket(
                         Connection.ActiveChar.ObjId,

@@ -122,6 +122,14 @@ public class CSResurrectCharacterPacket() : GamePacket(CSOffsets.CSResurrectChar
         }
 
         // Same-instance temple resurrection must update the authoritative transform here.
+
+        // Coming back at a return point (or the courthouse) is a move the server makes, not movement: the speed
+        // check forgets the spot it last saw, or the check that falls on this landing measures the trip from where
+        // the character died. Only for the dead - this packet is the client's, and a living character must not be
+        // able to clear its own check with it.
+        if (!whereFallen && character.IsDead)
+            SusManager.Instance.ResetAnalyzePlayerDeltaMovement(character.Id);
+
         character.DisabledSetPosition = false;
         character.SetPosition(rx, ry, rz, 0f, 0f, rrot);
         character.Transform.FinalizeTransform();

@@ -48,7 +48,9 @@ public class Escape : SpecialEffectAction
                 portal = PortalManager.Instance.GetClosestReturnPortal(character);
             }
 
-            // force transported out
+            // force transported out. Not movement: the speed check forgets the spot it last saw, or the client's
+            // first move at the return point is measured from where the character stood
+            SusManager.Instance.ResetAnalyzePlayerDeltaMovement(character.Id);
             character.BroadcastPacket(
                 new SCCharacterResurrectedPacket(
                     character.ObjId,

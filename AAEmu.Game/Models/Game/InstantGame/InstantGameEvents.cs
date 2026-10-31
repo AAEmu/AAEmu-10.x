@@ -1,4 +1,5 @@
-﻿using AAEmu.Game.Core.Packets.G2C;
+﻿using AAEmu.Game.Core.Managers;
+using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.InstantGame.Static;
 using AAEmu.Game.Models.Game.Units;
@@ -117,6 +118,9 @@ public partial class InstantGame
                 return;
 
             // TODO: Prevent fall damage for both killer and victim on teleport
+            // The respawns below are the match's moves, not movement: the speed check forgets the spot it last saw,
+            // or the client's first move at the spawn is measured from where the character fell or fought
+            SusManager.Instance.ResetAnalyzePlayerDeltaMovement(victim.Id);
             victim.BroadcastPacket(new SCCharacterResurrectedPacket(victim.ObjId, spawn.X, spawn.Y, spawn.Z, spawn.RotationZ), true);
             victim.ResetAllSkillCooldowns(false);
             victim.Buffs.RemoveAllEffects();
@@ -137,6 +141,7 @@ public partial class InstantGame
 
             if (_battlefield.Id == (uint)InstantGameType.Gladiator)
             {
+                SusManager.Instance.ResetAnalyzePlayerDeltaMovement(killer.Id);
                 if (killer.Hp == 0)
                     killer.BroadcastPacket(new SCCharacterResurrectedPacket(killer.ObjId, spawn.X, spawn.Y, spawn.Z, spawn.RotationZ), true);
                 else
