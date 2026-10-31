@@ -229,6 +229,10 @@ public class GradeEnchant : SpecialEffectAction
             // hear the new grade. A worn piece also reports the equip watch.
             CollectionsManager.Instance.DiscoverInPlaceChange(character, item.TemplateId, item.Grade,
                 item.SlotType == SlotType.Equipment);
+            // The cached gear score counts a worn piece's grade, and nothing else clears it after a change in
+            // place. A break needs nothing here: taking the piece out of the equipment clears it.
+            if (item.SlotType == SlotType.Equipment)
+                character.InvalidateGearScore();
         }
 
         if (cost > 0)
