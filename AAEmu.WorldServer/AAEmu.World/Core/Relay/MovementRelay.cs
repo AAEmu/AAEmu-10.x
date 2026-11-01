@@ -368,6 +368,22 @@ public class MovementRelay
 
         var (rotX, rotY, rotZ) = MathUtil.GetSlaveRotationInDegrees(ship.RotationX, ship.RotationY, ship.RotationZ);
         var before = slave.Transform.World.ClonePosition();
+        var zoneKey = source?.ZoneId != 0 ? source.ZoneId : slave.ZoneAnnouncedTo;
+        if (zoneKey != 0 &&
+            HullPoseSpaceRules.TryRepairLocalAsWorld(
+                before,
+                new System.Numerics.Vector3(ship.X, ship.Y, ship.Z),
+                local => ZoneManager.Instance.ConvertToWorldCoordinates(zoneKey, local),
+                out var repaired))
+        {
+            Logger.Warn(
+                "Hull pose local→world bc={0} zone={1} raw=({2:F1},{3:F1},{4:F1}) → ({5:F1},{6:F1},{7:F1})",
+                bcId, zoneKey, ship.X, ship.Y, ship.Z, repaired.X, repaired.Y, repaired.Z);
+            ship.X = repaired.X;
+            ship.Y = repaired.Y;
+            ship.Z = repaired.Z;
+        }
+
         slave.Transform.Local.SetPosition(ship.X, ship.Y, ship.Z, rotX, rotY, rotZ);
         slave.Transform.FinalizeTransform();
         slave.Throttle = ship.Throttle;

@@ -114,4 +114,54 @@ public class SkillAreaRulesTests
         await Assert.That(SkillAreaRules.IncludesAreaCenterUnit(5f, null)).IsFalse();
         await Assert.That(SkillAreaRules.IncludesAreaCenterUnit(5f, new BaseUnit { ObjId = 0 })).IsFalse();
     }
+
+    [Test]
+    public async Task SelfArea_ExcludesCasterFromCountedHits()
+    {
+        // Whalesong-style: Self + radius, count must not be eaten by the gather origin.
+        await Assert.That(SkillAreaRules.ExcludeCasterFromSelfAreaHits(
+            SkillTargetType.Self, 100f)).IsTrue();
+        await Assert.That(SkillAreaRules.ExcludeCasterFromSelfAreaHits(
+            SkillTargetType.Self, 0f)).IsFalse();
+        await Assert.That(SkillAreaRules.ExcludeCasterFromSelfAreaHits(
+            SkillTargetType.AnyUnit, 100f)).IsFalse();
+        await Assert.That(SkillAreaRules.ExcludeCasterFromSelfAreaHits(
+            SkillTargetType.Hostile, 50f)).IsFalse();
+    }
+
+    [Test]
+    public async Task TargetAreaCount_CapsUnitsOnly_NeverDoodads()
+    {
+        // Count is unit-effect slots. Doodad OnSkillHit must not share it — effectless mine
+        // openers (count 1) and peace-strip 36659 (count 4 + BuffEffect) both need every in-radius
+        // stand to see the skill.
+        await Assert.That(SkillAreaRules.TargetAreaCountCapsDoodads(0)).IsFalse();
+        await Assert.That(SkillAreaRules.TargetAreaCountCapsDoodads(1)).IsFalse();
+
+        var origin = new Unit { ObjId = 1 };
+        var unitA = new Unit { ObjId = 2 };
+        var unitB = new Unit { ObjId = 3 };
+        var mine1 = new BaseUnit { ObjId = 10 };
+        var mine2 = new BaseUnit { ObjId = 11 };
+        // Non-Unit BaseUnits stand in for doodads (Doodad : BaseUnit, not Unit).
+        var effectless = SkillAreaRules.ApplyTargetAreaCount(
+            [unitA, unitB, mine1, mine2],
+            origin,
+            targetAreaCount: 1,
+            skillEffectCount: 0);
+        await Assert.That(effectless.Count).IsEqualTo(3); // 1 unit + 2 mines
+        await Assert.That(effectless.Contains(mine1)).IsTrue();
+        await Assert.That(effectless.Contains(mine2)).IsTrue();
+
+        // Same shape as 36659: real skill_effects must still leave doodads uncapped.
+        var withEffects = SkillAreaRules.ApplyTargetAreaCount(
+            [unitA, unitB, mine1, mine2],
+            origin,
+            targetAreaCount: 1,
+            skillEffectCount: 2);
+        await Assert.That(withEffects.Count).IsEqualTo(3);
+        await Assert.That(withEffects.Contains(mine1)).IsTrue();
+        await Assert.That(withEffects.Contains(mine2)).IsTrue();
+        await Assert.That(withEffects.Count(t => t is Unit)).IsEqualTo(1);
+    }
 }

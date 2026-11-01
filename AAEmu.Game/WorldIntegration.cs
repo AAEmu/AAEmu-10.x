@@ -1040,6 +1040,9 @@ public static class WorldIntegration
         // Same OnSpawn plot path as ZW mirrors (tower stage → army SpawnEffect). Safe: zone skill
         // relay suppressed inside CastOnSpawnPlotSkills.
         npc.CastOnSpawnPlotSkills();
+        // World-authored area OnSpawn (worldgate SkillHit open, Abyssal clear, …). Dedic is silent
+        // for these; Skill.Use reaches planted doodads. Relay suppressed inside the cast.
+        npc.CastOnSpawnAreaScriptSkills();
         return true;
     }
 
@@ -1617,6 +1620,9 @@ public static class WorldIntegration
             // plot_only skill filtered by the target's buff tag). The dedic is silent for
             // instance-authored start NPCs; the engine resolves the skill's own targets.
             npc.CastOnSpawnTargetEffectSkills();
+            // Area OnSpawn scripts (radius > 0, no plot/tag claim): Skill.Use so AoE OnSkillHit
+            // opens worldgates / clears Abyssal. World-authored or priority mirrors only.
+            npc.CastOnSpawnAreaScriptSkills();
 
             MonitorNpcGameData.Instance.OnSpawn(bcId, templateId);
 

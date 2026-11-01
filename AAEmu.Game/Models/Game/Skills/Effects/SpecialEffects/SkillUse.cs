@@ -41,7 +41,13 @@ public class SkillUse : SpecialEffectAction
         // Buff-tick SkillUse (Romance cadence, etc.) must not wipe remove_on_use_skill performances.
         if (SkillUseRemoveOnRules.ShouldTriggerRemoveOnUseSkill(castObj))
             caster.Buffs.TriggerRemoveOn(Buffs.BuffRemoveOn.UseSkill);
-        TaskManager.Instance.Schedule(new UseSkillTask(useSkill, caster, casterObj, target, targetObj, skillObject), TimeSpan.FromMilliseconds(delay));
+        var nested = new UseSkillTask(useSkill, caster, casterObj, target, targetObj, skillObject);
+        // Delay 0 must cast on this stack: a same-buff KillNpcWithoutCorpse can already have
+        // scheduled a 1 ms despawn, and a queued 0 ms Use would race it (Whalesong 36659 NoTarget).
+        if (SkillUseScheduleRules.ShouldExecuteImmediately(delay))
+            nested.Execute();
+        else
+            TaskManager.Instance.Schedule(nested, TimeSpan.FromMilliseconds(delay));
         //useSkill.ApplyEffects(caster, casterObj, target, targetObj, skillObject);
     }
 }

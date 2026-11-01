@@ -56,9 +56,45 @@ public class ZoneDoodadPlacementCatalogTests
             await Assert.That(list[0].Y).IsEqualTo(21012.532f).Within(0.001f);
             await Assert.That(list[0].Z).IsEqualTo(102.865f).Within(0.001f);
             await Assert.That(list[0].YawDegrees).IsEqualTo(0f).Within(0.01f);
+            await Assert.That(list[0].Scale).IsEqualTo(1f).Within(0.001f);
             await Assert.That(list[1].TemplateId).IsEqualTo(8414u);
             await Assert.That(list[1].X).IsEqualTo(20099.055f).Within(0.001f);
             await Assert.That(list[1].YawDegrees).IsEqualTo(-90f).Within(0.01f);
+            await Assert.That(list[1].Scale).IsEqualTo(1f).Within(0.001f);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Test]
+    public async Task ParseFile_ReadsNonDefaultScale()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"doodad_scale_{Guid.NewGuid():N}.g");
+        await File.WriteAllTextAsync(path, """
+            doodad
+                category 17
+                type 12229
+                family 0
+                vegetation false
+                pos ( x 10, y 20, z 30 )
+                ori ( x 0, y 0, z 0, w 1 )
+                scale 2.5
+            doodad
+                category 17
+                type 12230
+                family 0
+                vegetation false
+                pos ( x 11, y 21, z 31 )
+                ori ( x 0, y 0, z 0, w 1 )
+            """);
+        try
+        {
+            var list = ZoneDoodadPlacementCatalog.ParseFile(path, cellX: 0, cellY: 0);
+            await Assert.That(list.Count).IsEqualTo(2);
+            await Assert.That(list[0].Scale).IsEqualTo(2.5f).Within(0.001f);
+            await Assert.That(list[1].Scale).IsEqualTo(1f).Within(0.001f);
         }
         finally
         {

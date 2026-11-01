@@ -206,6 +206,15 @@ public class CombatRelay
         }
 
         var casterUnit = ResolveUnit(casterId);
+        if (casterUnit == null &&
+            ZoneOrphanCasterRules.ShouldRematerialize(
+                casterMissing: true,
+                hasRecentRemoval: NpcSpawnRelay.HasRecentRemoval(casterId)) &&
+            NpcSpawnRelay.TryRematerializeRemovedCaster(connection, casterId))
+        {
+            casterUnit = ResolveUnit(casterId);
+        }
+
         if (casterUnit == null)
         {
             Logger.Warn("ZWStartSkill unresolved caster={0} skillId={1}", casterId, skillId);
@@ -487,6 +496,11 @@ public class CombatRelay
         var unitId = stream.ReadBc();
         Logger.Info("ZWClearCombat unit={0}", unitId);
         ZoneAuthorityCombat.ResetMirrorNpcHp(unitId);
+
+        // After a wave kills its remnant (or leashes), reseed aggressive NPCs onto nearby players —
+        // zone sight alone does not pick Characters for these templates.
+        if (ResolveUnit(unitId) is Npc)
+            ZonePlayerAggro.ScheduleSeedNpcTowardNearbyPlayers(unitId);
 
         // Zone clears the *player* while mobs still swing — don't push SCCombatCleared or the
         // client drops combat UI / full out-of-combat regen while still taking hits.

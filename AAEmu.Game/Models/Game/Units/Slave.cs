@@ -52,8 +52,8 @@ public class Slave : Unit
     public BaseUnitType OwnerType { get; init; }
 
     /// <summary>
-    /// Set for the initial Spawn broadcast when CS/skill did not request hideSpawnEffect; clear
-    /// immediately after so AOI re-streams do not replay the portal.
+    /// Set for the initial Spawn broadcast when CS/skill did not request hideSpawnEffect.
+    /// Consumed on the first <see cref="SendUnitStateTo"/> so AOI re-streams do not replay the portal.
     /// </summary>
     public bool PendingSpawnPortal { get; set; }
 
@@ -1021,6 +1021,8 @@ public class Slave : Unit
             return;
 
         character.SendPacket(new SCUnitStatePacket(this));
+        // Bit 11 is one-shot for this paint; keep it set until SendPacket has read BuildFlags.
+        PendingSpawnPortal = false;
         character.SendPacket(new SCUnitPointsPacket(ObjId, Hp, Mp));
         character.SendPacket(new SCSlaveStatePacket(ObjId, TlId, Summoner?.Name ?? string.Empty, Summoner?.ObjId ?? 0, Id));
 

@@ -18,6 +18,7 @@ using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Effects;
 using AAEmu.Game.Models.Game.Skills.SkillControllers;
 using AAEmu.Game.Models.Game.Skills.Static;
+using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.StreamAoi;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.Units.Movements;
@@ -1802,6 +1803,11 @@ public partial class Npc : Unit
                     effects: OnSpawnTargetEffectRules.EffectsOf(skillTemplate)))
                 continue;
 
+            // Area OnSpawn scripts (worldgate open, Abyssal clear, …) must Skill.Use so AoE
+            // OnSkillHit reaches planted doodads — not self-buff paint.
+            if (IsClaimedByOnSpawnAreaScript(skillTemplate))
+                continue;
+
             foreach (var skillEffect in skillTemplate.Effects)
             {
                 if (skillEffect?.Template is not BuffEffect buffEffect || buffEffect.Buff == null)
@@ -1856,6 +1862,10 @@ public partial class Npc : Unit
                 continue;
             // Plots stay on dedic; World must not re-run plot graphs under ZoneAuthority.
             if (st.Plot != null || st.PlotOnly)
+                continue;
+
+            // Area scripts go through Skill.Use (Fired + effects); do not SC-paint them twice.
+            if (IsClaimedByOnSpawnAreaScript(st))
                 continue;
 
             var animId = st.FireAnim?.Id ?? 0;
@@ -1940,7 +1950,10 @@ public partial class Npc : Unit
             // skill_use_param1: delay seconds before OnSpawn graph (Crimson / Lusca stage use 1.0).
             var delaySec = npcSkill.SkillUseParam1;
             skill.SuppressZoneSkillRelay = true;
-            skill.ForcePlotGraphOnly = true;
+            // plot_only / radius-0: plot graph only. Radius > 0 also needs Cast for AoE SkillHit.
+            skill.ForcePlotGraphOnly = OnSpawnPlotWorldGate.ShouldForcePlotGraphOnly(
+                skill.Template.PlotOnly,
+                skill.Template.TargetAreaRadius);
             var caster = SkillCaster.GetByType(SkillCasterType.Unit);
             caster.ObjId = ObjId;
             var target = SkillCastTarget.GetByType(SkillCastTargetType.Unit);
@@ -2104,6 +2117,131 @@ public partial class Npc : Unit
                 "OnSpawn target-effect scheduled bc={0} tpl={1} count={2}",
                 ObjId, TemplateId, started);
         }
+    }
+
+    /// <summary>
+    /// ZoneAuthority: run a plotless OnSpawn skill whose <c>target_area_radius</c> hits nearby
+    /// units/doodads (Activate Worldgate SkillHit open, Abyssal Attack Begins KillNpc clear, …)
+    /// through the skill engine. Tagged target scripts stay on
+    /// <see cref="CastOnSpawnTargetEffectSkills"/>; plots stay on <see cref="CastOnSpawnPlotSkills"/>.
+    /// Kill: <c>AAEMU_DISABLE_ONSPAWN_AREA_SCRIPTS=1</c>.
+    /// </summary>
+    public void CastOnSpawnAreaScriptSkills()
+    {
+        if (string.Equals(
+                Environment.GetEnvironmentVariable("AAEMU_DISABLE_ONSPAWN_AREA_SCRIPTS"),
+                "1",
+                StringComparison.Ordinal))
+            return;
+
+        if (!WorldIntegration.ZoneAuthority)
+            return;
+        if (!IsZoneMirror)
+            return;
+        // Per-skill gate in IsClaimedByOnSpawnAreaScript: AoE openers run on ambient mirrors;
+        // radius-0 NpcSpawnerSpawnEffect stays World-authored / priority only.
+
+        var skills = NpcGameData.Instance.GetNpSkills(TemplateId, SkillUseConditionKind.OnSpawn);
+        if (skills == null || skills.Count == 0)
+            return;
+
+        var started = 0;
+        foreach (var npcSkill in skills)
+        {
+            var skill = SkillManager.Instance.GetNpSkillTemplate(npcSkill);
+            if (skill?.Template == null)
+                continue;
+            if (!IsClaimedByOnSpawnAreaScript(skill.Template))
+                continue;
+
+            if (Cooldowns.CheckCooldown(skill.Id))
+                continue;
+            if (skill.Template.CooldownTime == 0)
+                Cooldowns.AddCooldown(skill.Id, uint.MaxValue);
+
+            var delaySec = npcSkill.SkillUseParam1;
+            skill.SuppressZoneSkillRelay = true;
+            var caster = SkillCaster.GetByType(SkillCasterType.Unit);
+            caster.ObjId = ObjId;
+            var target = SkillCastTarget.GetByType(SkillCastTargetType.Unit);
+            target.ObjId = ObjId;
+
+            void Fire()
+            {
+                if (Hp <= 0 || !IsVisible)
+                    return;
+                try
+                {
+                    var result = skill.Use(this, caster, target, null, true, out _);
+                    Logger.Info(
+                        "OnSpawn area-script Use bc={0} tpl={1} skill={2} radius={3} result={4}",
+                        ObjId, TemplateId, skill.Id, skill.Template.TargetAreaRadius, result);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn(
+                        ex,
+                        "OnSpawn area-script failed bc={0} tpl={1} skill={2}",
+                        ObjId, TemplateId, skill.Id);
+                }
+            }
+
+            if (delaySec > 0.01f)
+            {
+                var delay = TimeSpan.FromSeconds(delaySec);
+                _ = System.Threading.Tasks.Task.Run(async () =>
+                {
+                    try
+                    {
+                        await System.Threading.Tasks.Task.Delay(delay).ConfigureAwait(false);
+                        Fire();
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Warn(ex, "OnSpawn area-script delay fire bc={0} skill={1}", ObjId, skill.Id);
+                    }
+                });
+            }
+            else
+            {
+                Fire();
+            }
+
+            started++;
+        }
+
+        if (started > 0)
+        {
+            Logger.Info(
+                "OnSpawn area-script scheduled bc={0} tpl={1} count={2}",
+                ObjId, TemplateId, started);
+        }
+    }
+
+    /// <summary>
+    /// Whether this OnSpawn skill belongs to <see cref="CastOnSpawnAreaScriptSkills"/> for this unit.
+    /// </summary>
+    private bool IsClaimedByOnSpawnAreaScript(SkillTemplate skillTemplate)
+    {
+        if (skillTemplate == null)
+            return false;
+
+        var claimedByTargetEffect = OnSpawnTargetEffectRules.ShouldWorldRun(
+            zoneAuthority: WorldIntegration.ZoneAuthority,
+            isZoneMirror: IsZoneMirror,
+            isPriorityMirror: IsMirrorStreamPriority,
+            hasPlot: skillTemplate.Plot != null,
+            effects: OnSpawnTargetEffectRules.EffectsOf(skillTemplate));
+
+        return OnSpawnAreaScriptRules.ShouldWorldRun(
+            zoneAuthority: WorldIntegration.ZoneAuthority,
+            isZoneMirror: IsZoneMirror,
+            isWorldAuthored: IsWorldAuthored,
+            isPriorityMirror: IsMirrorStreamPriority,
+            hasPlot: skillTemplate.Plot != null,
+            targetAreaRadius: skillTemplate.TargetAreaRadius,
+            claimedByTargetEffectPath: claimedByTargetEffect,
+            hasEngineSpawnEffects: OnSpawnAreaScriptRules.HasEngineSpawnEffects(skillTemplate));
     }
 
     public override void Spawn()

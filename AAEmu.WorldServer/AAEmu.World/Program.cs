@@ -8,6 +8,7 @@ using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.GameData;
+using AAEmu.Game.Models;
 using AAEmu.Game.Models.Game.Dominions;
 using AAEmu.Game.Models.Game.DoodadObj;
 using AAEmu.Game.Models.Game.Indun;
@@ -79,7 +80,15 @@ public static class Program
         var zoneHost = new ZoneHostSupervisor(appConfig.ZoneHost);
         WorldIntegration.ZoneHostSpawnEnabled = appConfig.ZoneHost.Enabled;
         WorldIntegration.TryStartInstanceZoneHost = zoneHost.TryStart;
-        WorldIntegration.PlantInstanceLevelDoodads = QuestTalkDoodads.EnsureInstanceCopy;
+        WorldIntegration.PlantInstanceLevelDoodads = world =>
+        {
+            // Level-pack modes own the full cell plant; Json keeps the narrow quest-talk fill.
+            if (MapDoodadPlantRules.ShouldPlantFromLevelPack(
+                    AppConfiguration.Instance.World.MapDoodadSource))
+                MapDoodadPlant.EnsureInstanceCopy(world);
+            else
+                QuestTalkDoodads.EnsureInstanceCopy(world);
+        };
         WorldIntegration.StopInstanceZoneHost = worldId =>
         {
             var world = WorldManager.Instance.GetWorld(worldId);
@@ -230,7 +239,17 @@ public static class Program
             // tracked units applies the same window rules as a live announcement.
             NpcScheduleGate.Start();
             NpcSpawnRelay.RemirrorAllZones();
-            QuestTalkDoodads.EnsureAllWorlds();
+            if (MapDoodadPlantRules.ShouldPlantFromLevelPack(
+                    AppConfiguration.Instance.World.MapDoodadSource))
+            {
+                MapDoodadPlant.EnsureAllWorlds();
+                // Maritime FX volumes are WeatherManager-owned (not orphan salvage).
+                WeatherManager.Instance.EnsureMaritimeVolumeStands =
+                    MapDoodadPlant.EnsureMaritimeWeatherVolumesAllWorlds;
+                WeatherManager.Instance.EnsureMaritimeVolumes();
+            }
+            else
+                QuestTalkDoodads.EnsureAllWorlds();
             foreach (var readyWorld in WorldManager.Instance.GetWorlds() ?? [])
                 StarterChainActorAudit.Report(readyWorld);
             zoneHost.ConfigureWarmWorldFactory(
@@ -543,21 +562,41 @@ public static class Program
         WorldIntegration.ApplyClosedGameSpawners = GameSpawnerGate.Apply;
         WorldIntegration.RelayNpcSpawnerEventToZone = request =>
         {
-            var zone = request.CreatorObjId != 0
+            // Placement ids are zone-local (.g spawnerId). A Silent Sea seed OnSpawn must arm
+            // Marianople / Sunrise recruiters — route by owning zone, not the caster's.
+            var creatorZone = request.CreatorObjId != 0
                 ? PlayerEnterService.ForUnit(request.CreatorObjId)
                 : null;
-            if (zone == null)
-                return false;
-
-            zone.SendPacket(new WZNpcSpawnerEventPacket(request));
-            Logger.Info(
-                "WZNpcSpawnerEvent -> zoneId={0} spawnerId={1} event={2} creator={3} lifeTime={4}",
-                zone.ZoneId,
+            var loadedIds = PlayerEnterService.AllLoadedZones()
+                .Select(z => z.ZoneId)
+                .Distinct()
+                .ToList();
+            var byZone = ZoneSpawnerPlacementCatalog.PlacementIdsByZone(loadedIds);
+            var targets = NpcSpawnerEventRouteRules.ResolveTargetZones(
                 request.SpawnerId,
-                request.Event,
-                request.CreatorObjId,
-                request.LifeTime);
-            return true;
+                creatorZone?.ZoneId ?? 0,
+                byZone);
+
+            var sent = false;
+            foreach (var zoneId in targets)
+            {
+                var zone = PlayerEnterService.ForZoneId(zoneId);
+                if (zone == null)
+                    continue;
+
+                zone.SendPacket(new WZNpcSpawnerEventPacket(request));
+                sent = true;
+                Logger.Info(
+                    "WZNpcSpawnerEvent -> zoneId={0} spawnerId={1} event={2} creator={3} lifeTime={4} creatorZone={5}",
+                    zone.ZoneId,
+                    request.SpawnerId,
+                    request.Event,
+                    request.CreatorObjId,
+                    request.LifeTime,
+                    creatorZone?.ZoneId ?? 0);
+            }
+
+            return sent;
         };
         WorldIntegration.RelayNpcSpawnToZone = request =>
         {

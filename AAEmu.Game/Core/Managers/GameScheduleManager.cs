@@ -13,6 +13,7 @@ using NLog;
 using static System.String;
 
 using DayOfWeek = AAEmu.Game.Models.Game.Schedules.DayOfWeek;
+using PeriodWindowKind = AAEmu.Game.Models.Game.Schedules.GameSchedulePeriodRules.WindowKind;
 
 namespace AAEmu.Game.Core.Managers;
 
@@ -174,40 +175,21 @@ public class GameScheduleManager(
 
     /// <summary>
     /// Checks the period status for a list of game schedule IDs.
+    /// Multi-year festival rows (Christmas 16708, …): a stale Ended year must not hide a later
+    /// NotStarted year — see <see cref="GameSchedulePeriodRules.Aggregate"/>.
     /// </summary>
-    /// <param name="ids">The list of game schedule IDs to check.</param>
-    /// <returns>The overall period status.</returns>
     private PeriodStatus CheckPeriodStatus(List<int> ids)
     {
-        // var hasNotStarted = true;  // Assume that no period has started
-        var hasInProgress = false; // Assume that no period is in progress
-        var hasEnded = false;      // Assume that no period has ended
-
+        var kinds = new List<PeriodWindowKind>(ids.Count);
         foreach (var gameScheduleId in ids)
         {
-            if (_gameSchedules.TryGetValue(gameScheduleId, out var gs))
-            {
-                var (started, ended) = CheckData(gs);
-
-                if (started && !ended)
-                {
-                    hasInProgress = true;  // The period has started, but has not yet ended
-                    // hasNotStarted = false; // At least one period has started, so "hasn't started" = false
-                }
-                else if (ended)
-                {
-                    hasEnded = true;       // At least one period has ended
-                    // hasNotStarted = false; // At least one period has ended, so "hasn't started" = false
-                }
-            }
+            if (!_gameSchedules.TryGetValue(gameScheduleId, out var gs))
+                continue;
+            var (started, ended) = CheckData(gs);
+            kinds.Add(GameSchedulePeriodRules.Classify(started, ended));
         }
 
-        // Determine the final status
-        if (hasInProgress)
-            return PeriodStatus.InProgress;
-        if (hasEnded)
-            return PeriodStatus.Ended;
-        return PeriodStatus.NotStarted;
+        return GameSchedulePeriodRules.Aggregate(kinds);
     }
 
     /// <summary>
@@ -296,46 +278,71 @@ public class GameScheduleManager(
 
     public string GetCronRemainingTime(int spawnerId, bool start = true)
     {
-        var cronExpression = Empty;
-        if (!_gameScheduleSpawnerIds.TryGetValue(spawnerId, out var _gameScheduleIds))
-        {
-            return cronExpression;
-        }
-
-        foreach (var gameScheduleId in _gameScheduleIds)
-        {
-            if (!_gameSchedules.TryGetValue(gameScheduleId, out var gameSchedules)) { continue; }
-
-            try
-            {
-                cronExpression = start ? GetCronExpression(gameSchedules, true) : GetCronExpression(gameSchedules, false);
-            }
-            catch (Exception e)
-            {
-                Logger.Info($"Error Spawning Npc {e}");
-                throw;
-            }
-        }
-
-        return cronExpression;
+        if (!_gameScheduleSpawnerIds.TryGetValue(spawnerId, out var scheduleIds))
+            return Empty;
+        return PickSoonestCron(scheduleIds, start);
     }
 
     public string GetDoodadCronRemainingTime(int doodadId, bool start = true)
     {
-        var cronExpression = Empty;
-        if (!_gameScheduleDoodadIds.TryGetValue(doodadId, out var value))
+        if (!_gameScheduleDoodadIds.TryGetValue(doodadId, out var scheduleIds))
+            return Empty;
+        return PickSoonestCron(scheduleIds, start);
+    }
+
+    /// <summary>
+    /// Spawn arm uses the soonest NotStarted window; despawn uses the soonest InProgress end.
+    /// Last-wins overwrite used to latch a stale Ended year and never wake the next festival.
+    /// </summary>
+    private string PickSoonestCron(List<int> scheduleIds, bool start)
+    {
+        var best = Empty;
+        var bestRemaining = TimeSpan.MaxValue;
+        var want = start ? PeriodWindowKind.NotStarted : PeriodWindowKind.InProgress;
+
+        foreach (var gameScheduleId in scheduleIds)
         {
-            return cronExpression;
+            if (!_gameSchedules.TryGetValue(gameScheduleId, out var gameSchedules))
+                continue;
+
+            var (started, ended) = CheckData(gameSchedules);
+            if (GameSchedulePeriodRules.Classify(started, ended) != want)
+                continue;
+
+            string cron;
+            try
+            {
+                cron = GetCronExpression(gameSchedules, start);
+            }
+            catch (Exception e)
+            {
+                Logger.Warn(e, "PickSoonestCron scheduleId={0} start={1}", gameScheduleId, start);
+                continue;
+            }
+
+            if (cron is "" or "0 0 0 0 0 ?")
+                continue;
+
+            TimeSpan remaining;
+            try
+            {
+                remaining = start
+                    ? GetRemainingTimeStart(gameSchedules)
+                    : GetRemainingTimeEnd(gameSchedules);
+            }
+            catch (Exception e)
+            {
+                Logger.Warn(e, "PickSoonestCron remaining scheduleId={0}", gameScheduleId);
+                continue;
+            }
+
+            if (remaining >= bestRemaining)
+                continue;
+            bestRemaining = remaining;
+            best = cron;
         }
 
-        foreach (var gameScheduleId in value)
-        {
-            if (!_gameSchedules.TryGetValue(gameScheduleId, out var gameSchedules)) { continue; }
-
-            cronExpression = start ? GetCronExpression(gameSchedules, true) : GetCronExpression(gameSchedules, false);
-        }
-
-        return cronExpression;
+        return best;
     }
 
     public TimeSpan GetRemainingTime(int spawnerId, bool start = true)

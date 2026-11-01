@@ -168,18 +168,12 @@ public class TransferManager
         {
             var doodad = DoodadManager.Instance.Create(transfer.ParentWorld, 0, doodadBinding.DoodadId, transfer);
             doodad.Transform.StickyParent = null;
-            doodad.Transform.Parent = transfer.Transform;
-            doodad.ParentObjId = transfer.ObjId;
             doodad.AttachPoint = doodadBinding.AttachPointId;
-            switch (doodadBinding.AttachPointId)
-            {
-                case AttachPointKind.Passenger0:
-                    doodad.Transform.Local.SetPosition(0.00537476f, 5.7852f, 1.36648f, 0, 0, MathF.PI * 2f);
-                    break;
-                case AttachPointKind.Passenger1:
-                    doodad.Transform.Local.SetPosition(0.00537476f, 1.63614f, 1.36648f, 0, 0, 0);
-                    break;
-            }
+            doodad.ParentObj = transfer;
+            doodad.ParentObjId = transfer.ObjId;
+            doodad.Transform.Parent = transfer.Transform;
+            if (TransferAttachmentMoveRules.TryGetSeatLocal(doodadBinding.AttachPointId, out var seatPos, out var seatYaw))
+                doodad.Transform.Local.SetPosition(seatPos.X, seatPos.Y, seatPos.Z, 0, 0, seatYaw);
             doodad.Transform.ResetFinalizeTransform();
             doodad.PlantTime = DateTime.UtcNow;
             doodad.Data = (byte)doodadBinding.AttachPointId;

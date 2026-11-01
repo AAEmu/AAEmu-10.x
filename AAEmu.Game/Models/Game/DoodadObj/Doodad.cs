@@ -1013,6 +1013,12 @@ public class Doodad : BaseUnit
 
     private bool DoPhaseFuncsBody(BaseUnit caster, ref int nextPhase)
     {
+        // Leave the prior phase's Clout/area triggers before arming the next. Duration-0
+        // Clouts never schedule a lifecycle task; cancelling a Duration>0 FuncTask also skips
+        // its RemoveAreaTrigger — both leaked peace buff 21394 across Whalesong SkillHit hops.
+        if (DoodadPhaseAreaTriggerRules.ShouldClearAttachedTriggers(AttachAreaTriggers.Count))
+            ClearAttachedAreaTriggers();
+
         // Changing the phase.
         FuncGroupId = (uint)nextPhase;
         if (WorldIntegration.ZoneAuthority && !IsPlacementPending)
@@ -1629,13 +1635,7 @@ public class Doodad : BaseUnit
         }
 
         base.Delete();
-        var triggersToRemove = new List<AreaTrigger>(AttachAreaTriggers);
-        foreach (var areaTrigger in triggersToRemove)
-        {
-            AreaTriggerManager.Instance.RemoveAreaTrigger(areaTrigger);
-        }
-
-        AttachAreaTriggers.Clear();
+        ClearAttachedAreaTriggers();
         AreaTriggerManager.Instance.AreaEdges.ForgetOwner(ObjId);
 
         // Delete associated item if expired
@@ -1656,6 +1656,21 @@ public class Doodad : BaseUnit
         DeletePersistentRow();
         RemoveFromSpawnManager();
         IsPersistent = false;
+    }
+
+    /// <summary>
+    /// Drops every attached area trigger (Clout inside-buff) and runs leave so occupants lose the buff.
+    /// </summary>
+    private void ClearAttachedAreaTriggers()
+    {
+        if (AttachAreaTriggers.Count == 0)
+            return;
+
+        var triggersToRemove = new List<AreaTrigger>(AttachAreaTriggers);
+        foreach (var areaTrigger in triggersToRemove)
+            AreaTriggerManager.Instance.RemoveAreaTrigger(areaTrigger);
+
+        AttachAreaTriggers.Clear();
     }
 
     /// <summary>Deletes the persistent row represented by this in-memory doodad.</summary>

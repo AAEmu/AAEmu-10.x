@@ -1028,10 +1028,11 @@ public class SlaveManager(WorldInstance parentWorldInstance)
         // IsOrigin land branch above via SlaveLandVehiclePlantRules.
 
         // Retail: CSSpawnSlave.hideSpawnEffect=false (and skill summons that skip that CS)
-        // → UnitState flags bit 11 → client portal_spawn_fx. hideSpawnEffect was previously unused.
-        summonedSlave.PendingSpawnPortal = !hideSpawnEffect;
+        // → UnitState flags bit 11 → client portal_spawn_fx. Cleared inside SendUnitStateTo on the
+        // first paint — clearing here dropped the flag when AOI enqueued the hull and the flush
+        // (or a soft-cull re-stream) painted without the portal.
+        summonedSlave.PendingSpawnPortal = SlaveSpawnPortalRules.ShouldSetPortalFlag(hideSpawnEffect);
         summonedSlave.Spawn();
-        summonedSlave.PendingSpawnPortal = false;
 
         // remove_by_summoned (110 buffs: the 감정 표현_* poses, 자세 잡기, 예도, 맹세, 위엄, 열정의 춤, all
         // of them poses with a hidden buff kind) drops the summoner's poses the moment it summons. The

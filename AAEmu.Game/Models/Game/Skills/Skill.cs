@@ -847,9 +847,19 @@ public class Skill
         if (targetCaster == null || skillCaster == null) // проверяем, так как иногда бывает null
             return null;
 
-        // HACKFIX : Mounts and Turbulence
+        // Mount / unit casters resolve through the world table. After a same-event
+        // KillNpcWithoutCorpse the id may already be gone while this call still holds the
+        // caster object — keep it so Self AoE / SkillHit (Whalesong 36659) can finish.
         if (skillCaster.Type == SkillCasterType.Mount || skillCaster.Type == SkillCasterType.Unit)
-            target = caster.ParentWorld.GetUnit(skillCaster.ObjId);
+        {
+            var lookedUp = caster.ParentWorld?.GetUnit(skillCaster.ObjId);
+            if (lookedUp != null)
+                target = lookedUp;
+            else if (!SkillCasterLookupRules.PreferHeldCasterWhenLookupMisses(
+                         skillCaster.ObjId, caster.ObjId, lookupFound: false))
+                target = null;
+            // else keep `target = caster`
+        }
 
         switch (Template.TargetType)
         {
@@ -1952,13 +1962,15 @@ public class Skill
             originFallbackOnly = true;
         }
 
-        if (Template.TargetAreaCount > 0 && possibleTargets.Count > Template.TargetAreaCount)
-        {
-            possibleTargets = possibleTargets
-                .OrderBy(t => t.GetDistanceTo(targetSelf))
-                .Take(Template.TargetAreaCount)
-                .ToList();
-        }
+        // Self AoE: caster is gather origin, not a counted neighbour hit (SkillAreaRules).
+        if (SkillAreaRules.ExcludeCasterFromSelfAreaHits(Template.TargetType, areaRadius))
+            possibleTargets.RemoveAll(t => t != null && t.ObjId == caster.ObjId);
+
+        possibleTargets = SkillAreaRules.ApplyTargetAreaCount(
+            possibleTargets,
+            targetSelf,
+            Template.TargetAreaCount,
+            Template.Effects?.Count ?? 0);
 
         foreach (var target in possibleTargets)
         {

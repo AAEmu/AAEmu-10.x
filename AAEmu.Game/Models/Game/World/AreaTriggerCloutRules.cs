@@ -40,4 +40,14 @@ public static class AreaTriggerCloutRules
     /// </summary>
     public static bool NeedsPostSpawnPulse(bool ownerWasVisibleAtArm) => !ownerWasVisibleAtArm;
 
+    /// <summary>
+    /// Whether a trigger that has already run <c>OnDelete</c> may still pulse.
+    /// </summary>
+    /// <remarks>
+    /// Removals are queued until the end of the manager tick, so a SkillHit phase hop that
+    /// clears a duration-0 Clout (Whalesong peace 12312) would otherwise re-enter occupants and
+    /// re-apply the inside buff before the queue drains.
+    /// </remarks>
+    public static bool MayTickAfterDelete(bool deleted) => !deleted;
+
 }

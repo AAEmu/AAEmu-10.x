@@ -411,9 +411,27 @@ public class Transfer : Unit
 
     public override void RemoveVisibleObject(Character character)
     {
+        // Seated or standing on this body (or its motor/boarding pair): keep the stream like a
+        // ship deck — otherwise a step onto the roof culls the wagon and the character is left
+        // behind with a full AOI re-stream ("joined guild" thrash).
+        if (character.IsOccupyingTransfer(this) ||
+            character.IsOccupyingTransfer(Bounded) ||
+            (ParentObj is Transfer motor && character.IsOccupyingTransfer(motor)))
+            return;
+
         base.RemoveVisibleObject(character);
 
         character.SendPacket(new SCUnitsRemovedPacket([ObjId]));
+
+        // Seats are separate doodad objects. If they lagged a region behind the boarding part,
+        // region leave alone would not remove them — clear them whenever the body leaves view.
+        if (AttachedDoodads.Count > 0)
+        {
+            var ids = new uint[AttachedDoodads.Count];
+            for (var i = 0; i < AttachedDoodads.Count; i++)
+                ids[i] = AttachedDoodads[i].ObjId;
+            character.SendPacket(new SCDoodadsRemovedPacket(true, ids));
+        }
     }
 
     public PacketStream WriteTelescopeUnit(PacketStream stream)
@@ -648,14 +666,12 @@ public class Transfer : Unit
             transfer.BroadcastPacket(new SCOneUnitMovementPacket(ObjId, moveTypeTr), false);
         }
 
-        // Added so whatever riding this, doesn't clip out of existence when moving
-        transfer.Transform.FinalizeTransform();
+        // Apply positions first. FinalizeTransform before SetPosition was a no-op (zero delta) and
+        // left boarding seats registered in the spawn region after the carriage drove away.
         transfer.SetPosition(transfer.vPosition.X, transfer.vPosition.Y, transfer.vPosition.Z, 0, 0, (float)transfer.Angle);
         transfer.Transform.World.SetPosition(transfer.vPosition, new Vector3(0, 0, (float)transfer.Angle));
 
         // Keep bound carriage parts in sync server-side.
-        // The client may initially render them attached at the station, but without server-side position updates
-        // they can later "snap back" to the spawn point when the streaming/visibility refreshes.
         if (transfer.Bounded is not null)
         {
             var child = transfer.Bounded;
@@ -674,12 +690,16 @@ public class Transfer : Unit
             child.BroadcastPacket(new SCOneUnitMovementPacket(child.ObjId, childMove), false);
         }
 
-        // Follow the region as the route crosses one. Movement alone never re-registers visibility,
-        // so the rig stayed bound to the region it spawned in and streamed out of every client the
-        // moment it drove clear of that region's neighbourhood. AddVisibleObject resolves through
-        // the transform root (the bounded child, moved just above) and early-returns when the
-        // region is unchanged, so this is cheap on the common tick.
-        Core.Managers.World.WorldManager.Instance.AddVisibleObject(transfer);
+        // Motor/boarding SetPosition already refresh themselves when the region changes. Seat
+        // doodads must stay parented to the boarding part and re-enter visibility every tick —
+        // otherwise they remain registered at the stop after the carriage has left (Parent lost or
+        // region never updated while AddVisibleObject early-outs on the body).
+        foreach (var body in TransferAttachmentMoveRules.BodiesNeedingVisibilitySync(transfer))
+        {
+            Core.Managers.World.WorldManager.Instance.AddVisibleObject(body);
+            foreach (var doodad in TransferAttachmentMoveRules.EnsureAttachedParented(body))
+                Core.Managers.World.WorldManager.Instance.AddVisibleObject(doodad);
+        }
     }
 
     private void NextPoint(Transfer transfer)

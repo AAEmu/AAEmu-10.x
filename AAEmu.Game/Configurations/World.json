@@ -31,6 +31,7 @@
         "HeavyTaxMode": "TargetData",
         "DemolitionMailRetentionDays": 740,
         "SpawnDoodads": true,
+        "MapDoodadSource": "LevelPack",
         "SpawnTransfers": true,
         "SpawnGimmicks": true,
         "SpawnSlaves": true,

@@ -23,7 +23,8 @@ public static partial class ZoneDoodadPlacementCatalog
         float Y,
         float Z,
         float YawDegrees,
-        bool IgnoredPermanent = false);
+        bool IgnoredPermanent = false,
+        float Scale = 1f);
 
     /// <summary>All placements of <paramref name="templateId"/> in a world (empty when root/files missing).</summary>
     public static IReadOnlyList<DoodadPlacement> GetByTemplate(string worldName, uint templateId)
@@ -243,7 +244,12 @@ public static partial class ZoneDoodadPlacementCatalog
                 yawDeg = YawDegreesFromOri(ox, oy, oz, ow);
             }
 
-            list.Add(new DoodadPlacement(type, originX + lx, originY + ly, lz, yawDeg));
+            var scale = 1f;
+            var scaleMatch = ScaleRegex().Match(block);
+            if (scaleMatch.Success && TryF(scaleMatch.Groups[1].Value, out var parsedScale) && parsedScale > 0f)
+                scale = parsedScale;
+
+            list.Add(new DoodadPlacement(type, originX + lx, originY + ly, lz, yawDeg, Scale: scale));
         }
 
         return list;
@@ -314,6 +320,9 @@ public static partial class ZoneDoodadPlacementCatalog
         @"ori\s*\(\s*x\s+([-\d.eE+]+)\s*,\s*y\s+([-\d.eE+]+)\s*,\s*z\s+([-\d.eE+]+)\s*,\s*w\s+([-\d.eE+]+)\s*\)",
         RegexOptions.CultureInvariant)]
     private static partial Regex OriRegex();
+
+    [GeneratedRegex(@"scale\s+([-\d.eE+]+)", RegexOptions.CultureInvariant)]
+    private static partial Regex ScaleRegex();
 
     [GeneratedRegex(@"(?m)^doodad\r?\n", RegexOptions.CultureInvariant)]
     private static partial Regex SplitDoodadBlocks();

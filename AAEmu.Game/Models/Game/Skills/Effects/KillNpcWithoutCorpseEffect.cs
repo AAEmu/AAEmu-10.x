@@ -1,9 +1,11 @@
-﻿using AAEmu.Game.Core.Managers.World;
+﻿using AAEmu.Game.Core.Managers;
+using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Models.Tasks.Skills;
 
 namespace AAEmu.Game.Models.Game.Skills.Effects;
 
@@ -82,7 +84,6 @@ public class KillNpcWithoutCorpseEffect : EffectTemplate
 
     private void RemoveEffectsAndDelete(Unit unit, Character experiencedBy)
     {
-        unit.Buffs.RemoveAllEffects();
         if (unit is not Npc npc)
             return;
 
@@ -92,7 +93,28 @@ public class KillNpcWithoutCorpseEffect : EffectTemplate
         if (GiveExp)
             GrantKillExp(npc, experiencedBy);
 
-        if (WorldIntegration.ZoneAuthority)
+        // Defer buff wipe + despawn. RemoveAllEffects here would UnsubscribeEvents mid-OnTimeout and
+        // drop later same-buff SkillUse rows (Whalesong 21093 → 36659); immediate RemoveNpcNow
+        // also unregisters the caster before that SkillUse gathers Self AoE / SkillHit.
+        if (KillNpcWithoutCorpseDeferRules.ShouldDeferRemoval(npc.ObjId != 0))
+        {
+            TaskManager.Instance.Schedule(
+                new KillNpcWithoutCorpseDeleteTask(npc, WorldIntegration.ZoneAuthority),
+                TimeSpan.FromMilliseconds(KillNpcWithoutCorpseDeferRules.DeferRemovalMs));
+            return;
+        }
+
+        FinishRemoval(npc, WorldIntegration.ZoneAuthority);
+    }
+
+    internal static void FinishRemoval(Npc npc, bool zoneAuthority)
+    {
+        if (npc == null || npc.ObjId == 0)
+            return;
+
+        npc.Buffs.RemoveAllEffects();
+
+        if (zoneAuthority)
         {
             // Removed now: the npc vanishes as the effect lands, it does not walk off through GO_TO_DESPAWN.
             WorldIntegration.RemoveNpcNow(npc);
@@ -101,6 +123,10 @@ public class KillNpcWithoutCorpseEffect : EffectTemplate
         {
             npc.DoDespawn(npc);
             npc.Spawner.DespawnWithRespawn(npc);
+        }
+        else
+        {
+            npc.Delete();
         }
     }
 

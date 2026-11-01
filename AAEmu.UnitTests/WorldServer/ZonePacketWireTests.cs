@@ -126,6 +126,16 @@ public class ZonePacketWireTests
         await Assert.That(
             BondDoodad.IsIntentionalSeatLeave(MoveTypeFlags.None, (ushort)MoveTypeActorFlags.Jumping))
             .IsTrue();
+
+        // Carriage / slave / house carrier seats: walk-on settle keeps Moving — must not unbond.
+        await Assert.That(
+            BondDoodad.IsIntentionalSeatLeave(
+                MoveTypeFlags.Moving, (ushort)MoveTypeActorFlags.None, carrierSeat: true))
+            .IsFalse();
+        await Assert.That(
+            BondDoodad.IsIntentionalSeatLeave(
+                MoveTypeFlags.Jumping, (ushort)MoveTypeActorFlags.None, carrierSeat: true))
+            .IsTrue();
     }
 
     [Test]
