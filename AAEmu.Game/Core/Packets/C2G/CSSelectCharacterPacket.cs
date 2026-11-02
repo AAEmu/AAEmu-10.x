@@ -190,9 +190,10 @@ public class CSSelectCharacterPacket() : GamePacket(CSOffsets.CSSelectCharacterP
                 ExpeditionManager.SendExpeditionInfo(Connection.ActiveChar);
             }
 
-            Connection.ActiveChar.SendOption(1);
-            Connection.ActiveChar.SendOption(2);
-            Connection.ActiveChar.SendOption(5);
+            // UI sections the client does not request itself (see UiData.SentAtCharacterSelect): without the
+            // push, 5-7 are never restored after a client restart or a server reboot.
+            foreach (var uiDataType in UiData.SentAtCharacterSelect)
+                Connection.ActiveChar.SendOption(uiDataType);
 
             Connection.ActiveChar.Buffs.AddBuff((uint)BuffConstants.LoggedOn, Connection.ActiveChar);
 
