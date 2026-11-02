@@ -33,6 +33,39 @@ public class DoodadClientOverlayUseTests
         await Assert.That(doodad.ToNextPhase).IsFalse();
     }
 
+    /// <summary>
+    /// "One Last Job" (quest 7147): Ayle (client doodad 14246) ends on a use func with next_phase -1.
+    /// One player's antidote deleted the shared Ayle for everyone (live 2026-11-02).
+    /// </summary>
+    [Test]
+    public async Task FinalUseByPlayer_KeepsSharedClientDoodad()
+    {
+        var doodad = new Doodad
+        {
+            Template = new DoodadTemplate { ClientDoodad = true, FuncGroups = [] }
+        };
+        var user = new Character(new UnitCustomModelParams()) { Id = 7, ObjId = 70, Name = "Trouble" };
+        var sharedPhase = doodad.FuncGroupId;
+        var func = new DoodadFunc { NextPhase = -1 };
+
+        var stop = doodad.DoFuncWithApply(user, func, (_, owner) => owner.ToNextPhase = true, user);
+
+        await Assert.That(stop).IsTrue();
+        await Assert.That(doodad.ToNextPhase).IsFalse();
+        await Assert.That(doodad.FuncGroupId).IsEqualTo(sharedPhase);
+    }
+
+    [Test]
+    [Arguments(true, true, false)]
+    [Arguments(true, false, true)]
+    [Arguments(false, true, true)]
+    public async Task ShouldConsumeOnFinalUse_KeepsClientDoodadForPlayers(
+        bool clientDoodad, bool usedByPlayer, bool expected)
+    {
+        await Assert.That(DoodadQuestReactRules.ShouldConsumeOnFinalUse(clientDoodad, usedByPlayer))
+            .IsEqualTo(expected);
+    }
+
     [Test]
     [Arguments(true, 41989u, 42002u, true)]
     [Arguments(true, 42002u, 42002u, false)]

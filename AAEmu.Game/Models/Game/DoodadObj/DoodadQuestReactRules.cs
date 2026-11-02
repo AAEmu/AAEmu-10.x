@@ -56,6 +56,14 @@ public static class DoodadQuestReactRules
     public static bool ShouldAdvanceViewerOnly(bool clientDoodad, uint usePhase, uint sharedPhase) =>
         clientDoodad && usePhase != sharedPhase;
 
+    /// <summary>
+    /// A player's final use (<c>next_phase</c> -1) consumes the doodad. A client doodad is one copy
+    /// per player in the official client, so the shared copy must stay for everyone else; that
+    /// player's own view moves on through QuestReact.
+    /// </summary>
+    public static bool ShouldConsumeOnFinalUse(bool clientDoodad, bool usedByPlayer) =>
+        !(clientDoodad && usedByPlayer);
+
     public static uint NextViewerPhase(uint currentPhase, int reactNextPhase) =>
         ShouldAdvance(reactNextPhase, currentPhase) ? (uint)reactNextPhase : currentPhase;
 

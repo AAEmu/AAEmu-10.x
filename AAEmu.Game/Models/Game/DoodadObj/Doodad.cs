@@ -937,6 +937,15 @@ public class Doodad : BaseUnit
                 }
             }
 
+            if (func.NextPhase == -1 &&
+                !DoodadQuestReactRules.ShouldConsumeOnFinalUse(Template?.ClientDoodad == true, caster is Character))
+            {
+                // "One Last Job" (7147): feeding Ayle (client doodad 14246) the antidote deleted the
+                // shared Ayle, and every other player on the quest lost her until a restart.
+                ToNextPhase = false;
+                return true;
+            }
+
             if (func.NextPhase == -1)
             {
                 // We don't need to change phase, we stay in the current phase.
