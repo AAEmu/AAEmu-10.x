@@ -9,6 +9,10 @@ public class ShutdownTask : Task
 {
     // private DateTime _lastCheckTime = DateTime.MinValue;
     private bool _alreadyShuttingDown;
+    private ShutdownLogout _logout;
+    private bool _granted;
+    private DateTime _grantAt;
+    private DateTime _exitAt;
     private DateTime _shutdownTime;
     private DateTime _nextTriggerTime = DateTime.MinValue;
     private readonly int _exitCode;
@@ -66,35 +70,14 @@ public class ShutdownTask : Task
 
     public override void Execute()
     {
-        if (_alreadyShuttingDown)
-            return;
-
         if (_shutdownTime <= DateTime.UtcNow)
         {
-            _alreadyShuttingDown = true;
-            // Do server shut down now
-
-            // Wipe all BuyBack containers manually, as there will be no trigger for disconnected players
-            try
-            {
-                foreach (var character in WorldManager.Instance.GetAllCharacters())
-                    character.BuyBackItems.Wipe();
-            }
-            catch (Exception)
-            {
-                // Ignore
-            }
-
-            FactionPowerManager.Instance.Save();
-            if (SaveManager.Instance.DoSave())
-            {
-                WorldManager.Instance.BroadcastPacketToServer(new SCNoticeMessagePacket(3, Color.Magenta, 15000,
-                    "The server is shutting down right now!"));
-                Environment.Exit(_exitCode); // Manual Shutdown
-            }
-
+            ExecuteShutdown();
             return;
         }
+
+        if (_alreadyShuttingDown)
+            return;
 
         var remainingTime = _shutdownTime - DateTime.UtcNow;
         var remainingSeconds = (int)Math.Ceiling(remainingTime.TotalSeconds);
@@ -131,5 +114,63 @@ public class ShutdownTask : Task
                 Color.Red,
                 popupTime,
                 shutdownText));
+    }
+
+    /// <summary>
+    /// Runs once a second after the shutdown time: players are sent to character select through the normal
+    /// leave handshake (their clients only send the quest tracker and the rest of their UI data when they
+    /// leave the world, see <see cref="ShutdownLogout"/>), then the world is saved and the process exits.
+    /// </summary>
+    private void ExecuteShutdown()
+    {
+        var now = DateTime.UtcNow;
+        if (!_alreadyShuttingDown)
+        {
+            _alreadyShuttingDown = true;
+
+            // Wipe all BuyBack containers manually, as there will be no trigger for disconnected players
+            try
+            {
+                foreach (var character in WorldManager.Instance.GetAllCharacters())
+                    character.BuyBackItems.Wipe();
+            }
+            catch (Exception)
+            {
+                // Ignore
+            }
+
+            _logout = ShutdownLogout.ForServer();
+            if (_logout.Begin(ShutdownLogout.DefaultCountdown) > 0)
+            {
+                _grantAt = now + ShutdownLogout.DefaultCountdown;
+                _exitAt = _grantAt + ShutdownLogout.DefaultGrace;
+                return;
+            }
+
+            _granted = true;
+            _grantAt = now;
+            _exitAt = now;
+        }
+
+        if (!_granted)
+        {
+            if (now < _grantAt)
+                return;
+
+            _granted = true;
+            if (_logout.Grant() == 0)
+                _exitAt = now;
+        }
+
+        if (now < _exitAt)
+            return;
+
+        FactionPowerManager.Instance.Save();
+        if (SaveManager.Instance.DoSave())
+        {
+            WorldManager.Instance.BroadcastPacketToServer(new SCNoticeMessagePacket(3, Color.Magenta, 15000,
+                "The server is shutting down right now!"));
+            Environment.Exit(_exitCode); // Manual Shutdown
+        }
     }
 }

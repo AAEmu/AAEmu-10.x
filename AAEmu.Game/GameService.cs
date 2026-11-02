@@ -171,6 +171,19 @@ public sealed class GameService : IHostedService, IDisposable
         Logger.Info("Stopping daemon...");
 
 
+        // Players leave through the normal handshake first: a client only sends its UI data (quest tracker,
+        // journal check boxes, action bars) when it leaves the world, so a socket that just closes loses it.
+        // Ctrl+C and SIGTERM reach this; a forced taskkill does not.
+        try
+        {
+            await ShutdownLogout.ForServer().RunAsync(
+                ShutdownLogout.DefaultCountdown, ShutdownLogout.DefaultGrace, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            Logger.Warn("Shutdown logout cut short by the host stop timeout; players still in the world are saved without their UI data");
+        }
+
         await SaveManager.Instance.StopAsync();
         FactionPowerManager.Instance.Save();
 
