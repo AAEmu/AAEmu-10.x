@@ -436,7 +436,8 @@ public partial class Quest : PacketMarshaler
     /// Drops the quest as a result of the player requesting it
     /// </summary>
     /// <param name="update">Should an update packet be sent to the player</param>
-    public void Drop(bool update)
+    /// <param name="completed">The quest is being removed because it was turned in, not abandoned</param>
+    public void Drop(bool update, bool completed = false)
     {
         Status = QuestStatus.Dropped;
         Step = QuestComponentKind.Drop;
@@ -451,9 +452,15 @@ public partial class Quest : PacketMarshaler
         if (update)
             Owner.SendPacket(new SCQuestContextUpdatedPacket(this, 0));
 
-        foreach (var questComponentTemplate in Template.Components.Values)
-            foreach (var actTemplate in questComponentTemplate.ActTemplates)
-                actTemplate.QuestDropped(this);
+        // destroy_when_drop is the abandon rule. A turned-in quest keeps items its Cleanup leaves behind:
+        // "Hota's Strong Wheel" (8759) gathers 43999 with cleanup off and destroy_when_drop on, because
+        // "A Guild Reward" (8766) asks for that same wheel next.
+        if (!completed)
+        {
+            foreach (var questComponentTemplate in Template.Components.Values)
+                foreach (var actTemplate in questComponentTemplate.ActTemplates)
+                    actTemplate.QuestDropped(this);
+        }
 
         ClearObjectives();
     }

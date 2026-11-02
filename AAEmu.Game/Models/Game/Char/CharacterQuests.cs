@@ -668,13 +668,14 @@ public class CharacterQuests(Character owner)
     /// <param name="questId"></param>
     /// <param name="update"></param>
     /// <param name="forcibly"></param>
-    public void DropQuest(uint questId, bool update, bool forcibly = false)
+    /// <param name="completed">The quest was turned in; its acts' abandon (destroy_when_drop) rules are skipped</param>
+    public void DropQuest(uint questId, bool update, bool forcibly = false, bool completed = false)
     {
         if (!ActiveQuests.TryGetValue(questId, out var quest)) { return; }
 
         quest.SkipUpdatePackets(); // make sure no further "update packets" are send to the player
         quest.Cleanup();
-        quest.Drop(update);
+        quest.Drop(update, completed);
         quest.FinalizeQuestActs();
         if (QuestCinemaBindRules.ShouldClearCinemaEndOnDrop(HasQuestCompleted(questId), forcibly))
             ClearCinemaEndEffects(questId);

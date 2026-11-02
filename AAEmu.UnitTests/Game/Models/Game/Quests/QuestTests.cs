@@ -131,6 +131,31 @@ public class QuestTests
         await Assert.That((loaded.Time - acceptTime).Duration()).IsLessThan(TimeSpan.FromSeconds(1));
     }
 
+    [Test]
+    [Arguments(false, 1)]
+    [Arguments(true, 0)]
+    public async Task Drop_RunsActAbandonRulesOnlyWhenNotCompleted(bool completed, int expectedDropCalls)
+    {
+        // Turn-in removes the quest through Drop too. destroy_when_drop must not fire then, or
+        // "Hota's Strong Wheel" (8759) deletes the wheel that "A Guild Reward" (8766) asks for next.
+        var quest = SetupQuest(out _, out var mockQuestTemplate, out _, out _, out _, out _, out _);
+        var component = new QuestComponentTemplate(new QuestTemplate()) { Id = 37933, KindId = QuestComponentKind.Progress };
+        var act = new DropRecordingAct(component);
+        component.ActTemplates.Add(act);
+        mockQuestTemplate.Components.Returns(new Dictionary<uint, QuestComponentTemplate> { [component.Id] = component });
+
+        quest.Drop(false, completed);
+
+        await Assert.That(act.DropCalls).IsEqualTo(expectedDropCalls);
+    }
+
+    private sealed class DropRecordingAct(QuestComponentTemplate parentComponent) : QuestActTemplate(parentComponent)
+    {
+        public int DropCalls { get; private set; }
+
+        public override void QuestDropped(Quest quest) => DropCalls++;
+    }
+
     #region Property Tests
 
     [Test]
