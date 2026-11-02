@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 
 using AAEmu.Commons.Utils;
 using AAEmu.Commons.Utils.Creatures;
@@ -74,6 +74,24 @@ public class DoodadManager(INonUnitObjectIdManager objectIdManager, IDoodadIdMan
     public DoodadTemplate GetTemplate(uint id)
     {
         return Exist(id) ? _templates[id] : null;
+    }
+
+    /// <summary>
+    /// True when any loaded almighty with the same model URI has <c>mgmt_spawn</c> — used to
+    /// refuse json-only densification of management pools (sunken chests).
+    /// </summary>
+    public bool HasMgmtSpawnTemplateWithModel(string model)
+    {
+        if (string.IsNullOrEmpty(model) || _templates == null)
+            return false;
+        foreach (var template in _templates.Values)
+        {
+            if (template.MgmtSpawn &&
+                string.Equals(template.Model, model, StringComparison.Ordinal))
+                return true;
+        }
+
+        return false;
     }
 
     public void Load()

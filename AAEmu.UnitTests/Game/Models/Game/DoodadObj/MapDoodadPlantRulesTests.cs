@@ -1,3 +1,5 @@
+﻿using System.IO;
+
 using AAEmu.Game.Models.Game.DoodadObj;
 using AAEmu.Game.Models.Game.DoodadObj.Static;
 using AAEmu.Game.Models.Game.Weather;
@@ -116,16 +118,36 @@ public class MapDoodadPlantRulesTests
     }
 
     [Test]
-    public async Task Source_LevelPack_OnlyOverlayJson()
+    public async Task Source_LevelPack_LoadsOnlyExactOverlayFile()
     {
         await Assert.That(MapDoodadPlantRules.ShouldPlantFromLevelPack(MapDoodadSourceKind.LevelPack))
             .IsTrue();
         await Assert.That(MapDoodadPlantRules.ShouldLoadJsonSpawnFile(
             MapDoodadSourceKind.LevelPack, "doodad_spawns.json")).IsFalse();
         await Assert.That(MapDoodadPlantRules.ShouldLoadJsonSpawnFile(
-            MapDoodadSourceKind.LevelPack, "doodad_spawns_overlay.json")).IsTrue();
+            MapDoodadSourceKind.LevelPack, MapDoodadPlantRules.OverlaySpawnFileName)).IsTrue();
         await Assert.That(MapDoodadPlantRules.ShouldLoadJsonSpawnFile(
-            MapDoodadSourceKind.LevelPack, "doodad_spawns_overlay_instance.json")).IsTrue();
+            MapDoodadSourceKind.LevelPack, "doodad_spawns_overlay_instance.json")).IsFalse();
+    }
+
+    [Test]
+    public async Task HasOverlaySpawnFile_TrueOnlyWhenOverlayPresent()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "aaemu-map-doodad-overlay-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try
+        {
+            await Assert.That(MapDoodadPlantRules.HasOverlaySpawnFile(dir)).IsFalse();
+            await Assert.That(MapDoodadPlantRules.HasOverlaySpawnFile(null)).IsFalse();
+            File.WriteAllText(
+                Path.Combine(dir, MapDoodadPlantRules.OverlaySpawnFileName),
+                "[]");
+            await Assert.That(MapDoodadPlantRules.HasOverlaySpawnFile(dir)).IsTrue();
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
     }
 
     [Test]
@@ -239,7 +261,7 @@ public class MapDoodadPlantRulesTests
     }
 
     [Test]
-    public async Task Orphan_DigTreasureAndSale_Plant()
+    public async Task Orphan_DigTreasureAndFishSale_Plant()
     {
         await Assert.That(MapDoodadOrphanRules.Decide(
             templateExists: true,
@@ -250,14 +272,16 @@ public class MapDoodadPlantRulesTests
             hasResidentTownhall: false,
             hasQuestFunc: false)).IsEqualTo(MapDoodadPlantDecision.Plant);
 
+        // Fish stands — BuyFish on FishSale group.
         await Assert.That(MapDoodadOrphanRules.Decide(
             templateExists: true,
             templateInLevelPack: false,
             standOccupied: false,
-            groupId: (uint)DoodadGroupId.Sale,
+            groupId: (uint)DoodadGroupId.FishSale,
             hasEvidenceLoot: false,
             hasResidentTownhall: false,
-            hasQuestFunc: false)).IsEqualTo(MapDoodadPlantDecision.Plant);
+            hasQuestFunc: false,
+            hasBuyFish: true)).IsEqualTo(MapDoodadPlantDecision.Plant);
 
         await Assert.That(MapDoodadOrphanRules.Decide(
             templateExists: true,
@@ -267,6 +291,42 @@ public class MapDoodadPlantRulesTests
             hasEvidenceLoot: false,
             hasResidentTownhall: false,
             hasQuestFunc: false)).IsEqualTo(MapDoodadPlantDecision.Plant);
+    }
+
+    [Test]
+    public async Task Orphan_SaleCatalog_PurchaseAndService_Plant_EmptyAndSeatsSkipped()
+    {
+        // Mirage housing-shop Purchase blueprint / fence.
+        await Assert.That(MapDoodadOrphanRules.Decide(
+            templateExists: true,
+            templateInLevelPack: false,
+            standOccupied: false,
+            groupId: (uint)DoodadGroupId.Sale,
+            hasEvidenceLoot: false,
+            hasResidentTownhall: false,
+            hasQuestFunc: false,
+            hasPurchase: true)).IsEqualTo(MapDoodadPlantDecision.Plant);
+
+        // Unmanned warehouse — BankUi.
+        await Assert.That(MapDoodadOrphanRules.Decide(
+            templateExists: true,
+            templateInLevelPack: false,
+            standOccupied: false,
+            groupId: (uint)DoodadGroupId.Sale,
+            hasEvidenceLoot: false,
+            hasResidentTownhall: false,
+            hasQuestFunc: false,
+            hasServiceUi: true)).IsEqualTo(MapDoodadPlantDecision.Plant);
+
+        // Empty carpets / partitions and Attachment chairs — showroom cosmetics.
+        await Assert.That(MapDoodadOrphanRules.Decide(
+            templateExists: true,
+            templateInLevelPack: false,
+            standOccupied: false,
+            groupId: (uint)DoodadGroupId.Sale,
+            hasEvidenceLoot: false,
+            hasResidentTownhall: false,
+            hasQuestFunc: false)).IsEqualTo(MapDoodadPlantDecision.SkipRandomPlacement);
     }
 
     [Test]
@@ -352,6 +412,33 @@ public class MapDoodadPlantRulesTests
         await Assert.That(MaritimeWeatherRules.IsVolumeModel(null)).IsFalse();
         await Assert.That(MapDoodadPlantRules.IsMaritimeWeatherVolumeModel(
             "prefab://prefabs/interaction.xml/env.cloud")).IsTrue();
+    }
+
+    [Test]
+    public async Task MaritimeWeatherRules_CatalogPath_IsNotDoodadSpawns()
+    {
+        await Assert.That(MaritimeWeatherRules.CatalogFileName)
+            .IsEqualTo("maritime_weather_volumes.json");
+        await Assert.That(MaritimeWeatherRules.CatalogFileName.Contains("doodad_spawns"))
+            .IsFalse();
+        var path = MaritimeWeatherRules.CatalogPath(Path.Combine("Data", "Worlds", "main_world"));
+        await Assert.That(Path.GetFileName(path)).IsEqualTo(MaritimeWeatherRules.CatalogFileName);
+        await Assert.That(MaritimeWeatherRules.HasCatalog(null)).IsFalse();
+        await Assert.That(MaritimeWeatherRules.HasCatalog("")).IsFalse();
+        var dir = Path.Combine(Path.GetTempPath(), "aaemu-maritime-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Directory.CreateDirectory(dir);
+            await Assert.That(MaritimeWeatherRules.HasCatalog(dir)).IsFalse();
+            await File.WriteAllTextAsync(
+                Path.Combine(dir, MaritimeWeatherRules.CatalogFileName), "[]");
+            await Assert.That(MaritimeWeatherRules.HasCatalog(dir)).IsTrue();
+        }
+        finally
+        {
+            if (Directory.Exists(dir))
+                Directory.Delete(dir, recursive: true);
+        }
     }
 
     [Test]
@@ -488,7 +575,7 @@ public class MapDoodadPlantRulesTests
     [Test]
     public async Task Orphan_NationTomeAndTerritoryStatue_StillUnhandled()
     {
-        // Player-nation Binding tome / dominion statues stay system-owned.
+        // Player-nation Binding tome / dominion statues stay system-owned even with Use/Buff.
         await Assert.That(MapDoodadOrphanRules.Decide(
             templateExists: true,
             templateInLevelPack: false,
@@ -496,7 +583,8 @@ public class MapDoodadPlantRulesTests
             groupId: 53,
             hasEvidenceLoot: false,
             hasResidentTownhall: false,
-            hasQuestFunc: false)).IsEqualTo(MapDoodadPlantDecision.SkipJsonOrphanUnhandled);
+            hasQuestFunc: false,
+            hasWorldInteract: true)).IsEqualTo(MapDoodadPlantDecision.SkipJsonOrphanUnhandled);
 
         await Assert.That(MapDoodadOrphanRules.Decide(
             templateExists: true,
@@ -505,6 +593,156 @@ public class MapDoodadPlantRulesTests
             groupId: 80,
             hasEvidenceLoot: false,
             hasResidentTownhall: false,
+            hasQuestFunc: false,
+            hasWorldInteract: true)).IsEqualTo(MapDoodadPlantDecision.SkipJsonOrphanUnhandled);
+    }
+
+    [Test]
+    public async Task Orphan_FishAndRelicFurniture_SkippedAsHousing()
+    {
+        await Assert.That(MapDoodadOrphanRules.Decide(
+            templateExists: true,
+            templateInLevelPack: false,
+            standOccupied: false,
+            groupId: (uint)DoodadGroupId.FishFurniture,
+            hasEvidenceLoot: false,
+            hasResidentTownhall: false,
+            hasQuestFunc: false)).IsEqualTo(MapDoodadPlantDecision.SkipHousingOrphan);
+
+        await Assert.That(MapDoodadOrphanRules.Decide(
+            templateExists: true,
+            templateInLevelPack: false,
+            standOccupied: false,
+            groupId: (uint)DoodadGroupId.RelicFurniture,
+            hasEvidenceLoot: false,
+            hasResidentTownhall: false,
+            hasQuestFunc: false)).IsEqualTo(MapDoodadPlantDecision.SkipHousingOrphan);
+    }
+
+    [Test]
+    public async Task Orphan_DevTestWithoutQuest_Skipped_EmptyDoorUnhandled()
+    {
+        // QA effect / returnpoint / TEST water — no DoodadFuncQuest.
+        await Assert.That(MapDoodadOrphanRules.Decide(
+            templateExists: true,
+            templateInLevelPack: false,
+            standOccupied: false,
+            groupId: (uint)DoodadGroupId.TestDoodad,
+            hasEvidenceLoot: false,
+            hasResidentTownhall: false,
+            hasQuestFunc: false,
+            hasWorldInteract: true)).IsEqualTo(MapDoodadPlantDecision.SkipJsonOrphanUnhandled);
+
+        await Assert.That(MapDoodadOrphanRules.Decide(
+            templateExists: true,
+            templateInLevelPack: false,
+            standOccupied: false,
+            groupId: (uint)DoodadGroupId.TrashDoodad,
+            hasEvidenceLoot: false,
+            hasResidentTownhall: false,
             hasQuestFunc: false)).IsEqualTo(MapDoodadPlantDecision.SkipJsonOrphanUnhandled);
+
+        // Empty battlefield iron gate — no funcs, residual SkipUnhandled.
+        await Assert.That(MapDoodadOrphanRules.Decide(
+            templateExists: true,
+            templateInLevelPack: false,
+            standOccupied: false,
+            groupId: (uint)DoodadGroupId.Door,
+            hasEvidenceLoot: false,
+            hasResidentTownhall: false,
+            hasQuestFunc: false)).IsEqualTo(MapDoodadPlantDecision.SkipJsonOrphanUnhandled);
+    }
+
+    [Test]
+    public async Task Orphan_BindingTomeAndDominionStatue_Skipped()
+    {
+        await Assert.That(MapDoodadOrphanRules.Decide(
+            templateExists: true,
+            templateInLevelPack: false,
+            standOccupied: false,
+            groupId: (uint)DoodadGroupId.BindingTome,
+            hasEvidenceLoot: false,
+            hasResidentTownhall: false,
+            hasQuestFunc: false,
+            hasWorldInteract: true)).IsEqualTo(MapDoodadPlantDecision.SkipJsonOrphanUnhandled);
+
+        await Assert.That(MapDoodadOrphanRules.Decide(
+            templateExists: true,
+            templateInLevelPack: false,
+            standOccupied: false,
+            groupId: (uint)DoodadGroupId.DominionStatue,
+            hasEvidenceLoot: false,
+            hasResidentTownhall: false,
+            hasQuestFunc: false,
+            hasWorldInteract: true)).IsEqualTo(MapDoodadPlantDecision.SkipJsonOrphanUnhandled);
+    }
+
+    [Test]
+    public async Task Orphan_ItemSpawnedFeastAndCampfire_Skipped()
+    {
+        // Feast tables / traveler campfire live in item_spawn_doodads — Create on item use.
+        await Assert.That(MapDoodadOrphanRules.Decide(
+            templateExists: true,
+            templateInLevelPack: false,
+            standOccupied: false,
+            groupId: (uint)DoodadGroupId.CollideCheck,
+            hasEvidenceLoot: false,
+            hasResidentTownhall: false,
+            hasQuestFunc: false,
+            hasWorldInteract: true,
+            isItemSpawnedTemplate: true)).IsEqualTo(MapDoodadPlantDecision.SkipJsonOrphanUnhandled);
+    }
+
+    [Test]
+    public async Task Orphan_NonMgmtSunkenChestDensification_Skipped_AltarStillPlants()
+    {
+        // Same model as a mgmt_spawn twin → denser json pool stays off (activation is the twin).
+        await Assert.That(MapDoodadOrphanRules.Decide(
+            templateExists: true,
+            templateInLevelPack: false,
+            standOccupied: false,
+            groupId: (uint)DoodadGroupId.Interaction,
+            hasEvidenceLoot: false,
+            hasResidentTownhall: false,
+            hasQuestFunc: false,
+            hasSalvageGimmickFakeUse: true,
+            mgmtSpawn: false,
+            sameModelHasMgmtSpawn: true)).IsEqualTo(MapDoodadPlantDecision.SkipMgmtSalvageTwin);
+
+        // Ancestor's Altar — unique model, no mgmt twin.
+        await Assert.That(MapDoodadOrphanRules.Decide(
+            templateExists: true,
+            templateInLevelPack: false,
+            standOccupied: false,
+            groupId: (uint)DoodadGroupId.Interaction,
+            hasEvidenceLoot: false,
+            hasResidentTownhall: false,
+            hasQuestFunc: false,
+            hasSalvageGimmickFakeUse: true,
+            mgmtSpawn: false,
+            sameModelHasMgmtSpawn: false)).IsEqualTo(MapDoodadPlantDecision.Plant);
+    }
+
+    [Test]
+    public async Task ShippedGreaterHowlingAbyssOverlay_CoversDumpOnlyStands()
+    {
+        var path = Path.Combine(
+            AppContext.BaseDirectory,
+            "Data",
+            "Worlds",
+            "instance_howling_abyss_2",
+            MapDoodadPlantRules.OverlaySpawnFileName);
+        await Assert.That(File.Exists(path)).IsTrue();
+        await Assert.That(MapDoodadPlantRules.ShouldLoadJsonSpawnFile(
+            MapDoodadSourceKind.LevelPack, Path.GetFileName(path))).IsTrue();
+
+        using var doc = System.Text.Json.JsonDocument.Parse(await File.ReadAllTextAsync(path));
+        var ids = doc.RootElement.EnumerateArray()
+            .Select(e => e.GetProperty("UnitId").GetUInt32())
+            .Distinct()
+            .OrderBy(id => id)
+            .ToArray();
+        await Assert.That(string.Join(",", ids)).IsEqualTo("5711,9908,9909,9910,9929,9930");
+        await Assert.That(doc.RootElement.GetArrayLength()).IsEqualTo(30);
     }
 }

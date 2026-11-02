@@ -9,6 +9,12 @@ namespace AAEmu.Game.Models.Game.Weather;
 public static class MaritimeWeatherRules
 {
     /// <summary>
+    /// Per-world placement catalog under <c>Data/Worlds/&lt;name&gt;/</c>. Not a
+    /// <c>doodad_spawns*</c> file — SpawnManager must not load it; WeatherManager plants it.
+    /// </summary>
+    public const string CatalogFileName = "maritime_weather_volumes.json";
+
+    /// <summary>
     /// Prefab models that carry the active maritime weather FX. After their window they
     /// RatioRespawn into the hub, which RatioRespawns back into one of these.
     /// </summary>
@@ -20,5 +26,16 @@ public static class MaritimeWeatherRules
                || model.Contains("env.rainstorm", StringComparison.OrdinalIgnoreCase)
                || model.Contains("env.vortex", StringComparison.OrdinalIgnoreCase)
                || model.Contains("env.raincloud", StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static string CatalogPath(string worldDataDir) =>
+        string.IsNullOrWhiteSpace(worldDataDir)
+            ? null
+            : Path.Combine(worldDataDir, CatalogFileName);
+
+    public static bool HasCatalog(string worldDataDir)
+    {
+        var path = CatalogPath(worldDataDir);
+        return path != null && File.Exists(path);
     }
 }

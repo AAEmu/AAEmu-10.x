@@ -223,11 +223,12 @@ public class WorldConfig
 
     /// <summary>
     /// Open-world map doodad plant source. <c>LevelPack</c> (default) plants from
-    /// <c>cells/*/doodad.g</c>, arms schedule spawners for off-window rows, salvages
-    /// approved json-only orphans, and loads json only when the filename contains
-    /// <c>overlay</c>. <c>LevelPackFill</c> also loads every <c>doodad_spawns*.json</c>
-    /// (legacy dual-source). <c>Json</c> is the pre-level-pack path.
-    /// Values match <c>MapDoodadSourceKind</c>.
+    /// <c>cells/*/doodad.g</c>, arms schedule spawners for off-window rows, and loads
+    /// no <c>doodad_spawns*.json</c> (maritime volumes use a separate WeatherManager
+    /// catalog). Orphan salvage from a legacy giant json is opt-in via
+    /// <c>AAEMU_ENABLE_MAP_DOODAD_ORPHAN_SALVAGE=1</c>. <c>LevelPackFill</c> also loads
+    /// every <c>doodad_spawns*.json</c> (legacy dual-source). <c>Json</c> is the
+    /// pre-level-pack path. Values match <c>MapDoodadSourceKind</c>.
     /// </summary>
     public string MapDoodadSource { get; set; } = "LevelPack";
 

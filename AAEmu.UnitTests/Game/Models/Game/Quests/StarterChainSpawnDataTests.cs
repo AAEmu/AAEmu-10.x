@@ -1,95 +1,87 @@
-using AAEmu.Game.Models.Game.Quests;
-
-using Newtonsoft.Json;
+﻿using AAEmu.Game.Models.Game.Quests;
+using AAEmu.World.Core.Relay;
 
 namespace AAEmu.UnitTests.Game.Models.Game.Quests;
 
 /// <summary>
-/// Guards the shipped <c>Data/Worlds/main_world/doodad_spawns.json</c> (copied next to the test
-/// binary by the Game project) against losing a starter chain doodad. Chain NPCs are not in the
-/// repo: the zone host reads the client's <c>npc_spawners.g</c> itself, so only the doodads can be
-/// pinned here. The two <c>npctype://</c> report bodies were absent until this data change; their
-/// coordinates come from the cell <c>doodad.g</c> rows named in the entries' titles.
+/// Starter-chain doodad placement lives in cell <c>doodad.g</c> (LevelPack), not in a repo
+/// <c>doodad_spawns.json</c>. These tests pin the aggregate actor set and the two
+/// <c>npctype://</c> report-body conversions from their authored cell-local rows.
+/// Live presence is audited at World boot by <c>StarterChainActorAudit</c>.
 /// </summary>
 public class StarterChainSpawnDataTests
 {
-    private sealed class SpawnRow
-    {
-        public uint UnitId { get; set; }
-        public PositionRow Position { get; set; }
-    }
-
-    private sealed class PositionRow
-    {
-        public float X { get; set; }
-        public float Y { get; set; }
-        public float Z { get; set; }
-        public float Yaw { get; set; }
-    }
-
-    private static Dictionary<uint, List<PositionRow>> ReadSpawns(IEnumerable<uint> wanted)
-    {
-        var path = Path.Combine(AppContext.BaseDirectory, "Data", "Worlds", "main_world", "doodad_spawns.json");
-        var found = wanted.Distinct().ToDictionary(id => id, _ => new List<PositionRow>());
-
-        using var text = File.OpenText(path);
-        using var reader = new JsonTextReader(text);
-        var serializer = new JsonSerializer();
-        if (!reader.Read() || reader.TokenType != JsonToken.StartArray)
-            throw new InvalidDataException($"{path} does not start with an array");
-
-        while (reader.Read() && reader.TokenType == JsonToken.StartObject)
-        {
-            var row = serializer.Deserialize<SpawnRow>(reader);
-            if (row?.Position != null && found.TryGetValue(row.UnitId, out var list))
-                list.Add(row.Position);
-        }
-
-        return found;
-    }
-
-    private static PositionRow Single(Dictionary<uint, List<PositionRow>> spawns, uint templateId)
-    {
-        var rows = spawns[templateId];
-        if (rows.Count != 1)
-            throw new InvalidDataException($"doodad {templateId} has {rows.Count} spawns, expected one");
-        return rows[0];
-    }
-
     [Test]
-    public async Task ShippedSpawns_ContainEveryStarterChainDoodad()
+    public async Task StarterChains_Collect_YieldsEveryStarterChainDoodad()
     {
         var required = StarterChainActorRules.Collect(StarterChainActorRulesTests.AllChains);
-        var spawns = ReadSpawns(required.Doodads);
 
-        await Assert.That(required.Doodads.Count).IsEqualTo(7);
-        foreach (var templateId in required.Doodads)
-            await Assert.That(spawns[templateId].Count > 0).IsTrue();
+        await Assert.That(string.Join(",", required.Doodads.OrderBy(id => id)))
+            .IsEqualTo("1427,1473,2881,11624,11641,14178,14206");
     }
 
     [Test]
-    public async Task ShippedSpawns_PlaceElfArenaBodyOnItsLevelPackRow()
+    public async Task LevelPack_PlaceElfArenaBodyOnItsCellRow()
     {
         // level_design/cells/010_014/doodad.g: type 14178, pos (27.3228, 931.893, 239.544),
-        // ori (0, 0, 0.93358, -0.358368); cell 10,14 puts it at 10240 + x, 14336 + y.
-        var row = Single(ReadSpawns([14178u]), 14178);
-
-        await Assert.That(row.X).IsEqualTo(10267.3228f).Within(0.01f);
-        await Assert.That(row.Y).IsEqualTo(15267.893f).Within(0.01f);
-        await Assert.That(row.Z).IsEqualTo(239.544f).Within(0.01f);
-        await Assert.That(row.Yaw).IsEqualTo(-138f).Within(0.01f);
+        // ori (0, 0, 0.93358, -0.358368); cell 10,14 → world 10240 + x, 14336 + y.
+        var path = Path.Combine(Path.GetTempPath(), $"starter_elf_{Guid.NewGuid():N}.g");
+        await File.WriteAllTextAsync(path, """
+            doodad
+                category 17
+                type 14178
+                family 0
+                vegetation false
+                pos ( x 27.3228, y 931.893, z 239.544 )
+                ori ( x 0, y 0, z 0.93358, w -0.358368 )
+                scale 1
+            """);
+        try
+        {
+            var list = ZoneDoodadPlacementCatalog.ParseFile(path, cellX: 10, cellY: 14);
+            await Assert.That(list.Count).IsEqualTo(1);
+            await Assert.That(list[0].TemplateId).IsEqualTo(14178u);
+            await Assert.That(list[0].X).IsEqualTo(10267.3228f).Within(0.01f);
+            await Assert.That(list[0].Y).IsEqualTo(15267.893f).Within(0.01f);
+            await Assert.That(list[0].Z).IsEqualTo(239.544f).Within(0.01f);
+            // Catalog yaw is Atan2(z,w)*360/π → 222° here (same facing as json's -138°).
+            await Assert.That(list[0].YawDegrees).IsEqualTo(222f).Within(0.01f);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 
     [Test]
-    public async Task ShippedSpawns_PlaceDwarfDaughterBodyOnItsLevelPackRow()
+    public async Task LevelPack_PlaceDwarfDaughterBodyOnItsCellRow()
     {
         // level_design/cells/008_013/doodad.g: type 14206, pos (265.12, 155.49, 696.871),
-        // ori (0, 0, 0.996918, 0.0784556); cell 8,13 puts it at 8192 + x, 13312 + y.
-        var row = Single(ReadSpawns([14206u]), 14206);
-
-        await Assert.That(row.X).IsEqualTo(8457.12f).Within(0.01f);
-        await Assert.That(row.Y).IsEqualTo(13467.49f).Within(0.01f);
-        await Assert.That(row.Z).IsEqualTo(696.871f).Within(0.01f);
-        await Assert.That(row.Yaw).IsEqualTo(171f).Within(0.01f);
+        // ori (0, 0, 0.996918, 0.0784556); cell 8,13 → world 8192 + x, 13312 + y.
+        var path = Path.Combine(Path.GetTempPath(), $"starter_dwarf_{Guid.NewGuid():N}.g");
+        await File.WriteAllTextAsync(path, """
+            doodad
+                category 17
+                type 14206
+                family 0
+                vegetation false
+                pos ( x 265.12, y 155.49, z 696.871 )
+                ori ( x 0, y 0, z 0.996918, w 0.0784556 )
+                scale 1
+            """);
+        try
+        {
+            var list = ZoneDoodadPlacementCatalog.ParseFile(path, cellX: 8, cellY: 13);
+            await Assert.That(list.Count).IsEqualTo(1);
+            await Assert.That(list[0].TemplateId).IsEqualTo(14206u);
+            await Assert.That(list[0].X).IsEqualTo(8457.12f).Within(0.01f);
+            await Assert.That(list[0].Y).IsEqualTo(13467.49f).Within(0.01f);
+            await Assert.That(list[0].Z).IsEqualTo(696.871f).Within(0.01f);
+            await Assert.That(list[0].YawDegrees).IsEqualTo(171f).Within(0.01f);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 }

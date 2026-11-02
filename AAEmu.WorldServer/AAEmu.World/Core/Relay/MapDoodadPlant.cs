@@ -1,4 +1,4 @@
-using AAEmu.Commons.IO;
+﻿using AAEmu.Commons.IO;
 using AAEmu.Commons.Utils;
 using AAEmu.Game;
 using AAEmu.Game.Core.Managers;
@@ -23,9 +23,12 @@ namespace AAEmu.World.Core.Relay;
 /// World-authors open-world map doodads from <c>cells/*/doodad.g</c> when
 /// <c>World.MapDoodadSource</c> is a level-pack mode. Coordinates come from
 /// <see cref="ZoneDoodadPlacementCatalog"/> only; classification is
-/// <see cref="MapDoodadPlantRules"/>. LevelPack also salvages approved
-/// json-only orphans (sale / dig treasure / fish schools / …) without loading
-/// <c>doodad_spawns.json</c> as map authority.
+/// <see cref="MapDoodadPlantRules"/>. LevelPack plants cells and loads only
+/// <c>doodad_spawns_overlay.json</c> (small dump-only stands). The giant
+/// <c>doodad_spawns.json</c> is never authority. Opt-in orphan salvage
+/// (<c>AAEMU_ENABLE_MAP_DOODAD_ORPHAN_SALVAGE=1</c>) still needs a local giant dump
+/// beside the process — a clean checkout does not ship one. Maritime volumes plant from
+/// <see cref="MaritimeWeatherRules.CatalogFileName"/> via WeatherManager.
 /// </summary>
 public static class MapDoodadPlant
 {
@@ -35,8 +38,13 @@ public static class MapDoodadPlant
         Environment.GetEnvironmentVariable("AAEMU_DISABLE_MAP_DOODAD_PLANT") == "1" ||
         Environment.GetEnvironmentVariable("AAEMU_DISABLE_LEVEL_PACK_DOODADS") == "1";
 
-    private static bool OrphanSalvageDisabled =>
-        Environment.GetEnvironmentVariable("AAEMU_DISABLE_MAP_DOODAD_ORPHAN_SALVAGE") == "1";
+    /// <summary>
+    /// Opt-in only. Needs a local <c>Data/Worlds/&lt;world&gt;/doodad_spawns.json</c> next to
+    /// the process — stock trees no longer ship that dump. Skipped when an overlay file is
+    /// already present for the world.
+    /// </summary>
+    private static bool OrphanSalvageEnabled =>
+        Environment.GetEnvironmentVariable("AAEMU_ENABLE_MAP_DOODAD_ORPHAN_SALVAGE") == "1";
 
     private static bool MaritimeWeatherVolumesDisabled =>
         Environment.GetEnvironmentVariable("AAEMU_DISABLE_MARITIME_WEATHER_VOLUMES") == "1";
@@ -87,7 +95,7 @@ public static class MapDoodadPlant
 
         var catalog = ZoneDoodadPlacementCatalog.GetAll(world.Template.Name);
         PlantCatalog(world, catalog, copy: false);
-        if (MapDoodadPlantRules.IsLevelPackOnly(Source) && !OrphanSalvageDisabled)
+        if (MapDoodadPlantRules.IsLevelPackOnly(Source) && OrphanSalvageEnabled)
             SalvageJsonOrphans(world, catalog);
     }
 
@@ -231,7 +239,19 @@ public static class MapDoodadPlant
         IReadOnlyList<ZoneDoodadPlacementCatalog.DoodadPlacement> levelPackCatalog)
     {
         var worldName = world.Template.Name;
-        var jsonPath = Path.Combine(FileManager.AppPath, "Data", "Worlds", worldName, "doodad_spawns.json");
+        var worldDataDir = Path.Combine(FileManager.AppPath, "Data", "Worlds", worldName);
+        // Overlay owns Plant stands under LevelPack — SpawnManager already loaded them.
+        // Maritime volumes are WeatherManager + maritime_weather_volumes.json, not this path.
+        if (MapDoodadPlantRules.HasOverlaySpawnFile(worldDataDir))
+        {
+            Logger.Info(
+                "MapDoodadOrphan world={0}: skipped (overlay {1} present — SpawnManager authority)",
+                worldName,
+                MapDoodadPlantRules.OverlaySpawnFileName);
+            return;
+        }
+
+        var jsonPath = Path.Combine(worldDataDir, "doodad_spawns.json");
         if (!File.Exists(jsonPath))
         {
             Logger.Info("MapDoodadOrphan world={0}: no doodad_spawns.json to salvage", worldName);
@@ -283,8 +303,14 @@ public static class MapDoodadPlant
                 out var storeUi,
                 out var transferTelescope,
                 out var flavorContainer,
-                out var worldInteract);
+                out var worldInteract,
+                out var buyFish,
+                out var serviceUi);
             var housingBound = HousingGameData.Instance.IsHousingBoundDoodadTemplate(spawner.UnitId);
+            var itemSpawned = ItemManager.Instance.GetItemIdsFromDoodad(spawner.UnitId).Count > 0;
+            var mgmtSpawn = template?.MgmtSpawn ?? false;
+            var sameModelMgmt = salvageGimmick && !mgmtSpawn &&
+                                DoodadManager.Instance.HasMgmtSpawnTemplateWithModel(template?.Model);
 
             var place = new MapDoodadPlantRules.Placement(
                 spawner.UnitId,
@@ -313,7 +339,12 @@ public static class MapDoodadPlant
                 storeUi,
                 transferTelescope,
                 flavorContainer,
-                worldInteract);
+                worldInteract,
+                itemSpawned,
+                mgmtSpawn,
+                sameModelMgmt,
+                buyFish,
+                serviceUi);
 
             switch (decision)
             {
@@ -349,7 +380,8 @@ public static class MapDoodadPlant
     }
 
     /// <summary>
-    /// Json-only maritime weather FX volumes for one world. WeatherManager owns this path.
+    /// Maritime weather FX volumes for one world. WeatherManager owns this path; placements
+    /// come from <see cref="MaritimeWeatherRules.CatalogFileName"/> (not <c>doodad_spawns*</c>).
     /// </summary>
     private static void PlantMaritimeWeatherVolumes(WorldInstance world)
     {
@@ -357,15 +389,22 @@ public static class MapDoodadPlant
             return;
 
         var worldName = world.Template.Name;
-        var jsonPath = Path.Combine(FileManager.AppPath, "Data", "Worlds", worldName, "doodad_spawns.json");
-        if (!File.Exists(jsonPath))
+        var worldDataDir = Path.Combine(FileManager.AppPath, "Data", "Worlds", worldName);
+        var catalogPath = MaritimeWeatherRules.CatalogPath(worldDataDir);
+        if (string.IsNullOrEmpty(catalogPath) || !File.Exists(catalogPath))
+        {
+            Logger.Info(
+                "MaritimeWeather world={0}: no {1}",
+                worldName,
+                MaritimeWeatherRules.CatalogFileName);
             return;
+        }
 
-        var contents = FileManager.GetFileContents(jsonPath);
+        var contents = FileManager.GetFileContents(catalogPath);
         if (string.IsNullOrWhiteSpace(contents) ||
             !JsonHelper.TryDeserializeObject(contents, out List<DoodadSpawner> spawners, out _))
         {
-            Logger.Warn("MaritimeWeather world={0}: failed to parse {1}", worldName, jsonPath);
+            Logger.Warn("MaritimeWeather world={0}: failed to parse {1}", worldName, catalogPath);
             return;
         }
 
@@ -432,7 +471,9 @@ public static class MapDoodadPlant
         out bool hasStoreUi,
         out bool hasTransferTelescope,
         out bool hasFlavorContainer,
-        out bool hasWorldInteract)
+        out bool hasWorldInteract,
+        out bool hasBuyFish,
+        out bool hasServiceUi)
     {
         hasEvidenceLoot = false;
         hasResidentTownhall = false;
@@ -445,6 +486,8 @@ public static class MapDoodadPlant
         hasTransferTelescope = false;
         hasFlavorContainer = false;
         hasWorldInteract = false;
+        hasBuyFish = false;
+        hasServiceUi = false;
         if (template?.FuncGroups == null)
             return;
 
@@ -469,6 +512,12 @@ public static class MapDoodadPlant
                     hasPurchase = true;
                 else if (func.FuncType == nameof(DoodadFuncStoreUi))
                     hasStoreUi = true;
+                else if (func.FuncType is nameof(DoodadFuncBuyFish)
+                         or nameof(DoodadFuncConvertFish))
+                    hasBuyFish = true;
+                else if (func.FuncType is nameof(DoodadFuncBankUi)
+                         or nameof(DoodadFuncAuctionUi))
+                    hasServiceUi = true;
                 else if (func.FuncType is nameof(DoodadFuncUse)
                          or nameof(DoodadFuncSkillHit)
                          or nameof(DoodadFuncOpenPaper)

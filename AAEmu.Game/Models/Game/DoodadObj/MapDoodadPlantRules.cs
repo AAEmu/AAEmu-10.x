@@ -1,3 +1,5 @@
+﻿using System.IO;
+
 using AAEmu.Game.Models.Game.DoodadObj.Static;
 using AAEmu.Game.Models.Game.Weather;
 
@@ -24,6 +26,11 @@ public enum MapDoodadPlantDecision
     SkipRuntimeEvidence,
     SkipRandomPlacement,
     SkipJsonOrphanUnhandled,
+    /// <summary>
+    /// Json-only FakeUse salvage whose model already has a <c>mgmt_spawn</c> twin (e.g. denser
+    /// sunken-chest pool next to the level-pack management template). Twin owns activation.
+    /// </summary>
+    SkipMgmtSalvageTwin,
 }
 
 /// <summary>
@@ -55,11 +62,13 @@ public static class MapDoodadSourceKind
     public const string LevelPackFill = "LevelPackFill";
 
     /// <summary>
-    /// Authority: plant from .g, arm off-window schedule spawners, salvage approved json-only
-    /// orphans. SpawnManager loads json only when the filename contains <c>overlay</c>.
+    /// Authority: plant from .g, arm off-window schedule spawners. Loads only
+    /// <c>doodad_spawns_overlay.json</c> (small dump-only stands); never the giant
+    /// <c>doodad_spawns.json</c>. Orphan salvage from a local giant dump is opt-in via env.
     /// </summary>
     public const string LevelPack = "LevelPack";
 }
+
 
 /// <summary>
 /// Fail-closed decision table for map doodads from <c>cells/*/doodad.g</c>.
@@ -162,17 +171,35 @@ public static class MapDoodadPlantRules
         string.Equals(mapDoodadSource, MapDoodadSourceKind.LevelPack, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
+    /// Optional LevelPack companion for dump-only stands that never lived in
+    /// <c>cells/*/doodad.g</c> (e.g. Greater Howling Abyss exit / hazard props). Exact
+    /// filename only — never the giant <c>doodad_spawns.json</c>. Maritime volumes live in
+    /// <c>maritime_weather_volumes.json</c> (WeatherManager).
+    /// </summary>
+    public const string OverlaySpawnFileName = "doodad_spawns_overlay.json";
+
+    /// <summary>
     /// Whether a <c>doodad_spawns*.json</c> file under the world folder should be loaded.
-    /// LevelPack keeps only overlay files; Json and LevelPackFill load every match.
+    /// LevelPack loads only <see cref="OverlaySpawnFileName"/>. Json and LevelPackFill load
+    /// every match (including a stale giant dump left in bin).
     /// </summary>
     public static bool ShouldLoadJsonSpawnFile(string mapDoodadSource, string fileName)
     {
         if (string.IsNullOrWhiteSpace(fileName))
             return false;
-        if (!IsLevelPackOnly(mapDoodadSource))
-            return true;
-        return fileName.Contains("overlay", StringComparison.OrdinalIgnoreCase);
+        if (IsLevelPackOnly(mapDoodadSource))
+            return string.Equals(fileName, OverlaySpawnFileName, StringComparison.OrdinalIgnoreCase);
+        return true;
     }
+
+    /// <summary>
+    /// True when <paramref name="worldDataDir"/> still has
+    /// <see cref="OverlaySpawnFileName"/>. Used only to skip giant-file orphan salvage when
+    /// an old overlay is present; LevelPack does not plant from it.
+    /// </summary>
+    public static bool HasOverlaySpawnFile(string worldDataDir) =>
+        !string.IsNullOrWhiteSpace(worldDataDir) &&
+        File.Exists(Path.Combine(worldDataDir, OverlaySpawnFileName));
 
     public static bool IsSamePlacement(float ax, float ay, float az, float bx, float by, float bz)
     {
