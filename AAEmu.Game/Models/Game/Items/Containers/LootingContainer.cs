@@ -188,6 +188,11 @@ public class LootingContainer(IBaseUnit owner)
             // Base ID used for identifying the loot
             // var baseId = ((ulong)LootOwner.ObjId << 32) + ((ulong)LootOwnerType << 16) + 1;
 
+            // Quest drops roll when anyone with a claim on the loot has the quest, not only the killer.
+            Func<uint, bool> hasLootQuest = EligiblePlayers.Count > 0
+                ? questId => EligiblePlayers.Any(pl => pl.Quests.HasQuest(questId))
+                : null;
+
             // Generate the actual loot
             List<(uint itemId, int count, byte grade, uint lootGroupOrigin)> lootPackResults = [];
             foreach (var lootPackDropping in lootPackDroppingNpcs)
@@ -195,13 +200,17 @@ public class LootingContainer(IBaseUnit owner)
                 var lootPack = LootGameData.Instance.GetPack(lootPackDropping.LootPackId);
                 if (lootPack == null)
                     continue;
-                lootPackResults.AddRange(lootPack.GeneratePackNewV2(lootDropRate, lootGoldRate, killer as Character, ActabilityType.None));
+                lootPackResults.AddRange(lootPack.GeneratePackNewV2(lootDropRate, lootGoldRate, killer as Character, ActabilityType.None, hasLootQuest: hasLootQuest));
                 // var items = lootPack.GenerateNpcPackItems(ref baseId, killer, lootDropRate, lootGoldRate);
                 // RegisterItems(items);
             }
 
             // Convert direct NPC coin drops into the content-configured purse item.
             ApplyNpcCoinPurseMoney(lootPackResults, lootPackDroppingNpcs);
+
+            // One copy of each quest drop per eligible player on that quest, reserved for them.
+            if (EligiblePlayers.Count > 0)
+                RegisterQuestDropCopies(lootPackResults);
 
             // New Loot, i guess both loops can be optimzed....
             var groups = lootPackResults.GroupBy(x => x.lootGroupOrigin).Select(x => x.Key).ToList();
@@ -305,10 +314,33 @@ public class LootingContainer(IBaseUnit owner)
     }
 
     /// <summary>
+    /// Moves quest drops out of <paramref name="results"/> and registers one copy per eligible player
+    /// who has the quest (<see cref="QuestLootSharing"/>).
+    /// </summary>
+    private void RegisterQuestDropCopies(List<(uint itemId, int count, byte grade, uint lootGroupOrigin)> results)
+    {
+        for (var i = 0; i < results.Count; i++)
+        {
+            var (itemId, count, grade, _) = results[i];
+            var lootQuestId = ItemManager.Instance.GetTemplate(itemId)?.LootQuestId ?? 0;
+            if (lootQuestId == 0)
+                continue;
+
+            results.RemoveAt(i--);
+            foreach (var holder in QuestLootSharing.CopiesFor(lootQuestId, EligiblePlayers,
+                         (pl, questId) => pl.Quests.HasQuest(questId)))
+            {
+                RegisterItems([ItemManager.Instance.Create(itemId, count, grade, false)], holder.Id);
+            }
+        }
+    }
+
+    /// <summary>
     /// Add generated loot to the loot container
     /// </summary>
     /// <param name="items">Loot</param>
-    private void RegisterItems(List<Item> items)
+    /// <param name="reservedFor">Character Id the entries belong to, 0 for normal loot</param>
+    private void RegisterItems(List<Item> items, uint reservedFor = 0)
     {
         foreach (var item in items)
         {
@@ -317,7 +349,8 @@ public class LootingContainer(IBaseUnit owner)
                 Owner = this,
                 Item = item,
                 ItemIndex = (ushort)(Items.Count + 1),
-                HighestRoller = 0
+                HighestRoller = 0,
+                ReservedFor = reservedFor
             };
             // Update ItemId to what is expected to be used
             // Note that the actual Item.Id needs to be updated upon actual looting
@@ -390,6 +423,8 @@ public class LootingContainer(IBaseUnit owner)
             var lootedItems = new List<ushort>();
             foreach (var (itemIndex, itemEntry) in Items)
             {
+                if (!QuestLootSharing.IsVisibleTo(itemEntry.ReservedFor, player.Id))
+                    continue;
                 if (TryTakeLoot(player, itemIndex, itemEntry, true))
                     lootedItems.Add(itemIndex);
             }
@@ -406,15 +441,23 @@ public class LootingContainer(IBaseUnit owner)
         // else
         if (Items.Count > 0)
         {
-            var remainingItems = new List<Item>();
-            foreach (var (_, itemEntry) in Items)
+            // Each viewer sees the shared loot plus only their own copies of quest drops.
+            foreach (var viewer in OpenedBy)
             {
-                remainingItems.Add(itemEntry.Item);
+                var remainingItems = VisibleItemsLocked(viewer);
+                if (remainingItems.Count > 0)
+                    viewer.SendPacket(new SCLootBagDataPacket(remainingItems, lootAll));
+                else
+                    viewer.SendPacket(new SCLootableStatePacket(LootOwnerType, LootOwner.ObjId, false));
             }
-
-            SendPacketToPlayers(OpenedBy, new SCLootBagDataPacket(remainingItems, lootAll));
         }
     }
+
+    private List<Item> VisibleItemsLocked(Character viewer) =>
+        Items.Values
+            .Where(entry => QuestLootSharing.IsVisibleTo(entry.ReservedFor, viewer.Id))
+            .Select(entry => entry.Item)
+            .ToList();
 
     /// <summary>
     /// Tries to add a LootingContainerItemEntry's item to the player's Bag, does not actually remove the itemEntry
@@ -454,6 +497,15 @@ public class LootingContainer(IBaseUnit owner)
                 return false;
             }
         }
+
+        // Another player's copy of a quest drop. Their own copy skips the team rules: nobody else can win it.
+        if (!QuestLootSharing.IsVisibleTo(itemEntry.ReservedFor, player.Id))
+        {
+            player.SendPacket(new SCLootItemFailedPacket(ErrorMessageType.NoPermissionToLoot, LootOwnerType, LootOwner.ObjId, itemEntry.Item.Id));
+            return false;
+        }
+        if (itemEntry.ReservedFor != 0)
+            return TryDistributeLootToPlayer(player, itemEntry, didLootAll);
 
         // Check if we already have looting right, if so, try to loot again
         if (itemEntry.HighestRoller == player.Id)
@@ -738,6 +790,9 @@ public class LootingContainer(IBaseUnit owner)
 
         if (Items.Count <= 0)
             UpdateLootState();
+        else if (VisibleItemsLocked(player).Count == 0)
+            // Only other players' quest copies remain: this corpse is done for this player.
+            player.SendPacket(new SCLootableStatePacket(LootOwnerType, LootOwner.ObjId, false));
         return true;
     }
 

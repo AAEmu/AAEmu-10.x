@@ -28,4 +28,9 @@ public class LootingContainerItemEntry
     /// The generated Item
     /// </summary>
     public Item Item { get; init; }
+    /// <summary>
+    /// Character Id of the one player this copy of a quest drop belongs to, 0 for normal loot.
+    /// Every eligible player on the quest gets their own copy (<see cref="QuestLootSharing"/>).
+    /// </summary>
+    public uint ReservedFor { get; init; }
 }

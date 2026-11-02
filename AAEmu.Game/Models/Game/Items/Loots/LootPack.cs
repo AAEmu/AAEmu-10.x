@@ -175,10 +175,14 @@ public class LootPack
     /// <param name="player">The player the loot is generated for, currently only used to handle exclusions</param>
     /// <param name="actabilityType">AbilityType used to initiate the loot generation (used to calculate bonus)</param>
     /// <param name="inheritedGrade">Grade to inherit (Optional)</param>
+    /// <param name="hasLootQuest">Replaces <paramref name="player"/>'s own quest check for quest drops, so an
+    /// NPC kill rolls them when anyone with a claim on the loot has the quest, not only the killer</param>
     /// <returns></returns>
-    public List<(uint itemId, int count, byte grade, uint lootGroupOrigin)> GeneratePackNewV2(float lootDropRate, float lootGoldRate, Character player, ActabilityType actabilityType, byte? inheritedGrade = null)
+    public List<(uint itemId, int count, byte grade, uint lootGroupOrigin)> GeneratePackNewV2(float lootDropRate, float lootGoldRate, Character player, ActabilityType actabilityType, byte? inheritedGrade = null, Func<uint, bool> hasLootQuest = null)
     {
         var items = new List<(uint itemId, int count, byte grade, uint lootGroupOrigin)>();
+        var checksLootQuest = hasLootQuest != null || player != null;
+        hasLootQuest ??= questId => player.Quests.HasQuest(questId);
 
         foreach (var (groupNo, groupLootList) in LootsByGroupNo)
         {
@@ -194,10 +198,10 @@ public class LootPack
                 {
                     // Check for Quest loot drops
                     var itemTemplate = ItemManager.Instance.GetTemplate(loot.ItemId);
-                    if (itemTemplate?.LootQuestId > 0 && player != null)
+                    if (itemTemplate?.LootQuestId > 0 && checksLootQuest)
                     {
                         // Skip item if player does not have quest
-                        if (!player.Quests.HasQuest(itemTemplate.LootQuestId))
+                        if (!hasLootQuest(itemTemplate.LootQuestId))
                             continue;
                     }
 
@@ -227,10 +231,10 @@ public class LootPack
                     {
                         var itemTemplate = ItemManager.Instance.GetTemplate(loot.ItemId);
                         // Check for questS itemS in group
-                        if (itemTemplate?.LootQuestId > 0 && player != null)
+                        if (itemTemplate?.LootQuestId > 0 && checksLootQuest)
                         {
                             // Add item if player has quest
-                            if (player.Quests.HasQuest(itemTemplate.LootQuestId))
+                            if (hasLootQuest(itemTemplate.LootQuestId))
                             {
                                 // TODO Add Loot rate for quest items ???
                                 if (!tmpSelectedQuestItemsByGroup.ContainsKey(groupNo))

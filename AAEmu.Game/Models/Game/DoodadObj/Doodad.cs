@@ -652,6 +652,10 @@ public class Doodad : BaseUnit
         while (true)
         {
             var usePhase = player != null ? GetPhaseFor(player) : FuncGroupId;
+            var overlayViewer = DoodadQuestReactRules.ShouldAdvanceViewerOnly(
+                Template?.ClientDoodad == true, usePhase, FuncGroupId)
+                ? player
+                : null;
             if (player != null)
             {
                 Logger.Warn($"Use: TemplateId {TemplateId}, Using phase {usePhase} with SkillId {skillId}");
@@ -693,7 +697,7 @@ public class Doodad : BaseUnit
                 foreach (var funcWithoutSkill in allFuncsForGroup.Where(f =>
                              DoodadSkillLessUseRules.RunsOnSkillLessUse(f.FuncType)))
                 {
-                    if (DoFunc(caster, startedSkillId, funcWithoutSkill))
+                    if (DoFunc(caster, startedSkillId, funcWithoutSkill, overlayViewer))
                     {
                         ListGroupId.Clear();
                         return;
@@ -713,7 +717,7 @@ public class Doodad : BaseUnit
                 var completesFromClientPacket = funcWithSkill != null &&
                     DoodadManager.Instance.GetFuncTemplate(funcWithSkill.FuncId, funcWithSkill.FuncType)
                         ?.CompletesFromClientPacket == true;
-                if (DoFunc(caster, startedSkillId, funcWithSkill))
+                if (DoFunc(caster, startedSkillId, funcWithSkill, overlayViewer))
                 {
                     // Stay-on-phase funcs (quest offer, next_phase -1) leave ToNextPhase false.
                     // Re-entering the same phase still broadcasts SCDoodadPhaseChanged and
@@ -827,8 +831,10 @@ public class Doodad : BaseUnit
     /// <param name="caster"></param>
     /// <param name="skillId"></param>
     /// <param name="func"></param>
+    /// <param name="overlayViewer">Set when the func ran on that player's own QuestReact overlay of a
+    /// client doodad: its next phase then moves only that player's view.</param>
     /// <returns>If TRUE, then we stop further execution of functions and wait for interaction</returns>
-    public bool DoFunc(BaseUnit caster, uint skillId, DoodadFunc func)
+    public bool DoFunc(BaseUnit caster, uint skillId, DoodadFunc func, Character overlayViewer = null)
     {
         // if there is no function, complete the cycle
         if (func == null)
@@ -849,20 +855,21 @@ public class Doodad : BaseUnit
         LastUseAppliedFunc = true;
         // then perform the function
         func.Use(caster, this, skillId, func.NextPhase);
-        return CompleteFunc(caster, func, skillId);
+        return CompleteFunc(caster, func, skillId, overlayViewer);
     }
 
     /// <summary>
     /// Same apply → complete ordering as <see cref="DoFunc"/>, with an injectable apply step for
     /// unit tests (avoids DoodadManager template lookup).
     /// </summary>
-    internal bool DoFuncWithApply(BaseUnit caster, DoodadFunc func, Action<BaseUnit, Doodad> apply)
+    internal bool DoFuncWithApply(BaseUnit caster, DoodadFunc func, Action<BaseUnit, Doodad> apply,
+        Character overlayViewer = null)
     {
         if (func == null)
             return true;
 
         apply?.Invoke(caster, this);
-        return CompleteFunc(caster, func, skillId: 0);
+        return CompleteFunc(caster, func, skillId: 0, overlayViewer);
     }
 
     /// <summary>
@@ -894,11 +901,22 @@ public class Doodad : BaseUnit
             Use(caster, 0);
     }
 
-    private bool CompleteFunc(BaseUnit caster, DoodadFunc func, uint skillId)
+    private bool CompleteFunc(BaseUnit caster, DoodadFunc func, uint skillId, Character overlayViewer = null)
     {
         if (func.SoundId > 0)
         {
             BroadcastPacket(new SCDoodadSoundPacket(this, func.SoundId), true);
+        }
+
+        if (ToNextPhase && overlayViewer != null && func.NextPhase > 0)
+        {
+            // The client doodad is that player's own copy. Moving the shared phase put every other
+            // player on the rescued step of "The Captured Child" (doodad 14309), where the
+            // antidote is refused ("You cannot use this").
+            SetQuestReactViewerPhase(overlayViewer.ObjId, (uint)func.NextPhase);
+            overlayViewer.SendPacket(new SCDoodadPhaseChangedPacket(this, GetPhaseFor(overlayViewer)));
+            ToNextPhase = false;
+            return true;
         }
 
         if (ToNextPhase)

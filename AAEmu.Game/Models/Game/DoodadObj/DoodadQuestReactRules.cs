@@ -49,6 +49,13 @@ public static class DoodadQuestReactRules
     public static bool ShouldKeepViewerPhase(uint sharedPhase, uint viewerPhase) =>
         viewerPhase != 0 && viewerPhase != sharedPhase;
 
+    /// <summary>
+    /// A func used on a client doodad's per-viewer overlay advances that viewer only. Client
+    /// doodads are one copy per player in the official client; the shared phase stays put.
+    /// </summary>
+    public static bool ShouldAdvanceViewerOnly(bool clientDoodad, uint usePhase, uint sharedPhase) =>
+        clientDoodad && usePhase != sharedPhase;
+
     public static uint NextViewerPhase(uint currentPhase, int reactNextPhase) =>
         ShouldAdvance(reactNextPhase, currentPhase) ? (uint)reactNextPhase : currentPhase;
 
