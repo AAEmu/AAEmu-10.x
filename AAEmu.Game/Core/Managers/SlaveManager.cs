@@ -1066,8 +1066,17 @@ public class SlaveManager(WorldInstance parentWorldInstance)
         // If this was a previously saved slave, load doodads from DB and spawn them
         if (isLoadedPlayerSlave)
         {
-            var doodadSpawnCount = World.SpawnManager.SpawnPersistentDoodads(DoodadOwnerType.Slave, (int)summonedSlave.Id, summonedSlave, true);
+            var doodadSpawnCount = World.SpawnManager.SpawnPersistentDoodads(DoodadOwnerType.Slave, (int)summonedSlave.Id, summonedSlave, false);
             Logger.Debug($"Loaded {doodadSpawnCount} doodads from DB for Slave {summonedSlave.ObjId} (Db: {summonedSlave.Id}");
+
+            // A bound doodad's offset belongs to the hull's attach point, not to the row. Rows saved while a
+            // model had no attach point data hold (0,0,0) and would keep e.g. a cart's storage under the cart.
+            foreach (var doodad in summonedSlave.AttachedDoodads.ToList())
+            {
+                if (summonedSlave.Template.DoodadBindings.Any(b => b.AttachPointId == doodad.AttachPoint))
+                    ApplyAttachPointLocation(summonedSlave, doodad, doodad.AttachPoint);
+                doodad.Spawn();
+            }
         }
 
         // Create all remaining doodads that where not previously loaded
