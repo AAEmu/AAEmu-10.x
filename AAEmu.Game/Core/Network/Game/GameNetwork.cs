@@ -99,6 +99,7 @@ public class GameNetwork : Singleton<GameNetwork>
         RegisterPacket(CSOffsets.CSStartDuelPacket, 1, typeof(CSStartDuelPacket));
         RegisterPacket(CSOffsets.CSStartSkillPacket, 1, typeof(CSStartSkillPacket));
         RegisterPacket(CSOffsets.CSStopCastingPacket, 1, typeof(CSStopCastingPacket));
+        RegisterPacket(CSOffsets.CSInterruptSkillPacket, 1, typeof(CSInterruptSkillPacket));
         RegisterPacket(CSOffsets.CSRemoveBuffPacket, 1, typeof(CSRemoveBuffPacket));
         RegisterPacket(CSOffsets.CSConstructHouseTaxPacket, 1, typeof(CSConstructHouseTaxPacket));
         RegisterPacket(CSOffsets.CSCreateHousePacket, 1, typeof(CSCreateHousePacket));

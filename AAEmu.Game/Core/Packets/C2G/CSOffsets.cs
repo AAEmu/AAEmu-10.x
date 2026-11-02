@@ -75,6 +75,7 @@ public static class CSOffsets
     public const ushort CSStartDuelPacket = 0x085;
     public const ushort CSStartSkillPacket = 0x086;
     public const ushort CSStopCastingPacket = 0x088;
+    public const ushort CSInterruptSkillPacket = 0x089; // 10.0.2.13 client InterrupSkillPacket, body u32 "type"
     public const ushort CSRemoveBuffPacket = 0x08A;
     public const ushort CSConstructHouseTaxPacket = 0x08B;
     public const ushort CSCreateHousePacket = 0x08C;
