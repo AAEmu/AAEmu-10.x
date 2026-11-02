@@ -19,6 +19,7 @@ using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Slaves;
 using AAEmu.Game.Models.Game.Transfers;
 using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Models.Game.Weather;
 using AAEmu.Game.Models;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Models.Game.World.Transform;
@@ -401,6 +402,15 @@ public class SpawnManager(WorldInstance parentWorld)
                     if (!DoodadManager.Instance.Exist(spawner.UnitId))
                     {
                         Logger.Trace($"Doodad Template {spawner.UnitId} (file entry {entry}) doesn't exist - {jsonFileName}");
+                        continue;
+                    }
+                    // Maritime FX volumes belong to WeatherManager's catalog — never SpawnManager.
+                    var doodadTemplate = DoodadManager.Instance.GetTemplate(spawner.UnitId);
+                    if (MaritimeWeatherRules.IsVolumeModel(doodadTemplate?.Model))
+                    {
+                        Logger.Trace(
+                            "SpawnManager world {0}: skipping maritime volume UnitId {1} in {2}",
+                            World, spawner.UnitId, fileName);
                         continue;
                     }
                     spawner.Id = _nextId;
