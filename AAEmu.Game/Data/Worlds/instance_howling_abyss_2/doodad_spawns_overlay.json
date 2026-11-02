@@ -1,0 +1,452 @@
+[
+  {
+    "Id": 1,
+    "UnitId": 5711,
+    "Title": "Howling Abyss Exit",
+    "Position": {
+      "X": 704.422,
+      "Y": 723.488,
+      "Z": 184.8728,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": -108.0
+    },
+    "funcGroupId": 14652,
+    "Scale": 0.96
+  },
+  {
+    "Id": 2,
+    "UnitId": 9908,
+    "Title": "",
+    "Position": {
+      "X": 459.328,
+      "Y": 643.932,
+      "Z": 166.7647,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28050,
+    "Scale": 1.0
+  },
+  {
+    "Id": 3,
+    "UnitId": 9908,
+    "Title": "",
+    "Position": {
+      "X": 460.796,
+      "Y": 644.026,
+      "Z": 166.7647,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28050,
+    "Scale": 1.0
+  },
+  {
+    "Id": 4,
+    "UnitId": 9908,
+    "Title": "",
+    "Position": {
+      "X": 468.062,
+      "Y": 643.824,
+      "Z": 166.7647,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28050,
+    "Scale": 1.0
+  },
+  {
+    "Id": 5,
+    "UnitId": 9908,
+    "Title": "",
+    "Position": {
+      "X": 468.08,
+      "Y": 642.474,
+      "Z": 166.7647,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28050,
+    "Scale": 1.0
+  },
+  {
+    "Id": 6,
+    "UnitId": 9908,
+    "Title": "",
+    "Position": {
+      "X": 468.94,
+      "Y": 643.524,
+      "Z": 166.7647,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28050,
+    "Scale": 1.0
+  },
+  {
+    "Id": 7,
+    "UnitId": 9909,
+    "Title": "",
+    "Position": {
+      "X": 459.544,
+      "Y": 642.896,
+      "Z": 166.7687,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28052,
+    "Scale": 1.0
+  },
+  {
+    "Id": 8,
+    "UnitId": 9909,
+    "Title": "",
+    "Position": {
+      "X": 461.01,
+      "Y": 643.004,
+      "Z": 166.7687,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28052,
+    "Scale": 1.0
+  },
+  {
+    "Id": 9,
+    "UnitId": 9909,
+    "Title": "",
+    "Position": {
+      "X": 468.288,
+      "Y": 642.79,
+      "Z": 166.7687,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28052,
+    "Scale": 1.0
+  },
+  {
+    "Id": 10,
+    "UnitId": 9909,
+    "Title": "",
+    "Position": {
+      "X": 469.156,
+      "Y": 642.502,
+      "Z": 166.7687,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28052,
+    "Scale": 1.0
+  },
+  {
+    "Id": 11,
+    "UnitId": 9910,
+    "Title": "",
+    "Position": {
+      "X": 459.55,
+      "Y": 641.422,
+      "Z": 166.7687,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28054,
+    "Scale": 1.0
+  },
+  {
+    "Id": 12,
+    "UnitId": 9910,
+    "Title": "",
+    "Position": {
+      "X": 461.018,
+      "Y": 641.518,
+      "Z": 166.7687,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28054,
+    "Scale": 1.0
+  },
+  {
+    "Id": 13,
+    "UnitId": 9910,
+    "Title": "",
+    "Position": {
+      "X": 465.072,
+      "Y": 643.51,
+      "Z": 166.7687,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28054,
+    "Scale": 1.0
+  },
+  {
+    "Id": 14,
+    "UnitId": 9910,
+    "Title": "",
+    "Position": {
+      "X": 468.294,
+      "Y": 641.316,
+      "Z": 166.7687,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28054,
+    "Scale": 1.0
+  },
+  {
+    "Id": 15,
+    "UnitId": 9910,
+    "Title": "",
+    "Position": {
+      "X": 469.162,
+      "Y": 641.016,
+      "Z": 166.7687,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28054,
+    "Scale": 1.0
+  },
+  {
+    "Id": 16,
+    "UnitId": 9929,
+    "Title": "",
+    "Position": {
+      "X": 356.564,
+      "Y": 513.19,
+      "Z": 170.4101,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28122,
+    "Scale": 1.0
+  },
+  {
+    "Id": 17,
+    "UnitId": 9929,
+    "Title": "",
+    "Position": {
+      "X": 359.342,
+      "Y": 514.198,
+      "Z": 170.5322,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28122,
+    "Scale": 1.0
+  },
+  {
+    "Id": 18,
+    "UnitId": 9929,
+    "Title": "",
+    "Position": {
+      "X": 365.594,
+      "Y": 517.854,
+      "Z": 177.9111,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28122,
+    "Scale": 1.0
+  },
+  {
+    "Id": 19,
+    "UnitId": 9929,
+    "Title": "",
+    "Position": {
+      "X": 366.172,
+      "Y": 515.998,
+      "Z": 177.8821,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28122,
+    "Scale": 1.0
+  },
+  {
+    "Id": 20,
+    "UnitId": 9929,
+    "Title": "",
+    "Position": {
+      "X": 459.124,
+      "Y": 642.6,
+      "Z": 166.7687,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28122,
+    "Scale": 1.0
+  },
+  {
+    "Id": 21,
+    "UnitId": 9929,
+    "Title": "",
+    "Position": {
+      "X": 464.428,
+      "Y": 628.974,
+      "Z": 166.7697,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28122,
+    "Scale": 1.0
+  },
+  {
+    "Id": 22,
+    "UnitId": 9930,
+    "Title": "",
+    "Position": {
+      "X": 355.494,
+      "Y": 511.614,
+      "Z": 170.5322,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28124,
+    "Scale": 1.0
+  },
+  {
+    "Id": 23,
+    "UnitId": 9930,
+    "Title": "",
+    "Position": {
+      "X": 355.6,
+      "Y": 512.65,
+      "Z": 170.5322,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28124,
+    "Scale": 1.0
+  },
+  {
+    "Id": 24,
+    "UnitId": 9930,
+    "Title": "",
+    "Position": {
+      "X": 356.664,
+      "Y": 513.434,
+      "Z": 170.5322,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28124,
+    "Scale": 1.0
+  },
+  {
+    "Id": 25,
+    "UnitId": 9930,
+    "Title": "",
+    "Position": {
+      "X": 357.17,
+      "Y": 513.862,
+      "Z": 170.5322,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28124,
+    "Scale": 1.0
+  },
+  {
+    "Id": 26,
+    "UnitId": 9930,
+    "Title": "",
+    "Position": {
+      "X": 357.462,
+      "Y": 512.894,
+      "Z": 170.4101,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28124,
+    "Scale": 1.0
+  },
+  {
+    "Id": 27,
+    "UnitId": 9930,
+    "Title": "",
+    "Position": {
+      "X": 360.226,
+      "Y": 513.902,
+      "Z": 170.5322,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28124,
+    "Scale": 1.0
+  },
+  {
+    "Id": 28,
+    "UnitId": 9930,
+    "Title": "",
+    "Position": {
+      "X": 464.194,
+      "Y": 642.14,
+      "Z": 166.7887,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28124,
+    "Scale": 1.0
+  },
+  {
+    "Id": 29,
+    "UnitId": 9930,
+    "Title": "",
+    "Position": {
+      "X": 464.194,
+      "Y": 640.25,
+      "Z": 166.7887,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28124,
+    "Scale": 1.0
+  },
+  {
+    "Id": 30,
+    "UnitId": 9930,
+    "Title": "",
+    "Position": {
+      "X": 465.314,
+      "Y": 628.666,
+      "Z": 166.7697,
+      "Roll": 0.0,
+      "Pitch": 0.0,
+      "Yaw": 0.0
+    },
+    "funcGroupId": 28124,
+    "Scale": 1.0
+  }
+]

@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 
 using AAEmu.Game.Models.Game.DoodadObj.Static;
 using AAEmu.Game.Models.Game.Weather;
@@ -62,8 +62,9 @@ public static class MapDoodadSourceKind
     public const string LevelPackFill = "LevelPackFill";
 
     /// <summary>
-    /// Authority: plant from .g, arm off-window schedule spawners. No
-    /// <c>doodad_spawns*.json</c> load; orphan salvage is opt-in via env.
+    /// Authority: plant from .g, arm off-window schedule spawners. Loads only
+    /// <c>doodad_spawns_overlay.json</c> (small dump-only stands); never the giant
+    /// <c>doodad_spawns.json</c>. Orphan salvage from a local giant dump is opt-in via env.
     /// </summary>
     public const string LevelPack = "LevelPack";
 }
@@ -170,24 +171,24 @@ public static class MapDoodadPlantRules
         string.Equals(mapDoodadSource, MapDoodadSourceKind.LevelPack, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Legacy filename for an optional json-only Plant companion. LevelPack no longer
-    /// loads any <c>doodad_spawns*</c> file (2026-11-02); kept for LevelPackFill / salvage
-    /// skip detection if an old overlay is still on disk. Maritime volumes live in
+    /// Optional LevelPack companion for dump-only stands that never lived in
+    /// <c>cells/*/doodad.g</c> (e.g. Greater Howling Abyss exit / hazard props). Exact
+    /// filename only — never the giant <c>doodad_spawns.json</c>. Maritime volumes live in
     /// <c>maritime_weather_volumes.json</c> (WeatherManager).
     /// </summary>
     public const string OverlaySpawnFileName = "doodad_spawns_overlay.json";
 
     /// <summary>
     /// Whether a <c>doodad_spawns*.json</c> file under the world folder should be loaded.
-    /// LevelPack loads none (cells + maritime catalog only). Json and LevelPackFill load
-    /// every match.
+    /// LevelPack loads only <see cref="OverlaySpawnFileName"/>. Json and LevelPackFill load
+    /// every match (including a stale giant dump left in bin).
     /// </summary>
     public static bool ShouldLoadJsonSpawnFile(string mapDoodadSource, string fileName)
     {
         if (string.IsNullOrWhiteSpace(fileName))
             return false;
         if (IsLevelPackOnly(mapDoodadSource))
-            return false;
+            return string.Equals(fileName, OverlaySpawnFileName, StringComparison.OrdinalIgnoreCase);
         return true;
     }
 

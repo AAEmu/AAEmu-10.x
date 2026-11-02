@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 
 using AAEmu.Game.Models.Game.DoodadObj;
 using AAEmu.Game.Models.Game.DoodadObj.Static;
@@ -118,14 +118,14 @@ public class MapDoodadPlantRulesTests
     }
 
     [Test]
-    public async Task Source_LevelPack_LoadsNoJson()
+    public async Task Source_LevelPack_LoadsOnlyExactOverlayFile()
     {
         await Assert.That(MapDoodadPlantRules.ShouldPlantFromLevelPack(MapDoodadSourceKind.LevelPack))
             .IsTrue();
         await Assert.That(MapDoodadPlantRules.ShouldLoadJsonSpawnFile(
             MapDoodadSourceKind.LevelPack, "doodad_spawns.json")).IsFalse();
         await Assert.That(MapDoodadPlantRules.ShouldLoadJsonSpawnFile(
-            MapDoodadSourceKind.LevelPack, "doodad_spawns_overlay.json")).IsFalse();
+            MapDoodadSourceKind.LevelPack, MapDoodadPlantRules.OverlaySpawnFileName)).IsTrue();
         await Assert.That(MapDoodadPlantRules.ShouldLoadJsonSpawnFile(
             MapDoodadSourceKind.LevelPack, "doodad_spawns_overlay_instance.json")).IsFalse();
     }
@@ -721,5 +721,28 @@ public class MapDoodadPlantRulesTests
             hasSalvageGimmickFakeUse: true,
             mgmtSpawn: false,
             sameModelHasMgmtSpawn: false)).IsEqualTo(MapDoodadPlantDecision.Plant);
+    }
+
+    [Test]
+    public async Task ShippedGreaterHowlingAbyssOverlay_CoversDumpOnlyStands()
+    {
+        var path = Path.Combine(
+            AppContext.BaseDirectory,
+            "Data",
+            "Worlds",
+            "instance_howling_abyss_2",
+            MapDoodadPlantRules.OverlaySpawnFileName);
+        await Assert.That(File.Exists(path)).IsTrue();
+        await Assert.That(MapDoodadPlantRules.ShouldLoadJsonSpawnFile(
+            MapDoodadSourceKind.LevelPack, Path.GetFileName(path))).IsTrue();
+
+        using var doc = System.Text.Json.JsonDocument.Parse(await File.ReadAllTextAsync(path));
+        var ids = doc.RootElement.EnumerateArray()
+            .Select(e => e.GetProperty("UnitId").GetUInt32())
+            .Distinct()
+            .OrderBy(id => id)
+            .ToArray();
+        await Assert.That(string.Join(",", ids)).IsEqualTo("5711,9908,9909,9910,9929,9930");
+        await Assert.That(doc.RootElement.GetArrayLength()).IsEqualTo(30);
     }
 }

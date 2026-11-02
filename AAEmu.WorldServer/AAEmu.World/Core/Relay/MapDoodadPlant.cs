@@ -1,4 +1,4 @@
-using AAEmu.Commons.IO;
+﻿using AAEmu.Commons.IO;
 using AAEmu.Commons.Utils;
 using AAEmu.Game;
 using AAEmu.Game.Core.Managers;
@@ -23,10 +23,11 @@ namespace AAEmu.World.Core.Relay;
 /// World-authors open-world map doodads from <c>cells/*/doodad.g</c> when
 /// <c>World.MapDoodadSource</c> is a level-pack mode. Coordinates come from
 /// <see cref="ZoneDoodadPlacementCatalog"/> only; classification is
-/// <see cref="MapDoodadPlantRules"/>. LevelPack does not load
-/// <c>doodad_spawns*.json</c> (retail Zone Create is WZ-only; .g is the geometry
-/// stand-in). Optional giant-file orphan salvage is off unless
-/// <c>AAEMU_ENABLE_MAP_DOODAD_ORPHAN_SALVAGE=1</c>. Maritime volumes plant from
+/// <see cref="MapDoodadPlantRules"/>. LevelPack plants cells and loads only
+/// <c>doodad_spawns_overlay.json</c> (small dump-only stands). The giant
+/// <c>doodad_spawns.json</c> is never authority. Opt-in orphan salvage
+/// (<c>AAEMU_ENABLE_MAP_DOODAD_ORPHAN_SALVAGE=1</c>) still needs a local giant dump
+/// beside the process — a clean checkout does not ship one. Maritime volumes plant from
 /// <see cref="MaritimeWeatherRules.CatalogFileName"/> via WeatherManager.
 /// </summary>
 public static class MapDoodadPlant
@@ -38,7 +39,9 @@ public static class MapDoodadPlant
         Environment.GetEnvironmentVariable("AAEMU_DISABLE_LEVEL_PACK_DOODADS") == "1";
 
     /// <summary>
-    /// Opt-in only. Json-only orphans are dump extras, not missing .g rows.
+    /// Opt-in only. Needs a local <c>Data/Worlds/&lt;world&gt;/doodad_spawns.json</c> next to
+    /// the process — stock trees no longer ship that dump. Skipped when an overlay file is
+    /// already present for the world.
     /// </summary>
     private static bool OrphanSalvageEnabled =>
         Environment.GetEnvironmentVariable("AAEMU_ENABLE_MAP_DOODAD_ORPHAN_SALVAGE") == "1";
