@@ -230,17 +230,25 @@ public class SphereQuestManager(WorldInstance parent) : ISphereQuestManager
                     var isNew = lastCheckLocation == Vector3.Zero;
                     var oldInside = questStartingSphere.Sphere.Contains(lastCheckLocation);
                     var newInside = questStartingSphere.Sphere.Contains(character?.Transform?.World?.Position ?? Vector3.Zero);
+                    var worldEntryCompleted = character?.WorldEntryCompleted ?? false;
+                    var entering = !oldInside && newInside;
+                    var acceptedOrNotAnEnter = !entering;
 
-                    if (!oldInside && newInside)
+                    if (QuestStarterSphereRules.ShouldAcceptOnEnter(worldEntryCompleted, oldInside, newInside))
                     {
                         if (questStartingSphere.Sphere.DbSphere == null ||
                             UnitRequirementsGameData.Instance.CanTriggerSphere(questStartingSphere.Sphere.DbSphere, character))
+                        {
                             QuestManager.Instance.DoOnEnterQuestStarterSphere(character, questStartingSphere, lastCheckLocation);
+                            acceptedOrNotAnEnter = true;
+                        }
                     }
-                    //else if (oldInside && !newInside)
-                    //{
-                    //    QuestManager.Instance.DoOnExitQuestStarterSphere(character, questStartingSphere, lastCheckLocation);
-                    //}
+
+                    // Leave the last check "outside" while the client is still loading so the
+                    // enter edge fires again after NotifyInGameCompleted.
+                    if (!QuestStarterSphereRules.ShouldUpdateLastPosition(worldEntryCompleted, acceptedOrNotAnEnter))
+                        continue;
+
                     var newPos = character?.Transform?.World?.Position ?? Vector3.Zero;
                     if (isNew)
                     {
