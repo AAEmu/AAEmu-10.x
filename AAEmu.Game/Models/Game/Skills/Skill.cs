@@ -1395,7 +1395,8 @@ public class Skill
         if (caster is Character player && casterCaster is SkillItem castItem)
         {
             var castItemTemplate = ItemManager.Instance.GetTemplate(castItem.ItemTemplateId);
-            if (castItemTemplate.UseSkillAsReagent)
+            // A nested cast that still carries the item (a potion's heal tick) needs no item left in the bag.
+            if (castItemTemplate.UseSkillAsReagent && SkillItemReagentRules.IsItemUseSkill(castItemTemplate, Template.Id))
             {
                 var useItem = ItemManager.Instance.GetItemByItemId(castItem.ItemId);
                 if (useItem == null)
@@ -2321,7 +2322,8 @@ public class Skill
                 else
                 {
                     var castItemTemplate = ItemManager.Instance.GetTemplate(castItem.ItemTemplateId);
-                    if (castItemTemplate is { UseSkillAsReagent: true } && useItem != null)
+                    if (castItemTemplate is { UseSkillAsReagent: true } && useItem != null &&
+                        SkillItemReagentRules.IsItemUseSkill(castItemTemplate, Template.Id))
                         consumedItems.Add((useItem, Math.Max(1, lastAppliedEffect?.ConsumeItemCount ?? 1)));
                 }
             }
@@ -2425,7 +2427,9 @@ public class Skill
 
         // TODO Call OnItemUse() moved to the ApplyEffects() method from the effects and add trigger ConditionChance;
         // If the probability of passing the effect is greater than the chance, then run the check on the use of the item for the quest
-        if (casterCaster is SkillItem skillItem && unit.ConditionChance)
+        // Only the item's own use skill is a use: its buff ticks re-casting skill 33065 are not 10 more.
+        if (casterCaster is SkillItem skillItem && unit.ConditionChance &&
+            SkillItemReagentRules.IsItemUseSkill(ItemManager.Instance.GetTemplate(skillItem.ItemTemplateId), Template.Id))
         {
             if (player == null)
                 return;
