@@ -1,4 +1,4 @@
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using AAEmu.Commons.Network;
 using AAEmu.Commons.Network.Core;
 using AAEmu.Game.Core.Managers;
@@ -64,10 +64,10 @@ public class InventoryMutationTests
     }
 
     [Test]
-    public async Task OpeningReward_CanUseTheSlotItsConsumedSourceWillFree()
+    public async Task OpeningReward_UsesNextVacantSlotNotTheConsumedSourceSlot()
     {
         var (inventory, bag, source) = CreateInventory(5);
-        bag.ContainerSize = 1;
+        bag.ContainerSize = 2;
         source.Slot = 0;
         bag.UpdateFreeSlotCount();
         var items = CreateItemManager();
@@ -85,10 +85,31 @@ public class InventoryMutationTests
             using (acquisition)
             {
                 var snapshots = acquisition.CapturePersistenceSnapshots();
-                await Assert.That(snapshots[0].Desired.Slot).IsEqualTo(0);
+                await Assert.That(snapshots[0].Desired.Slot).IsEqualTo(1);
                 await Assert.That(source.Count).IsEqualTo(5);
                 await Assert.That(reward._holdingContainer).IsNull();
             }
+        }
+    }
+
+    [Test]
+    public async Task OpeningReward_FullBagWithoutVacantSlot_RefusesEvenWhenSourceWillBeRemoved()
+    {
+        var (inventory, bag, source) = CreateInventory(5);
+        bag.ContainerSize = 1;
+        source.Slot = 0;
+        bag.UpdateFreeSlotCount();
+        var items = CreateItemManager();
+        var rewardTemplate = new ItemTemplate { Id = 20, MaxCount = 100, FixedGrade = -1 };
+        items.GetTemplate(20).Returns(rewardTemplate);
+        using (inventory.AcquireMutation())
+        {
+            var planned = inventory.TryPlanExactBagConsumption(source.Id, 5, out var consumption);
+            await Assert.That(planned).IsTrue();
+            planned = inventory.TryPlanBagAcquisition(items.Object, [new(20, 5, 0)],
+                DateTime.UtcNow, out var acquisition, consumption);
+            await Assert.That(planned).IsFalse();
+            await Assert.That(acquisition).IsNull();
         }
     }
 

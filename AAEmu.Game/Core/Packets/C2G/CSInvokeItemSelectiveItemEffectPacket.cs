@@ -1,4 +1,4 @@
-using AAEmu.Commons.Network;
+﻿using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.GameData;
 using AAEmu.Game.Models.Game.Items;
@@ -62,6 +62,11 @@ public class CSInvokeItemSelectiveItemEffectPacket() : GamePacket(CSOffsets.CSIn
         var error = SelectiveItemOpening.Open(character, source.Id, effect, tryCount, selected,
             AAEmu.Game.Core.Managers.ItemManager.Instance);
         if (error.HasValue)
+        {
+            Logger.Warn(
+                "CSInvokeItemSelectiveItemEffect {0}: open failed {1} for tpl {2} skill {3} picks=[{4}]",
+                character.Name, error.Value, source.TemplateId, skillId, string.Join(",", selected));
             character.SendErrorMessage(error.Value);
+        }
     }
 }

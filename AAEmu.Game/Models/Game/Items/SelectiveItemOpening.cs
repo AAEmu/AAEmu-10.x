@@ -1,4 +1,4 @@
-using AAEmu.Commons.Utils.DB;
+﻿using AAEmu.Commons.Utils.DB;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Items.Actions;
@@ -48,7 +48,14 @@ internal static class SelectiveItemOpening
         IItemManager items, Action<IReadOnlyList<ItemPersistenceSnapshot>> persist = null)
     {
         if (!TryBuildRewards(effect, attempts, selected, out var burn, out var rewards))
+        {
+            Logger.Warn(
+                "Selective opening refused ItemCannotUse (build): char={0} source={1} skill={2} attempts={3} picks=[{4}] elems={5} selectCount={6} multi={7}",
+                character.Id, sourceId, effect?.SkillId ?? 0, attempts,
+                selected == null ? "" : string.Join(",", selected),
+                effect?.Elems?.Count ?? 0, effect?.SelectCount ?? 0, effect?.IsMulti ?? false);
             return ErrorMessageType.ItemCannotUse;
+        }
 
         ItemConsumptionPublication debit;
         ItemAcquisitionPublication credit;
@@ -59,9 +66,26 @@ internal static class SelectiveItemOpening
             var source = inventory.Bag.GetItemByItemId(sourceId);
             if (source?.Template?.UseSkillId != effect.SkillId ||
                 !inventory.TryPlanExactBagConsumption(sourceId, burn, out var consumption))
+            {
+                Logger.Warn(
+                    "Selective opening refused NotEnoughItem: char={0} source={1} found={2} tpl={3} count={4} useSkill={5} effectSkill={6} burn={7}",
+                    character.Id, sourceId, source != null, source?.TemplateId ?? 0,
+                    source?.Count ?? 0, source?.Template?.UseSkillId ?? 0, effect.SkillId, burn);
                 return ErrorMessageType.NotEnoughItem;
+            }
             if (!inventory.TryPlanBagAcquisition(items, rewards, DateTime.UtcNow, out var acquisition, consumption))
+            {
+                var rewardSummary = string.Join(",", rewards.Select(reward =>
+                {
+                    var template = items.GetTemplate(reward.TemplateId);
+                    return $"{reward.TemplateId}x{reward.Count}/grade{reward.Grade}/tpl={(template == null ? "null" : template.GetType().Name)}/max={template?.MaxCount ?? -1}";
+                }));
+                Logger.Warn(
+                    "Selective opening refused BagFull: char={0} source={1} tpl={2} free={3} size={4} rewards=[{5}]",
+                    character.Id, sourceId, source.TemplateId, inventory.Bag.FreeSlotCount,
+                    inventory.Bag.ContainerSize, rewardSummary);
                 return ErrorMessageType.BagFull;
+            }
             using (acquisition)
             {
                 var snapshots = consumption.CapturePersistenceSnapshots(items)
