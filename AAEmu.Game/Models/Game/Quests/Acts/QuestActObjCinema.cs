@@ -53,6 +53,8 @@ public class QuestActObjCinema(QuestComponentTemplate parentComponent) : QuestAc
 
         if (sender is not Character player)
             return;
+        if (!QuestCinemaProgressRules.ShouldCreditCinemaStarted(player.WorldEntryCompleted))
+            return;
         if (!QuestCinemaBindRules.ShouldBindStarted(e.CinemaId, CinemaId, player.CurrentlyPlayingCinemaId))
             return;
 

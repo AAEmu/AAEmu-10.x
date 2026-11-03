@@ -20,9 +20,15 @@ public class CSNotifyInGameCompletedPacket() : GamePacket(CSOffsets.CSNotifyInGa
             WorldIntegration.SyncTowerDefsToCharacter?.Invoke(Connection.ActiveChar);
             SquadManager.Instance.SyncClientSquadAfterLogin(Connection.ActiveChar);
             Connection.ActiveChar.WorldEntryCompleted = true;
+            // Quest-area AcceptSphere (Nuian 6839 etc.) was held during load so PlayCinema
+            // resolves under main_world; fire the deferred enters now that entry completed.
+            Connection.ActiveChar.Quests.ReconcileQuestAreaSpheres();
             // A cinema the previous session never finished still owes its buff or teleport.
             // Load only queues it — the effect needs the live connection that entry brings.
             Connection.ActiveChar.Quests.FlushPendingCinemaEndEffects();
+            // Progress ObjCinema reserved during the load screen can fail its one flush;
+            // ask the client again now that HideLoadingScreen has finished.
+            Connection.ActiveChar.Quests.ReplayUnwatchedProgressCinemas();
 
             // Locks and pending unlocks are not restored by the item bodies the client received; it
             // takes them from the security action. That action is discarded while the client is still

@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using AAEmu.Game;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.NPChar;
@@ -416,6 +416,8 @@ public partial class QuestManager
     /// <param name="oldPosition"></param>
     public void DoOnEnterQuestStarterSphere(ICharacter player, SphereQuestStarter sphereQuestStarter, Vector3 oldPosition)
     {
+        if (player is Character { WorldEntryCompleted: false })
+            return;
         if (player.Quests.HasQuestCompleted(sphereQuestStarter.QuestTemplateId) || player.Quests.HasQuest(sphereQuestStarter.QuestTemplateId))
             return;
         player.Quests.AddQuestFromSphere(sphereQuestStarter.QuestTemplateId, sphereQuestStarter.SphereId);

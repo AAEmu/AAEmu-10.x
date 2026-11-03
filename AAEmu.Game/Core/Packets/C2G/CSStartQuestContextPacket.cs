@@ -1,5 +1,6 @@
 ﻿using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Network.Game;
+using AAEmu.Game.Models.Game.Quests;
 
 namespace AAEmu.Game.Core.Packets.C2G;
 
@@ -31,7 +32,19 @@ public class CSStartQuestContextPacket() : GamePacket(CSOffsets.CSStartQuestCont
         else if (_doodadObjId > 0)
             Connection.ActiveChar.Quests.AddQuestFromDoodad(_questContextId, _doodadObjId, answerClient: true);
         else if (_sphereId > 0)
+        {
+            if (!QuestStarterSphereRules.ShouldAcceptClientSphere(Connection.ActiveChar.WorldEntryCompleted))
+            {
+                Logger.Info(
+                    "CSStartQuestContext sphere={0} quest={1} deferred until world entry for {2}",
+                    _sphereId,
+                    _questContextId,
+                    Connection.ActiveChar.Name);
+                return;
+            }
+
             Connection.ActiveChar.Quests.AddQuestFromSphere(_questContextId, _sphereId, answerClient: true);
+        }
         else
             Connection.ActiveChar.Quests.AddQuest(_questContextId, answerClient: true);
     }

@@ -1,4 +1,4 @@
-using AAEmu.Commons.Network;
+﻿using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
@@ -52,9 +52,11 @@ public sealed class ItemAcquisitionPlan : IDisposable
         var consumedItems = consumption?.Entries.Select(entry => entry.Item).ToHashSet() ?? [];
         if (consumption != null && consumption.Entries.Any(entry => !entry.MatchesLiveState(bag)))
             return false;
+        // Fully consumed stacks still occupy their live slots until ApplyCommitted runs. Do not
+        // reclaim those for rewards in the same batch — pick a slot that is vacant right now.
         var releasedItems = consumption?.Entries.Where(entry => entry.RemainingCount == 0)
             .Select(entry => entry.Item).ToHashSet() ?? [];
-        var reservedSlots = bag.Items.Where(item => item != null && !releasedItems.Contains(item))
+        var reservedSlots = bag.Items.Where(item => item != null)
             .Select(item => item.Slot).ToHashSet();
         try
         {

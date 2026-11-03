@@ -177,6 +177,47 @@ public class CharacterQuests(Character owner)
     }
 
     /// <summary>
+    /// Progress ObjCinema play is client-driven off SCQuestContextStarted/Updated. When
+    /// those arrived during the load screen the first attempt can fail once; push Updated
+    /// again after entry so the client re-reserves and plays while not loading.
+    /// </summary>
+    public void ReplayUnwatchedProgressCinemas()
+    {
+        foreach (var quest in ActiveQuests.Values)
+        {
+            var cinemaId = QuestCinemaRules.FirstCinema(quest.Template, QuestComponentKind.Progress);
+            var objective = ProgressCinemaObjectiveCount(quest);
+            if (!QuestCinemaProgressRules.ShouldReplayOnWorldEntry(quest.Step, cinemaId, objective))
+                continue;
+
+            BindPlayingCinema(cinemaId);
+            Owner.SendPacket(new SCQuestContextUpdatedPacket(quest, quest.ComponentId));
+            Logger.Info(
+                "Replayed progress cinema {0} for quest {1} on {2}",
+                cinemaId,
+                quest.TemplateId,
+                Owner.Name);
+        }
+    }
+
+    private static int ProgressCinemaObjectiveCount(Quest quest)
+    {
+        if (!quest.QuestSteps.TryGetValue(QuestComponentKind.Progress, out var step))
+            return 0;
+
+        foreach (var component in step.Components.Values)
+        {
+            foreach (var act in component.Acts)
+            {
+                if (act.Template is QuestActObjCinema)
+                    return act.GetObjective(quest);
+            }
+        }
+
+        return 0;
+    }
+
+    /// <summary>
     /// Queues the cinema-end entries a previous session could not finish. The component id
     /// is the only durable name for the effect, so a component that no longer exists is
     /// dropped with a warning. Production resolves through the quest manager; tests inject
@@ -1291,6 +1332,9 @@ public class CharacterQuests(Character owner)
     /// </summary>
     public void ReconcileQuestAreaSpheres()
     {
+        if (!QuestStarterSphereRules.ShouldReconcileQuestArea(Owner.WorldEntryCompleted))
+            return;
+
         var world = Owner.ParentWorld;
         var sqm = world?.SphereQuestManager;
         if (sqm == null)
