@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using AAEmu.Commons.Network;
+using AAEmu.Commons.Utils;
 using AAEmu.Commons.Utils.DB;
 using AAEmu.Game;
 using AAEmu.Game.Core.Managers;
@@ -21,6 +22,7 @@ using AAEmu.Game.Models.Game.Quests.Static;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Models.Tasks.Doodads;
+using Microsoft.Extensions.DependencyInjection;
 using MySql.Data.MySqlClient;
 
 /*
@@ -1548,6 +1550,20 @@ public class Doodad : BaseUnit
     /// </summary>
     public PacketStream Write(PacketStream stream) => Write(stream, FuncGroupId);
 
+    /// <summary>
+    /// The doodad's family on the wire: the owning character's current family. The client hides
+    /// FAMILY-permission funcs (perm 10, e.g. the family tree's roles, Start and harvest) unless this
+    /// matches the viewer's family, so a hard-coded 0 made every planted family doodad unusable.
+    /// Read live from the roster rather than stored, so it survives restarts and follows joins/leaves.
+    /// </summary>
+    internal uint WireFamilyId(IFamilyManager families = null)
+    {
+        if (OwnerType == DoodadOwnerType.System || OwnerId == 0)
+            return 0;
+        families ??= SingletonContainer.ServiceProvider?.GetService<IFamilyManager>();
+        return families?.GetFamilyOfCharacter(OwnerId) ?? 0;
+    }
+
     public PacketStream Write(PacketStream stream, uint funcGroupId)
     {
         var itemManager = ItemId == 0 && ItemTemplateId == 0 ? null : ItemManager.Instance;
@@ -1609,7 +1625,7 @@ public class Doodad : BaseUnit
             ? 0UL
             : (ulong)new DateTimeOffset(PlantTime.ToUniversalTime()).ToUnixTimeSeconds();
         stream.Write(plantTime);
-        stream.Write(0); // family
+        stream.Write(WireFamilyId()); // family
         stream.Write(PuzzleGroup);
         stream.Write((byte)OwnerType);
         stream.Write(OwnerDbId);

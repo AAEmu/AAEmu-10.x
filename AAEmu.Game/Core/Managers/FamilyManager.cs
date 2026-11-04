@@ -1163,6 +1163,10 @@ public class FamilyManager(IWorldManager worldManager, IChatManager chatManager,
     {
         lock (_familyMutationLock)
         {
+        // Fast path: doodad packets ask this for every player-owned doodad, and most owners have no family.
+        if (!_familyMembers.ContainsKey(characterId))
+            return 0;
+
         foreach (var family in _families.Values)
             foreach (var member in family.Members)
                 if (member.Id == characterId)

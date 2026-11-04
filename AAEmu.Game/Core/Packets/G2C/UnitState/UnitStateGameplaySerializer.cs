@@ -64,7 +64,7 @@ internal static class UnitStateGameplaySerializer
         stream.Write(yaw);
     }
 
-    private static void WritePackedState(PacketStream stream, UnitStateWireContext context)
+    internal static void WritePackedState(PacketStream stream, UnitStateWireContext context)
     {
         // (PacketLayouts/unit-stream.md). Faction is applied via SCUnitFactionChanged
         // (0→real), not through member 0x8E4. Writing faction here diverged from the
@@ -86,10 +86,14 @@ internal static class UnitStateGameplaySerializer
             optional?.VersionReserved7Fb4 ?? 0,
             context.Character?.Appellations.ActiveAppellation ?? 0u);
 
+        // The 10.0.2.13 client stores this group in the unit's faction (+0x6c6b), expedition (+0x6c6f)
+        // and family (+0x6c73) fields; X2Family:IsFamily() is "family field != 0". The third value used
+        // to be the faction id, so every player looked like a member of family <faction id> and got the
+        // family UI with no leave or invite. The first value is left as it was (see the note above).
         stream.WritePisc(
             activeSkillTemplate?.Plot?.Id ?? 0u,
-            activeSkillTemplate?.KeepManaRegen == true ? 1 : 0,
-            (uint)(unit.Faction?.Id ?? 0));
+            (uint)(context.Character?.Expedition?.Id ?? 0),
+            context.Character?.Family ?? 0u);
 
         stream.WritePisc(
             unit.IsEquipmentPublic ? 1 : 0,

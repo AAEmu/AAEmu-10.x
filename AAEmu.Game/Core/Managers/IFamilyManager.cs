@@ -19,4 +19,6 @@ public interface IFamilyManager : ILoadable
     bool TryLevelUp(Character owner, uint targetLevel);
     IDisposable AcquireCharacterDeletionLock();
     bool CanDeleteCharacterLocked(uint characterId, uint storedFamilyId);
+    /// <summary>Family id of an online or offline character, 0 when it has none.</summary>
+    uint GetFamilyOfCharacter(uint characterId);
 }
