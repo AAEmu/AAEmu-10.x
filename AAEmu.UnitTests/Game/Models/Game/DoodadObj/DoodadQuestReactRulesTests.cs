@@ -60,4 +60,26 @@ public class DoodadQuestReactRulesTests
         await Assert.That(DoodadQuestReactRules.ShouldInvalidateViewerPhases(41880, 41882)).IsTrue();
         await Assert.That(DoodadQuestReactRules.ShouldInvalidateViewerPhases(41880, 41880)).IsFalse();
     }
+
+    [Test]
+    public async Task FinalUse_InAPhaseAnotherFuncMovesOn_StaysForTheNextUse()
+    {
+        // Ironwood family tree 11541, phase 32889: three role uses (-1) and "Start a Family Quest" (-> 33308).
+        await Assert.That(DoodadQuestReactRules.StaysForTheNextUse([-1, -1, -1, 33308])).IsTrue();
+    }
+
+    [Test]
+    public async Task FinalUse_InAPhaseNothingMovesOn_IsConsumed()
+    {
+        await Assert.That(DoodadQuestReactRules.StaysForTheNextUse([-1])).IsFalse();
+        await Assert.That(DoodadQuestReactRules.StaysForTheNextUse([-1, -1])).IsFalse();
+        await Assert.That(DoodadQuestReactRules.StaysForTheNextUse([0, -1])).IsFalse();
+    }
+
+    [Test]
+    public async Task FinalUse_WithNoPhaseFuncsKnown_IsConsumed()
+    {
+        await Assert.That(DoodadQuestReactRules.StaysForTheNextUse([])).IsFalse();
+        await Assert.That(DoodadQuestReactRules.StaysForTheNextUse(null)).IsFalse();
+    }
 }

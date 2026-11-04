@@ -64,6 +64,15 @@ public static class DoodadQuestReactRules
     public static bool ShouldConsumeOnFinalUse(bool clientDoodad, bool usedByPlayer) =>
         !(clientDoodad && usedByPlayer);
 
+    /// <summary>
+    /// A use with <c>next_phase</c> -1 stays in its phase. When another func of that phase moves the doodad on, the
+    /// phase is a step the doodad has not finished (the family tree's roles beside "Start a Family Quest", a
+    /// statue's use beside its counter), so the doodad stays for the next user instead of being consumed.
+    /// </summary>
+    /// <param name="phaseNextPhases">The <c>next_phase</c> of every func in the phase the use belongs to.</param>
+    public static bool StaysForTheNextUse(IEnumerable<int> phaseNextPhases) =>
+        phaseNextPhases?.Any(nextPhase => nextPhase > 0) == true;
+
     public static uint NextViewerPhase(uint currentPhase, int reactNextPhase) =>
         ShouldAdvance(reactNextPhase, currentPhase) ? (uint)reactNextPhase : currentPhase;
 

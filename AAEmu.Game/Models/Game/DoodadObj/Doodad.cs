@@ -946,6 +946,14 @@ public class Doodad : BaseUnit
                 return true;
             }
 
+            if (func.NextPhase == -1 && DoodadQuestReactRules.StaysForTheNextUse(CurrentFuncs?.Select(f => f.NextPhase)))
+            {
+                // The Ironwood family tree (11541): a role was the last thing the first member did before the
+                // tree vanished, and the other members had nothing left to pick.
+                ToNextPhase = false;
+                return true;
+            }
+
             if (func.NextPhase == -1)
             {
                 // We don't need to change phase, we stay in the current phase.
