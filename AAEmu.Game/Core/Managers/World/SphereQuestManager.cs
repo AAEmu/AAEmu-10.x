@@ -505,17 +505,16 @@ public class SphereQuestManager(WorldInstance parent) : ISphereQuestManager
         var worldLevelDesignDir = Path.Combine("game", "worlds", worldTemplate.Name, "level_design", "zone");
         var pathFiles = ClientFileManager.GetFilesInDirectory(worldLevelDesignDir, "quest_area_sphere.g", true);
 
-        // ClientData/pak may omit loose zone trees; also scan the configured ZoneGameDataRoot.
-        foreach (var extra in EnumerateLooseQuestAreaSphereFiles(worldTemplate.Name))
-        {
-            if (!pathFiles.Contains(extra, StringComparer.OrdinalIgnoreCase))
-                pathFiles.Add(extra);
-        }
+        // ClientData/pak may omit loose zone trees; also scan the configured ZoneGameDataRoot. The
+        // loose scan lists the same zone files under another spelling, so keep one file per zone.
+        var listed = pathFiles.Count;
+        pathFiles.AddRange(EnumerateLooseQuestAreaSphereFiles(worldTemplate.Name));
+        pathFiles = QuestAreaSphereFileRules.OnePerZone(pathFiles);
 
-        Logger.Debug("Loading {0} quest area sphere data files", pathFiles.Count);
+        Logger.Debug("Loading {0} quest area sphere data files ({1} from client files)", pathFiles.Count, listed);
         foreach (var pathFileName in pathFiles)
         {
-            if (!TryParseZoneIdFromSpherePath(pathFileName, out var zoneId))
+            if (!QuestAreaSphereFileRules.TryParseZoneId(pathFileName, out var zoneId))
             {
                 Logger.Warn("Unable to parse zoneId from {0}", pathFileName);
                 continue;
@@ -596,15 +595,6 @@ public class SphereQuestManager(WorldInstance parent) : ISphereQuestManager
         var total = byZone.Values.Sum(v => v.Count);
         Logger.Info("Loaded {0} quest_area spheres across {1} zones", total, byZone.Count);
         return byZone;
-    }
-
-    private static bool TryParseZoneIdFromSpherePath(string pathFileName, out uint zoneId)
-    {
-        zoneId = 0;
-        // .../zone/<id>/world_server/quest_area_sphere.g  OR ClientFileManager relative
-        var dir = Path.GetDirectoryName(pathFileName);
-        var zoneDir = Path.GetDirectoryName(dir);
-        return zoneDir != null && uint.TryParse(Path.GetFileName(zoneDir), out zoneId);
     }
 
     private static List<string> EnumerateLooseQuestAreaSphereFiles(string worldName)

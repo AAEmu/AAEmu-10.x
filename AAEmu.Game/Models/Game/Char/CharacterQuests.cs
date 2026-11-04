@@ -1350,7 +1350,10 @@ public class CharacterQuests(Character owner)
                 continue;
             if (!CanTriggerQuestAreaSphere(geo.SphereId))
                 continue;
-            nowIds.Add(geo.SphereId);
+            // One pass handles a sphere id once: a volume authored as several overlapping shapes
+            // with the same stype used to fire ENTER (and its quest work) once per shape.
+            if (!nowIds.Add(geo.SphereId))
+                continue;
             if (_insideQuestAreaSphereIds.Contains(geo.SphereId))
             {
                 // Still inside: re-push SphereBuffs if a skill/impulse stripped them from the hull
