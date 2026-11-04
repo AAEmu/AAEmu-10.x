@@ -1,3 +1,4 @@
+using AAEmu.Game.Models.Game.Quests.Static;
 using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Models.Game.Units;
 
@@ -34,6 +35,15 @@ public static class QuestStartRequirementRules
 
     public static bool Passes(UnitReqsValidationResult result) =>
         result != null && result.ResultKey == SkillResultKeys.ok;
+
+    /// <summary>
+    /// Whether a component's unit_reqs still decide if it runs once the quest is in the journal. Start's
+    /// rows are the accept gate: AddQuest checks them before the quest exists, and a GM forced add skips
+    /// them on purpose. Checking them again on every evaluation held a force-added quest at Start for
+    /// good — "The Missing Ally" (3766) needs 3763 done — so its Progress acts never armed and the
+    /// sphere objective could not count. Every other step keeps its rows.
+    /// </summary>
+    public static bool GatesAcceptedQuest(QuestComponentKind step) => step != QuestComponentKind.Start;
 
     /// <summary>
     /// The result byte SCQuestUnitReqFailed carries: the byte the client's own evaluator writes when the
