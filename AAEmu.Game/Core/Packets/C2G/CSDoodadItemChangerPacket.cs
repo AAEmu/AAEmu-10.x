@@ -38,8 +38,13 @@ public class CSDoodadItemChangerPacket() : GamePacket(CSOffsets.CSDoodadItemChan
             var skill = SkillManager.Instance.GetSkillTemplate(selectedChanger.SkillId);
             if (skill == null)
                 return;
-            if (character.GetDistanceTo(doodad, true) > skill.MaxRange)
+            // Same reach as a doodad purchase: the client measures to the model, the server has its origin.
+            if (!DoodadPurchaseRules.IsWithinReach(
+                    character.Transform.World.Position, doodad.Transform.World.Position, skill.MaxRange,
+                    out var horizontal, out var vertical))
             {
+                Logger.Info("Doodad item changer refused for {0}: {1:F1} m across, {2:F1} m up from doodad template {3} (skill {4} range {5})",
+                    character.Name, horizontal, vertical, doodad.TemplateId, skill.Id, skill.MaxRange);
                 character.SendErrorMessage(ErrorMessageType.TooFarAway);
                 return;
             }
