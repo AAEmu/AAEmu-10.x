@@ -29,6 +29,10 @@ public static class QuestObjectiveSlotRules
         return assigned;
     }
 
+    /// <summary>The stored count in <paramref name="index"/>, or 0 for no slot, a slot past the array or no array.</summary>
+    public static int CountAt(int[] objectives, byte index) =>
+        objectives != null && index != NoSlot && index < objectives.Length ? objectives[index] : 0;
+
     public static bool RunActUsesStoredCount(QuestComponentKind kind, byte index, int objectivesLength)
     {
         if (index == NoSlot || index >= objectivesLength)

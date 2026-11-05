@@ -142,10 +142,7 @@ public class QuestActTemplate(QuestComponentTemplate parentComponent)
     /// </summary>
     /// <param name="quest"></param>
     /// <returns></returns>
-    public int GetObjective(Quest quest)
-    {
-        return quest?.Objectives[ThisComponentObjectiveIndex] ?? 0;
-    }
+    public int GetObjective(Quest quest) => QuestObjectiveSlotRules.CountAt(quest?.Objectives, ThisComponentObjectiveIndex);
     public int GetObjective(QuestAct questAct) => GetObjective(questAct.QuestComponent.Parent.Parent);
 
     /// <summary>
