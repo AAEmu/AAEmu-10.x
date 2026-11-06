@@ -1069,7 +1069,7 @@ public class NpcManager(
             // Load Unit modifiers for NPCs
             using (var command = connection.CreateCommand())
             {
-                command.CommandText = "SELECT * FROM unit_modifiers WHERE owner_type='Npc'";
+                command.CommandText = "SELECT * FROM unit_modifiers WHERE owner_type='Npc' ORDER BY id"; // Npc.MaxHp folds them in this order
                 command.Prepare();
                 var attributeIds = new List<long>();
                 using (var sqliteDataReader = command.ExecuteReader())

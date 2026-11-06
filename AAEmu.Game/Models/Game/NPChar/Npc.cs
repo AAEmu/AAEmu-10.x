@@ -1063,6 +1063,13 @@ public partial class Npc : Unit
 
     public override void DoDie(BaseUnit killer, KillReason killReason)
     {
+        // DamageEffect lowers HP before it records the hit for tagging, so a blow that kills from full
+        // health dies untagged. Credit the killing blow as a tag for the whole health bar, which hands the
+        // kill to whoever stands behind the killer: the character, a pet's owner, the gunner of a
+        // world-spawned cannon (quest 1401's Andelph cannons kill golems in one shot), with party sharing.
+        if (Tagging.KillingBlowTags(CharacterTagging.Tagger != null, CharacterTagging.TagTeam, killer, this))
+            CharacterTagging.AddTagger((Unit)killer, Math.Max(MaxHp, 1));
+
         var eligiblePlayers = new HashSet<Character>();
         if (CharacterTagging.TagTeam != 0)
         {

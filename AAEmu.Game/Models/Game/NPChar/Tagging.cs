@@ -46,6 +46,14 @@ public class Tagging(Unit owner)
         // _totalDamage = 0;
     }
 
+    /// <summary>
+    /// Whether a dying NPC should take its killing blow as a tag: nobody holds tag rights yet, and the
+    /// blow came from another unit (not the NPC's own death). <see cref="AddTagger"/> then resolves the
+    /// killer to the character behind it, or ignores it when there is none (an NPC guard).
+    /// </summary>
+    public static bool KillingBlowTags(bool hasTagger, uint tagTeam, BaseUnit killer, BaseUnit victim) =>
+        !hasTagger && tagTeam == 0 && killer is Unit && !ReferenceEquals(killer, victim);
+
     public void AddTagger(Unit checkUnit, int damage)
     {
         lock (_lock)
