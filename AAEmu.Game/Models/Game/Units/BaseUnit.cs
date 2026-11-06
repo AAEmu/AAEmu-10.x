@@ -52,6 +52,12 @@ public class BaseUnit : GameObject, IBaseUnit
     /// <returns></returns>
     public bool CanAttack(BaseUnit target)
     {
+        // A unit that fights on someone else's side (an ownerless world cannon under its gunner) asks
+        // that unit's question; the side itself never attacks the vehicle it is sitting in.
+        var side = CombatSide;
+        if (side != null && side != this)
+            return target != null && target.ObjId != ObjId && side.CanAttack(target);
+
         if (this.Faction == null || target.Faction == null)
             return true;
         if (this.ObjId == target.ObjId)
@@ -144,8 +150,21 @@ public class BaseUnit : GameObject, IBaseUnit
         return !target.Buffs.CheckBuffTag((uint)TagsEnum.Stealth);
     }
 
+    /// <summary>
+    /// The unit whose faction and attack rules this one uses as an attacker. Normally itself; an
+    /// ownerless world-spawned vehicle (the Andelph cannons of quest 1401) answers with its driver,
+    /// because its template faction is Friendly (1), which is friendly to every faction and left
+    /// every shot with no target. Summoned vehicles already carry their owner's faction.
+    /// </summary>
+    public virtual BaseUnit CombatSide => this;
+
     public RelationState GetRelationStateTo(BaseUnit unit)
     {
+        var side = CombatSide;
+        if (side != null && side != this)
+            return side.GetRelationStateTo(unit);
+
+
         // Guild War: members of two expeditions at war with each other are mutually hostile for the
         // war's duration, overriding their normal (usually identical) faction relation.
         if (AreGuildWarEnemies(this, unit))

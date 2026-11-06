@@ -55,6 +55,12 @@ public class Tagging(Unit owner)
             {
                 checkUnit = WorldManager.Instance.GetCharacterByObjId(mate.OwnerObjId) ?? checkUnit;
             }
+            // A vehicle's hits count for the character firing it: the driver of an ownerless world cannon
+            // (quest 1401's Andelph cannons), otherwise the vehicle's owner.
+            else if (checkUnit is Units.Slave slave)
+            {
+                checkUnit = (Unit)(slave.CombatSide as Character) ?? slave.GetOwnerCharacter() ?? checkUnit;
+            }
 
             if (checkUnit is Character player)
             {

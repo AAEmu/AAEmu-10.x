@@ -572,6 +572,14 @@ public class Skill
             return SkillResult.NeedLaborPower;
         }
 
+        // An item-to-item opening (skill_products) needs room for what it gives before it starts; see
+        // SkillProductSpaceRules. Checked again at fire, since the bag can fill during the cast.
+        if (character != null && !ProductsFitInBag(character))
+        {
+            Logger.Trace("Skill {0} blocked for {1}: no bag space for its products", Template.Id, character.Name);
+            return SkillResult.BagFull;
+        }
+
         // Combat resource band: the caster's pool named by combat_resource_id must be inside
         // min_combat_resource..max_combat_resource. 16 rows carry a band; the siege and test ones are
         // real (43711/43712 "fire the cannon" needs exactly one shell), the 외침 family names the pool's
@@ -2374,6 +2382,16 @@ public class Skill
 
                 if (skillProducts.Count > 0)
                 {
+                    // Room for the products, before the reagent is taken (it is taken further down).
+                    if (!SkillProductSpaceRules.Fits(skillProducts, player.Inventory.Bag.SpaceLeftForItem))
+                    {
+                        Logger.Debug("Skill {0}: {1}'s bag has no room for its products, nothing taken",
+                            Template.Id, player.Name);
+                        player.SendErrorMessage(ErrorMessageType.BagFull);
+                        Cancelled = true;
+                        return;
+                    }
+
                     foreach (var product in skillProducts)
                     {
                         player.Inventory.Bag.AcquireDefaultItem(ItemTaskType.SkillEffectGainItem, product.ItemId, product.Amount);
@@ -2702,6 +2720,17 @@ public class Skill
             _laborConsumed = true;
             return true;
         }
+    }
+
+    /// <summary>Whether the character's bag can take every skill_products row of this skill.</summary>
+    private bool ProductsFitInBag(Character character)
+    {
+        var bag = character?.Inventory?.Bag;
+        if (bag == null)
+            return true;
+
+        var products = SkillManager.Instance.GetSkillProductsBySkillId(Template.Id);
+        return products.Count == 0 || SkillProductSpaceRules.Fits(products, bag.SpaceLeftForItem);
     }
 
     /// <summary>

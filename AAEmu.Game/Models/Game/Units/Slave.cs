@@ -61,6 +61,14 @@ public class Slave : Unit
     public List<Doodad> AttachedDoodads { get; set; }
     public List<Slave> AttachedSlaves { get; set; }
     public Dictionary<AttachPointKind, Character> AttachedCharacters { get; set; }
+
+    /// <summary>
+    /// An ownerless slave (no summoner, not a part of another hull) fights on its driver's side while
+    /// someone is in the driver seat; see <see cref="BaseUnit.CombatSide"/>.
+    /// </summary>
+    public override BaseUnit CombatSide =>
+        (BaseUnit)SlaveCombatSideRules.DriverSide(Summoner != null, OwnerObjId, AttachedCharacters) ?? this;
+
     private readonly HashSet<AttachPointKind> _availableSeats = [];
     public IReadOnlyCollection<AttachPointKind> AvailableSeats => _availableSeats;
     public DateTime SpawnTime { get; init; }
