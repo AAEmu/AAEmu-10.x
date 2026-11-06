@@ -44,6 +44,9 @@ public class PortalManager(ILocalizationManager localizationManager, IWorldManag
     private Dictionary<uint, OpenPortalReagents> _openPortalInlandReagents;
     private Dictionary<uint, OpenPortalReagents> _openPortalOutlandReagents;
     private Dictionary<uint, DistrictReturnPoints> _districtReturnPoints;
+    private DistrictAreaIndex _returnDistrictAreas = new();
+    private Dictionary<uint, List<(uint FactionId, uint ReturnPointId)>> _returnDistrictRows = [];
+    private int _returnDistrictTickSubscribed;
     private readonly Dictionary<uint, HashSet<Models.Game.Units.Portal>> _ownerPortals = [];
     private readonly Lock _ownerPortalsLock = new();
 
@@ -158,6 +161,43 @@ public class PortalManager(ILocalizationManager localizationManager, IWorldManag
             where point.Value.ReturnPointId == returnPointId
             where point.Value.FactionId == factionId
             select point.Value.DistrictId).FirstOrDefault();
+    }
+
+    /// <summary>
+    /// Return districts (kind <c>return</c>) whose <c>district.xml</c> shape contains the world XY
+    /// point in <paramref name="zoneKey"/>.
+    /// </summary>
+    public IReadOnlyList<uint> GetReturnDistrictsAt(uint zoneKey, float x, float y) =>
+        _returnDistrictAreas?.DistrictsAt(zoneKey, x, y) ?? [];
+
+    /// <summary>
+    /// The Teleport Book destination a return district gives a character of <paramref name="factionId"/>:
+    /// that faction's <c>district_return_points</c> row, placed by <c>return_point.g</c>. Null when the
+    /// district has no row for the faction or its return point has no known position.
+    /// </summary>
+    public Portal GetReturnDistrictDestination(uint districtId, FactionsEnum factionId)
+    {
+        if (_returnDistrictRows == null || !_returnDistrictRows.TryGetValue(districtId, out var rows))
+            return null;
+
+        var returnPointId = DistrictVisitRules.PickReturnPoint(rows, (uint)factionId, MotherFactionOf);
+        if (returnPointId == 0)
+            return null;
+
+        return GetRecallById(returnPointId) ??
+               (_levelReturns != null && _levelReturns.TryGetValue(returnPointId, out var level) ? level : null);
+    }
+
+    private static uint MotherFactionOf(uint factionId)
+    {
+        try
+        {
+            return (uint)(FactionManager.Instance.GetFaction((FactionsEnum)factionId)?.MotherId ?? 0);
+        }
+        catch
+        {
+            return 0;
+        }
     }
 
     public void Load()
@@ -312,7 +352,11 @@ public class PortalManager(ILocalizationManager localizationManager, IWorldManag
             BuildRecallBookFromLevelFiles(editorNameToId, bookEligibleReturnPointIds);
             PropagateRecallsToDescendantSubZones(subZoneChildren);
             LoadLevelReturnPoints(editorNameToId);
+            LoadReturnDistrictAreas(connection);
         }
+
+        if (Interlocked.Exchange(ref _returnDistrictTickSubscribed, 1) == 0)
+            TickManager.Instance.OnTick.Subscribe(ReturnDistrictTick, TimeSpan.FromSeconds(1), true);
         Logger.Info("Loaded Portal Info");
         #endregion
     }
@@ -546,6 +590,99 @@ public class PortalManager(ILocalizationManager localizationManager, IWorldManag
         }
 
         Logger.Info("Loaded {0} return_point.g destinations", added);
+    }
+
+    /// <summary>
+    /// Return-district shapes from <c>world_server/district.xml</c>, in world XY. These record the
+    /// Teleport Book where the client sends no <c>CSNotifySubZone</c> for the district: Auroria's core
+    /// zones ship an empty <c>subzone_area.xml</c>, and several return points sit outside every subzone.
+    /// </summary>
+    private void LoadReturnDistrictAreas(Microsoft.Data.Sqlite.SqliteConnection connection)
+    {
+        var rows = new Dictionary<uint, List<(uint FactionId, uint ReturnPointId)>>();
+        using (var command = connection.CreateCommand())
+        {
+            command.CommandText =
+                """
+                SELECT drp.district_id, drp.faction_id, drp.return_point_id
+                FROM district_return_points drp
+                INNER JOIN districts d ON d.id = drp.district_id
+                INNER JOIN enum_district_kinds k ON k.id = d.kind_id
+                WHERE k.name = @kind
+                ORDER BY drp.district_id, drp.faction_id
+                """;
+            command.Parameters.AddWithValue("@kind", RecallBookRules.ReturnDistrictKindName);
+            using var reader = new SQLiteWrapperReader(command.ExecuteReader());
+            while (reader.Read())
+            {
+                var districtId = reader.GetUInt32("district_id");
+                if (!rows.TryGetValue(districtId, out var list))
+                {
+                    list = [];
+                    rows[districtId] = list;
+                }
+
+                list.Add((reader.GetUInt32("faction_id"), reader.GetUInt32("return_point_id")));
+            }
+        }
+
+        _returnDistrictRows = rows;
+
+        var index = new DistrictAreaIndex();
+        var roots = EnumerateZoneGameDataRoots();
+        if (roots.Count == 0)
+        {
+            _returnDistrictAreas = index;
+            Logger.Warn("ZoneGameDataRoot is not configured — district.xml return districts are not loaded");
+            return;
+        }
+
+        var skipped = 0;
+        foreach (var (worldName, local) in DistrictAreaGCatalog.LoadFromRoots(roots))
+        {
+            if (!rows.ContainsKey(local.DistrictId))
+                continue;
+
+            var worldTemplate = worldManager.GetWorldTemplateByZoneKey(local.ZoneKey);
+            if (worldTemplate?.XmlWorldZones == null || !worldTemplate.XmlWorldZones.ContainsKey(local.ZoneKey) ||
+                !string.Equals(worldTemplate.Name, worldName, StringComparison.OrdinalIgnoreCase))
+            {
+                skipped++;
+                continue;
+            }
+
+            var worldPoints = local.Points
+                .Select(p =>
+                {
+                    var w = zoneManager.ConvertToWorldCoordinates(local.ZoneKey, new Vector3(p.X, p.Y, 0));
+                    return new Vector2(w.X, w.Y);
+                })
+                .ToList();
+            index.Add(local.ZoneKey, local.DistrictId, worldPoints);
+        }
+
+        _returnDistrictAreas = index;
+        Logger.Info(
+            "Loaded {0} return-district shapes from district.xml ({1} districts), {2} shapes in unloaded worlds skipped",
+            index.ShapeCount, index.DistrictIds.Count, skipped);
+    }
+
+    private void ReturnDistrictTick(TimeSpan delta)
+    {
+        if ((_returnDistrictAreas?.ShapeCount ?? 0) == 0)
+            return;
+
+        foreach (var character in worldManager.GetAllCharacters())
+        {
+            try
+            {
+                character?.Portals?.CheckReturnDistricts();
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Return-district check failed for {0}", character?.Name);
+            }
+        }
     }
 
     private static List<string> EnumerateZoneGameDataRoots() => ZoneGameDataRoots.Enumerate();

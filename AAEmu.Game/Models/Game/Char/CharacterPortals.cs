@@ -1,6 +1,7 @@
 ﻿using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Models.Game.Teleport;
 
 using MySql.Data.MySqlClient;
 
@@ -16,6 +17,7 @@ public class CharacterPortals(Character owner)
     private Dictionary<uint, VisitedDistrict> VisitedDistricts { get; } = [];
     private readonly Dictionary<uint, ulong> _removedVisitedDistricts = [];
     private readonly Dictionary<uint, ulong> _removedPrivatePortals = [];
+    private IReadOnlyList<uint> _lastReturnDistricts = [];
 
     public Dictionary<uint, Portal> PrivatePortals { get; set; } = [];
     public Dictionary<uint, Portal> DistrictPortals { get; set; } = [];
@@ -132,7 +134,8 @@ public class CharacterPortals(Character owner)
                     //Owner.SendMessage("Recorded Portal deleted.");
                 }
             }
-            else if (RemoveVisitedDistrictRecordCore(portal.SubZoneId))
+            else if (RemoveVisitedDistrictRecordCore(portal.SubZoneId) |
+                     RemoveVisitedDistrictRecordCore(DistrictVisitRules.ToVisitKey(portal.Id)))
             {
                 FavoritePortals.Remove(new FavoritePortalRef((byte)PortalBookType.Return, portal.Id));
                 PopulateDistrictPortals();
@@ -170,6 +173,65 @@ public class CharacterPortals(Character owner)
                 Logger.Debug($"{Owner.Name} - {portal.Name}:{subZoneId} added to return district list");
                 Owner.SendDebugMessage($"{portal.Name}:{subZoneId} added to visited district list in the portal book");
             }
+        }
+    }
+
+    /// <summary>
+    /// Position check (PortalManager tick): records every return district whose <c>district.xml</c>
+    /// shape the character has just walked into. Only districts entered since the last check count, so a
+    /// district deleted from the book while standing in it stays deleted until the next visit.
+    /// </summary>
+    public void CheckReturnDistricts()
+    {
+        if (Owner == null || !Owner.IsOnline || Owner.DisabledSetPosition)
+            return;
+        var transform = Owner.Transform;
+        if (transform == null)
+            return;
+
+        var position = transform.World.Position;
+        var current = PortalManager.Instance.GetReturnDistrictsAt(transform.ZoneId, position.X, position.Y);
+        var entered = DistrictVisitRules.Entered(_lastReturnDistricts, current);
+        _lastReturnDistricts = current;
+        foreach (var districtId in entered)
+            NotifyReturnDistrict(districtId);
+    }
+
+    /// <summary>
+    /// Records a return district the character stood in, keyed by
+    /// <see cref="DistrictVisitRules.ToVisitKey"/> so it cannot collide with a subzone visit.
+    /// </summary>
+    public void NotifyReturnDistrict(uint districtId)
+    {
+        if (districtId == 0)
+            return;
+        if (PersistenceGate.IsSaveHeld)
+            throw new InvalidOperationException("District notification cannot run inside a persistence save.");
+        using var persistenceOperation = PersistenceOperationScope.Enter();
+        lock (_saveSync)
+        {
+            var key = DistrictVisitRules.ToVisitKey(districtId);
+            if (VisitedDistricts.ContainsKey(key))
+                return;
+
+            var destination = PortalManager.Instance.GetReturnDistrictDestination(districtId, Owner.Faction?.Id ?? 0);
+            if (destination == null)
+                return;
+
+            // A subzone visit may already list this district; record it anyway so a later
+            // subzone-only deletion does not lose it, but only announce a new book entry.
+            var alreadyListed = DistrictPortals.ContainsKey(districtId);
+            RestoreVisitedDistrictRecordCore(new VisitedDistrict
+            {
+                Id = VisitedSubZoneIdManager.Instance.GetNextId(), SubZone = key, Owner = Owner.Id
+            });
+            PopulateDistrictPortals();
+            if (alreadyListed)
+                return;
+
+            Send();
+            Logger.Debug($"{Owner.Name} - {destination.Name}: district {districtId} added to return district list");
+            Owner.SendDebugMessage($"{destination.Name}: district {districtId} added to the portal book");
         }
     }
 
@@ -464,6 +526,9 @@ public class CharacterPortals(Character owner)
 
         foreach (var subZone in VisitedDistricts)
         {
+            if (DistrictVisitRules.TryGetDistrictId(subZone.Key, out _))
+                continue;
+
             var portals = PortalManager.Instance.GetRecallBySubZoneId(subZone.Key);
             if (portals == null || portals.Count == 0) { continue; }
 
@@ -492,7 +557,36 @@ public class CharacterPortals(Character owner)
             }
         }
 
+        // District-shape visits second: when a subzone visit already lists the district, its entry
+        // (and SubZoneId) is kept, so deleting it from the book removes both records.
+        foreach (var visitKey in VisitedDistricts.Keys)
+        {
+            if (DistrictVisitRules.TryGetDistrictId(visitKey, out var visitedDistrictId))
+                AddReturnDistrictEntry(visitedDistrictId, visitKey);
+        }
+
         RefreshFavoriteFlags();
+    }
+
+    private void AddReturnDistrictEntry(uint districtId, uint visitKey)
+    {
+        var destination = PortalManager.Instance.GetReturnDistrictDestination(districtId, Owner.Faction?.Id ?? 0);
+        if (destination == null)
+            return;
+
+        DistrictPortals.TryAdd(districtId, new Portal
+        {
+            Id = districtId,
+            Type = destination.Id,
+            Name = destination.Name,
+            X = destination.X,
+            Y = destination.Y,
+            Z = destination.Z,
+            ZoneId = destination.ZoneId,
+            ZRot = destination.ZRot,
+            SubZoneId = visitKey,
+            Owner = Owner.Id
+        });
     }
 
     private void RefreshFavoriteFlags()
