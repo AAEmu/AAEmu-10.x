@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
 
 using AAEmu.Commons.Network;
@@ -19,30 +20,29 @@ public class EncryptionManager : Singleton<EncryptionManager>
 
     private const int DwKeySize = 1024;
 
-    // Keyed by accountId.
-    private Dictionary<ulong, ConnectionKeychain> _connectionKeys = new();
+    // Keyed by connectionId. Keying by account let a send through any other connection of the same
+    // account (a stale session, a late broadcast) replace the live keychain, after which the live
+    // client's packets no longer decrypted and it dropped.
+    private ConcurrentDictionary<uint, ConnectionKeychain> _connectionKeys = new();
 
     public void Load()
     {
-        _connectionKeys = new Dictionary<ulong, ConnectionKeychain>();
+        _connectionKeys = new ConcurrentDictionary<uint, ConnectionKeychain>();
         Logger.Info("Loaded Encryption Manager.");
     }
 
-    private ConnectionKeychain GetConnectionKeys(uint connectionId, ulong accountId)
-    {
-        if (_connectionKeys.TryGetValue(accountId, out var keys) && keys.ConnectionId == connectionId)
-            return keys;
-        return GenerateRsaKeyPair(connectionId, accountId);
-    }
+    private ConnectionKeychain GetConnectionKeys(uint connectionId) =>
+        _connectionKeys.GetOrAdd(connectionId, id => new ConnectionKeychain(id, RSA.Create(DwKeySize)));
 
-    private ConnectionKeychain GenerateRsaKeyPair(uint connectionId, ulong accountId)
+    private ConnectionKeychain GenerateRsaKeyPair(uint connectionId)
     {
-        _connectionKeys.Remove(accountId);
-        var rsa = RSA.Create(DwKeySize);
-        var keys = new ConnectionKeychain(connectionId, rsa);
-        _connectionKeys[accountId] = keys;
+        var keys = new ConnectionKeychain(connectionId, RSA.Create(DwKeySize));
+        _connectionKeys[connectionId] = keys;
         return keys;
     }
+
+    /// <summary>Drops a closed connection's keychain.</summary>
+    public void RemoveConnection(uint connectionId) => _connectionKeys.TryRemove(connectionId, out _);
 
     /// <summary>
     /// Writes the 260-byte public-key blob the client expects in X2EnterWorldResponse.pubKey.
@@ -54,11 +54,7 @@ public class EncryptionManager : Singleton<EncryptionManager>
     /// </summary>
     public PacketStream WriteKeyParams(uint connectionId, ulong accountId, PacketStream stream)
     {
-        ConnectionKeychain keychain;
-        if (_connectionKeys.TryGetValue(accountId, out var existing) && existing.ConnectionId == connectionId)
-            keychain = existing;
-        else
-            keychain = GenerateRsaKeyPair(connectionId, accountId);
+        var keychain = GetConnectionKeys(connectionId);
 
         var p = keychain.RsaKeyPair.ExportParameters(false);
         stream.Write(DwKeySize);      // dwKeySize (int) = 1024  (4)
@@ -69,11 +65,11 @@ public class EncryptionManager : Singleton<EncryptionManager>
     }
 
     /// <summary>
-    /// Create/replace the per-account RSA keychain *before* the first level-5 Encode so
+    /// Create/replace the connection's RSA keychain *before* the first level-5 Encode so
     /// WriteKeyParams does not need to regenerate mid-packet.
     /// </summary>
     public void PrepareEnterWorldKeys(uint connectionId, ulong accountId) =>
-        GenerateRsaKeyPair(connectionId, accountId);
+        GenerateRsaKeyPair(connectionId);
 
     /// <summary>Public key blob length (pubKeySize) — must be exactly 260 for r651713.</summary>
     public const ushort PubKeySize = 260;
@@ -84,9 +80,9 @@ public class EncryptionManager : Singleton<EncryptionManager>
     /// </summary>
     public void StoreClientKeys(byte[] aesKeyEncrypted, byte[] xorKeyEncrypted, ulong accountId, uint connectionId)
     {
-        if (!_connectionKeys.TryGetValue(accountId, out var keys))
+        if (!_connectionKeys.TryGetValue(connectionId, out var keys))
         {
-            Logger.Warn("StoreClientKeys: no keychain for accountId {0}", accountId);
+            Logger.Warn("StoreClientKeys: no keychain for connection {0}", connectionId);
             return;
         }
 
@@ -115,7 +111,7 @@ public class EncryptionManager : Singleton<EncryptionManager>
     /// </summary>
     public byte NextSCMessageCount(uint connectionId, ulong accountId)
     {
-        var keys = GetConnectionKeys(connectionId, accountId);
+        var keys = GetConnectionKeys(connectionId);
         lock (keys)
         {
             var count = keys.SCMessageCount;
@@ -125,10 +121,10 @@ public class EncryptionManager : Singleton<EncryptionManager>
     }
 
     public byte GetSCMessageCount(uint connectionId, ulong accountId) =>
-        GetConnectionKeys(connectionId, accountId).SCMessageCount;
+        GetConnectionKeys(connectionId).SCMessageCount;
 
     public void IncSCMsgCount(uint connectionId, ulong accountId) =>
-        GetConnectionKeys(connectionId, accountId).SCMessageCount++;
+        GetConnectionKeys(connectionId).SCMessageCount++;
 
     /// <summary>Packet checksum used in the level-5 body: c = c * 0x13 + b over every byte.</summary>
     public byte Crc8(byte[] data)
@@ -210,7 +206,7 @@ public class EncryptionManager : Singleton<EncryptionManager>
     public byte[] CSDecrypt(byte[] input, ulong accountId, uint connectionId)
     {
         // Direct lookup — do NOT use GetConnectionKeys here, it regenerates (wiping keys) on a mismatch.
-        if (!_connectionKeys.TryGetValue(accountId, out var keys) || !keys.ReceivedKeys || input.Length < 4)
+        if (!_connectionKeys.TryGetValue(connectionId, out var keys) || !keys.ReceivedKeys || input.Length < 4)
             return null;
 
         // cipher = input[3..] must be a whole number of AES blocks; otherwise this isn't a valid frame.
