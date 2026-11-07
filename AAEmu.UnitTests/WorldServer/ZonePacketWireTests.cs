@@ -123,8 +123,23 @@ public class ZonePacketWireTests
             BondDoodad.IsIntentionalSeatLeave(MoveTypeFlags.Jumping, (ushort)MoveTypeActorFlags.None))
             .IsTrue();
 
+        // Lying down on a bed: flags 0x04, actorFlags 0x0814 - stays seated.
         await Assert.That(
-            BondDoodad.IsIntentionalSeatLeave(MoveTypeFlags.None, (ushort)MoveTypeActorFlags.Jumping))
+            BondDoodad.IsIntentionalSeatLeave(MoveTypeFlags.Stopping, 0x0814))
+            .IsFalse();
+
+        await Assert.That(
+            BondDoodad.IsIntentionalSeatLeave(MoveTypeFlags.Moving, (ushort)MoveTypeActorFlags.Jumping, msSinceBond: 0))
+            .IsTrue();
+
+        // Moving right after bonding is the client settling into the seat.
+        await Assert.That(
+            BondDoodad.IsIntentionalSeatLeave(
+                MoveTypeFlags.Moving, (ushort)MoveTypeActorFlags.None, msSinceBond: BondDoodad.SettleGraceMs - 1))
+            .IsFalse();
+        await Assert.That(
+            BondDoodad.IsIntentionalSeatLeave(
+                MoveTypeFlags.Moving, (ushort)MoveTypeActorFlags.None, msSinceBond: BondDoodad.SettleGraceMs))
             .IsTrue();
 
         // Carriage / slave / house carrier seats: walk-on settle keeps Moving — must not unbond.

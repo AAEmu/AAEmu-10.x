@@ -25,7 +25,14 @@ public class DoodadFuncAttachment : DoodadFuncTemplate
         Logger.Trace("DoodadFuncAttachment");
         if (caster is Character character)
         {
-            if (BondKindId > BondKind.BondInvalid || AnimActionId != 0)
+            // Vehicle seats (jetski/speedboat driver: no bond kind, but a driving animation) bind to the vehicle.
+            var vehicle = BondKindId <= BondKind.BondInvalid
+                ? character.ParentWorld.SlaveManager.GetSlaveByObjId(owner.ParentObjId)
+                : null;
+            if (vehicle == null || !vehicle.HasSeat(AttachPointId))
+                vehicle = null;
+
+            if (vehicle == null && (BondKindId > BondKind.BondInvalid || AnimActionId != 0))
             {
                 var spot = owner.Seat.LoadPassenger(character, owner.ObjId, Space); // ask for a free meta number for landing
                 if (spot == -1)
