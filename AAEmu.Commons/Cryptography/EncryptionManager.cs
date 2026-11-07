@@ -82,7 +82,7 @@ public class EncryptionManager : Singleton<EncryptionManager>
     {
         if (!_connectionKeys.TryGetValue(connectionId, out var keys))
         {
-            Logger.Warn("StoreClientKeys: no keychain for connection {0} (accountId {1})", connectionId, accountId);
+            Logger.Warn("StoreClientKeys: no keychain for connection {0}", connectionId);
             return;
         }
 
