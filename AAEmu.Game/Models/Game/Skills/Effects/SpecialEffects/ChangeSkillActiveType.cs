@@ -20,7 +20,7 @@ public class ChangeSkillActiveType : SpecialEffectAction
     {
         var character = target as Character ?? caster as Character;
         if (character == null || value1 <= 0 || value3 < 0 ||
-            !Enum.IsDefined(typeof(SkillActiveType), value2))
+            value2 is < byte.MinValue or > byte.MaxValue || !Enum.IsDefined((SkillActiveType)value2))
             return;
 
         if (!character.SkillActiveTypes.TrySet(
