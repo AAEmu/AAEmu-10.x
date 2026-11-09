@@ -20,6 +20,12 @@ public class CTQueryCharNamePacket() : StreamPacket(CTOffsets.CTQueryCharNamePac
             return;
         }
 
+        if (key.Id > uint.MaxValue)
+        {
+            Logger.Warn($"QueryCharInfo: character id {key.Id} is out of range, not answered");
+            return;
+        }
+
         var name = NameManager.Instance.GetCharacterName((uint)key.Id);
         if (name != null)
             Connection.SendPacket(new TCCharNameQueriedPacket(key, name));
