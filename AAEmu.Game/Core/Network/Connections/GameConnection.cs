@@ -87,6 +87,8 @@ public class GameConnection
     /// <param name="packet"></param>
     private void SendPacket(byte[] packet)
     {
+        if (packet.Length == 0)
+            return;
         _session?.SendPacket(packet);
     }
 

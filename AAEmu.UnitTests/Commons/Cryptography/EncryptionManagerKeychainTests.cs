@@ -16,7 +16,7 @@ public class EncryptionManagerKeychainTests
         manager.PrepareEnterWorldKeys(LiveConnection, AccountId);
         var before = PublicKey(manager, LiveConnection);
 
-        manager.NextSCMessageCount(OtherConnection, AccountId);
+        manager.TryNextSCMessageCount(OtherConnection, AccountId, out _);
 
         await Assert.That(PublicKey(manager, LiveConnection)).IsEqualTo(before);
     }
@@ -25,25 +25,43 @@ public class EncryptionManagerKeychainTests
     public async Task SendCounters_AreTrackedPerConnection()
     {
         var manager = new EncryptionManager();
-        manager.NextSCMessageCount(LiveConnection, AccountId);
-        manager.NextSCMessageCount(LiveConnection, AccountId);
+        manager.PrepareEnterWorldKeys(LiveConnection, AccountId);
+        manager.PrepareEnterWorldKeys(OtherConnection, AccountId);
+        manager.TryNextSCMessageCount(LiveConnection, AccountId, out _);
+        manager.TryNextSCMessageCount(LiveConnection, AccountId, out _);
 
-        manager.NextSCMessageCount(OtherConnection, AccountId);
+        manager.TryNextSCMessageCount(OtherConnection, AccountId, out _);
 
-        await Assert.That(manager.GetSCMessageCount(LiveConnection, AccountId)).IsEqualTo((byte)2);
-        await Assert.That(manager.GetSCMessageCount(OtherConnection, AccountId)).IsEqualTo((byte)1);
+        manager.TryGetSCMessageCount(LiveConnection, AccountId, out var live);
+        manager.TryGetSCMessageCount(OtherConnection, AccountId, out var other);
+        await Assert.That(live).IsEqualTo((byte)2);
+        await Assert.That(other).IsEqualTo((byte)1);
     }
 
     [Test]
-    public async Task RemoveConnection_DropsItsKeychain()
+    public async Task SendWithoutKeychain_FailsClosedAndCreatesNone()
+    {
+        var manager = new EncryptionManager();
+
+        var allocated = manager.TryNextSCMessageCount(OtherConnection, AccountId, out _);
+
+        await Assert.That(allocated).IsFalse();
+        await Assert.That(manager.TryGetSCMessageCount(OtherConnection, AccountId, out _)).IsFalse();
+    }
+
+    [Test]
+    public async Task SendAfterRemoveConnection_DoesNotRecreateTheKeychain()
     {
         var manager = new EncryptionManager();
         manager.PrepareEnterWorldKeys(LiveConnection, AccountId);
-        var before = PublicKey(manager, LiveConnection);
+        manager.TryNextSCMessageCount(LiveConnection, AccountId, out _);
 
         manager.RemoveConnection(LiveConnection);
+        var allocated = manager.TryNextSCMessageCount(LiveConnection, AccountId, out _);
 
-        await Assert.That(PublicKey(manager, LiveConnection)).IsNotEqualTo(before);
+        await Assert.That(allocated).IsFalse();
+        await Assert.That(manager.TryGetSCMessageCount(LiveConnection, AccountId, out _)).IsFalse();
+        await Assert.That(() => PublicKey(manager, LiveConnection)).Throws<InvalidOperationException>();
     }
 
     private static string PublicKey(EncryptionManager manager, uint connectionId) =>

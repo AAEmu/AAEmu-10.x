@@ -31,9 +31,6 @@ public class EncryptionManager : Singleton<EncryptionManager>
         Logger.Info("Loaded Encryption Manager.");
     }
 
-    private ConnectionKeychain GetConnectionKeys(uint connectionId) =>
-        _connectionKeys.GetOrAdd(connectionId, id => new ConnectionKeychain(id, RSA.Create(DwKeySize)));
-
     private ConnectionKeychain GenerateRsaKeyPair(uint connectionId)
     {
         var keys = new ConnectionKeychain(connectionId, RSA.Create(DwKeySize));
@@ -54,7 +51,8 @@ public class EncryptionManager : Singleton<EncryptionManager>
     /// </summary>
     public PacketStream WriteKeyParams(uint connectionId, ulong accountId, PacketStream stream)
     {
-        var keychain = GetConnectionKeys(connectionId);
+        if (!_connectionKeys.TryGetValue(connectionId, out var keychain))
+            throw new InvalidOperationException($"No keychain for connection {connectionId}, call PrepareEnterWorldKeys first");
 
         var p = keychain.RsaKeyPair.ExportParameters(false);
         stream.Write(DwKeySize);      // dwKeySize (int) = 1024  (4)
@@ -107,24 +105,31 @@ public class EncryptionManager : Singleton<EncryptionManager>
 
     /// <summary>
     /// Atomically allocate the next S->C level-5 sequence byte (0..255 wrap).
-    /// Must be paired with a per-connection send lock so TCP write order matches allocation order;
+    /// Must be paired with a per-connection send lock so TCP write order matches allocation order.
+    /// Returns false when the connection has no keychain (never entered the world, or already closed);
+    /// keychains are only created by <see cref="PrepareEnterWorldKeys"/>.
     /// </summary>
-    public byte NextSCMessageCount(uint connectionId, ulong accountId)
+    public bool TryNextSCMessageCount(uint connectionId, ulong accountId, out byte count)
     {
-        var keys = GetConnectionKeys(connectionId);
+        if (!_connectionKeys.TryGetValue(connectionId, out var keys))
+        {
+            count = 0;
+            return false;
+        }
+
         lock (keys)
         {
-            var count = keys.SCMessageCount;
+            count = keys.SCMessageCount;
             keys.SCMessageCount++;
-            return count;
+            return true;
         }
     }
 
-    public byte GetSCMessageCount(uint connectionId, ulong accountId) =>
-        GetConnectionKeys(connectionId).SCMessageCount;
-
-    public void IncSCMsgCount(uint connectionId, ulong accountId) =>
-        GetConnectionKeys(connectionId).SCMessageCount++;
+    public bool TryGetSCMessageCount(uint connectionId, ulong accountId, out byte count)
+    {
+        count = _connectionKeys.TryGetValue(connectionId, out var keys) ? keys.SCMessageCount : (byte)0;
+        return keys != null;
+    }
 
     /// <summary>Packet checksum used in the level-5 body: c = c * 0x13 + b over every byte.</summary>
     public byte Crc8(byte[] data)
@@ -205,7 +210,6 @@ public class EncryptionManager : Singleton<EncryptionManager>
     /// </summary>
     public byte[] CSDecrypt(byte[] input, ulong accountId, uint connectionId)
     {
-        // Direct lookup — do NOT use GetConnectionKeys here, it regenerates (wiping keys) on a mismatch.
         if (!_connectionKeys.TryGetValue(connectionId, out var keys) || !keys.ReceivedKeys || input.Length < 4)
             return null;
 
