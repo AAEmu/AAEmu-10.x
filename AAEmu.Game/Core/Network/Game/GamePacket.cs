@@ -54,7 +54,11 @@ public abstract class GamePacket(ushort typeId, byte level) : PacketBase<GameCon
             {
                 case 5:
                     // Encrypted message: StoCEncrypt( crc8 | SCMessageCount | TypeId | body ).
-                    var count = EncryptionManager.Instance.NextSCMessageCount(Connection.Id, Connection.AccountId);
+                    if (!EncryptionManager.Instance.TryNextSCMessageCount(Connection.Id, Connection.AccountId, out var count))
+                    {
+                        Logger.Warn($"GamePacket: no keychain for connection {Connection.Id}, dropping S->C type {TypeId:X3}");
+                        return new PacketStream();
+                    }
                     var bodyCrc = new PacketStream()
                         .Write(count)
                         .Write(TypeId)
