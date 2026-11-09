@@ -86,10 +86,8 @@ public class BondDoodad : PacketMarshaler
             return false;
         if (flags.HasFlag(MoveTypeFlags.Jumping))
             return true;
-        if (carrierSeat)
-            return false;
-        // Moving (0x02) and Jumping combo (Moving|Stopping).
-        return flags.HasFlag(MoveTypeFlags.Moving);
+        // Carrier seats only leave on a jump; free furniture leaves on Moving, already checked above.
+        return !carrierSeat;
     }
 
     /// <summary>

@@ -20,19 +20,25 @@ public class DoodadFuncAttachment : DoodadFuncTemplate
     /// </summary>
     public int AnimActionId { get; init; }
 
+    /// <summary>
+    /// Whether the seat binds to its slave (vehicle or ship) instead of seating the character as furniture.
+    /// Vehicle seats (jetski/speedboat driver) have no bond kind but a driving animation; classic ship seats
+    /// have neither. Beds, loungers and thrones have an animation and no vehicle seat.
+    /// </summary>
+    public static bool ShouldBindSlaveSeat(BondKind bondKind, int animActionId, bool hasVehicleSeat) =>
+        bondKind <= BondKind.BondInvalid && (hasVehicleSeat || animActionId == 0);
+
     public override void Use(BaseUnit caster, Doodad owner, uint skillId, int nextPhase = 0)
     {
         Logger.Trace("DoodadFuncAttachment");
         if (caster is Character character)
         {
-            // Vehicle seats (jetski/speedboat driver: no bond kind, but a driving animation) bind to the vehicle.
             var vehicle = BondKindId <= BondKind.BondInvalid
-                ? character.ParentWorld.SlaveManager.GetSlaveByObjId(owner.ParentObjId)
+                ? character.ParentWorld?.SlaveManager?.GetSlaveByObjId(owner.ParentObjId)
                 : null;
-            if (vehicle == null || !vehicle.HasSeat(AttachPointId))
-                vehicle = null;
+            var hasVehicleSeat = vehicle?.HasSeat(AttachPointId) ?? false;
 
-            if (vehicle == null && (BondKindId > BondKind.BondInvalid || AnimActionId != 0))
+            if (!ShouldBindSlaveSeat(BondKindId, AnimActionId, hasVehicleSeat))
             {
                 var spot = owner.Seat.LoadPassenger(character, owner.ObjId, Space); // ask for a free meta number for landing
                 if (spot == -1)
@@ -55,7 +61,7 @@ public class DoodadFuncAttachment : DoodadFuncTemplate
             // Ships // TODO Check how sit on the ship
             else
             {
-                character.ParentWorld.SlaveManager.BindSlave(
+                character.ParentWorld?.SlaveManager?.BindSlave(
                     character, owner.ParentObjId, AttachPointId, AttachUnitReason.BoardTransfer,
                     occupySkillId: (int)skillId);
             }
