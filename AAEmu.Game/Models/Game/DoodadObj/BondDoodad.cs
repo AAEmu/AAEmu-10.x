@@ -48,6 +48,11 @@ public class BondDoodad : PacketMarshaler
         set;
     }
 
+    /// <summary>Moves inside this window after bonding are the client settling into the seat (lying down on a bed).</summary>
+    public const int SettleGraceMs = 2000;
+
+    public long BondedAtTick { get; } = Environment.TickCount64;
+
     public void SetOwner(Doodad owner)
     {
         _owner = owner;
@@ -70,16 +75,19 @@ public class BondDoodad : PacketMarshaler
     /// therefore only leave on Jump; free-world furniture still uses Moving.
     /// </param>
     public static bool IsIntentionalSeatLeave(
-        MoveTypeFlags flags, ushort actorFlags, bool carrierSeat = false)
+        MoveTypeFlags flags, ushort actorFlags, bool carrierSeat = false, long msSinceBond = long.MaxValue)
     {
+        // Lying down reports actor bit 0x10 with flags 0x04 (actorFlags 0x0814): not a jump without Moving.
+        if (!flags.HasFlag(MoveTypeFlags.Moving))
+            return false;
         if (((MoveTypeActorFlags)actorFlags).HasFlag(MoveTypeActorFlags.Jumping))
             return true;
+        if (msSinceBond < SettleGraceMs)
+            return false;
         if (flags.HasFlag(MoveTypeFlags.Jumping))
             return true;
-        if (carrierSeat)
-            return false;
-        // Moving (0x02) and Jumping combo (Moving|Stopping).
-        return flags.HasFlag(MoveTypeFlags.Moving);
+        // Carrier seats only leave on a jump; free furniture leaves on Moving, already checked above.
+        return !carrierSeat;
     }
 
     /// <summary>
