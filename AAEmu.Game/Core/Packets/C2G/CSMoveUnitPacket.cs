@@ -172,7 +172,8 @@ public class CSMoveUnitPacket() : GamePacket(CSOffsets.CSMoveUnitPacket, 1)
                 var carrierSeat = BondDoodad.IsCarrierSeat(character);
                 if (character.Bonding == null)
                     RemoveEffects(character, _moveType);
-                else if (BondDoodad.IsIntentionalSeatLeave(umt.Flags, umt.ActorFlags, carrierSeat))
+                else if (BondDoodad.IsIntentionalSeatLeave(umt.Flags, umt.ActorFlags, carrierSeat,
+                             Environment.TickCount64 - character.Bonding.BondedAtTick))
                 {
                     RemoveEffects(character, _moveType);
                     BondDoodad.TryRelease(character);
