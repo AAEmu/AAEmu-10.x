@@ -68,6 +68,7 @@ public class GameProtocolHandler : BaseProtocolHandler
                     // ObjectIdManager.Instance.ReleaseId(con.ActiveChar.BcId);
                 }
                 con.OnDisconnect();
+                EncryptionManager.Instance.RemoveConnection(con.Id);
                 StreamManager.Instance.RemoveToken(con.Id);
                 GameConnectionTable.Instance.RemoveConnection(session.SessionId);
             }
