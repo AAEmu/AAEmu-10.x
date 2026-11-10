@@ -29,6 +29,30 @@ public class SusMovementTrackerTests
         await Assert.That(tracker.Count).IsEqualTo(1);
     }
 
+    /// <summary>
+    /// A restart puts the id at the spot the server placed it, ready to be checked, whatever was recorded or expected
+    /// before (a flag's quiet time included): the next observation is judged from there.
+    /// </summary>
+    [Test]
+    public async Task Restart_JudgesTheNextObservationFromTheGivenSpot()
+    {
+        var tracker = new SusMovementTracker();
+        tracker.Analyze(Id, Vector3.Zero, true, Cadence, SusManager.PlayerCheckSpeed);
+        tracker.Analyze(Id, new Vector3(1000f, 0f, 0f), true, Cadence, SusManager.PlayerCheckSpeed);
+        tracker.ExpectLanding(Id, new Vector3(5000f, 0f, 0f));
+
+        tracker.Restart(Id, new Vector3(2000f, 0f, 0f));
+        tracker.TryGet(Id, out var restarted, out var skipTime);
+        var expected = tracker.TryGetExpectedLanding(Id, out _);
+        // 300 m in 5 s is 60 m/s.
+        var flagged = tracker.Analyze(Id, new Vector3(2300f, 0f, 0f), true, Cadence, SusManager.PlayerCheckSpeed);
+
+        await Assert.That(restarted).IsEqualTo(new Vector3(2000f, 0f, 0f));
+        await Assert.That(skipTime).IsEqualTo(0f);
+        await Assert.That(expected).IsFalse();
+        await Assert.That(flagged).IsEqualTo(60f);
+    }
+
     [Test]
     public async Task Analyze_UnderTheLimit_ReportsNothingAndCountsDown()
     {

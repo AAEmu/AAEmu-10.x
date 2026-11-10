@@ -229,10 +229,7 @@ public class GradeEnchant : SpecialEffectAction
             // hear the new grade. A worn piece also reports the equip watch.
             CollectionsManager.Instance.DiscoverInPlaceChange(character, item.TemplateId, item.Grade,
                 item.SlotType == SlotType.Equipment);
-            // The cached gear score counts a worn piece's grade, and nothing else clears it after a change in
-            // place. A break needs nothing here: taking the piece out of the equipment clears it.
-            if (item.SlotType == SlotType.Equipment)
-                character.InvalidateGearScore();
+            RefreshWornPiece(character, item);
         }
 
         if (cost > 0)
@@ -268,6 +265,22 @@ public class GradeEnchant : SpecialEffectAction
         Logger.Debug("GradeEnchant: {0} item {1} grade {2} -> {3} ({4}), charm {5}, cost {6}",
             character.Name, item.Id, initialGrade, itemBroken ? initialGrade : item.Grade, result,
             charmItem?.TemplateId ?? 0, cost);
+    }
+
+    /// <summary>
+    /// A grade that moved in place on a worn piece. Gear bonuses are totalled when a piece is equipped and not
+    /// again, so the ones that follow the grade - the synthesis lines, the per-grade item buff and the armour grade
+    /// buff - would stay at the old grade until a re-equip or relog. They are re-totalled here as synthesis and
+    /// awakening do, and the cached gear score, which counts the grade too, is cleared. A piece in the bag is in
+    /// neither sum, and a break needs nothing here: taking the piece out of the equipment does both.
+    /// </summary>
+    internal static void RefreshWornPiece(Character character, Item item)
+    {
+        if (item.SlotType != SlotType.Equipment)
+            return;
+
+        character.UpdateGearBonuses(null, null);
+        character.InvalidateGearScore();
     }
 
     /// <summary>

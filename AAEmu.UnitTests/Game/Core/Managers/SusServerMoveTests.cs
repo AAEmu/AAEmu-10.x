@@ -151,11 +151,11 @@ public sealed class SusServerMoveTests
     }
 
     /// <summary>
-    /// The resurrect request is the client's and nothing stops a living one from sending it. It still moves the
-    /// character, but cannot clear the check: the jump is measured as before.
+    /// The resurrect request is the client's and a modified living one can send it. It is refused: the character
+    /// does not move and the check is not cleared. The refusal is the only report.
     /// </summary>
     [Test]
-    public async Task ResurrectRequestFromTheLiving_StillHasItsJumpJudged()
+    public async Task ResurrectRequestFromTheLiving_IsRefused_AndCannotClearTheCheck()
     {
         AddPriestess(Landing);
         var character = NewCharacter(8513, hp: 100);
@@ -164,10 +164,13 @@ public sealed class SusServerMoveTests
 
         Resurrect(character);
 
+        await Assert.That(character.Transform.World.Position).IsEqualTo(Departure);
+        await Assert.That(_sus.LastPlayerPositions.TryGet(character.Id, out var position, out _)).IsTrue();
+        await Assert.That(position).IsEqualTo(Departure);
         var reports = _sus.Reports;
         await Assert.That(reports.Count).IsEqualTo(1);
         await Assert.That(reports[0]).StartsWith(
-            $"{SusManager.CategoryCheating}|{character.Id}|Player {character.Name} seems to be moving a bit fast ");
+            $"{SusManager.CategoryCheating}|{character.Id}|Player {character.Name} asked to be resurrected while alive ");
     }
 
     [Test]

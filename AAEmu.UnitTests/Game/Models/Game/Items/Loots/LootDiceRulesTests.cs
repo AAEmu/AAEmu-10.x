@@ -83,6 +83,42 @@ public class LootDiceRulesTests
     }
 
     [Test]
+    public async Task Roll_AsksForOneToAHundred_BothEndsIncluded()
+    {
+        (int Min, int Max) asked = default;
+
+        var lowest = LootDiceRules.Roll((min, max) =>
+        {
+            asked = (min, max);
+            return min;
+        });
+        // Random.Next excludes its upper bound, so the highest it can return is one below it.
+        var highest = LootDiceRules.Roll((_, max) => max - 1);
+
+        await Assert.That(asked).IsEqualTo((1, 101));
+        await Assert.That(lowest).IsEqualTo((sbyte)1);
+        await Assert.That(highest).IsEqualTo((sbyte)100);
+    }
+
+    [Test]
+    public async Task Roll_WithARealRandom_StaysInOneToAHundred_AndReachesBothEnds()
+    {
+        var random = new Random(4021);
+        var rolls = Enumerable.Range(0, 20_000).Select(_ => LootDiceRules.Roll(random.Next)).ToList();
+
+        await Assert.That(rolls.Min()).IsEqualTo((sbyte)1);
+        await Assert.That(rolls.Max()).IsEqualTo((sbyte)100);
+    }
+
+    [Test]
+    public async Task PickWinner_AHundredBeatsNinetyNine_AndTwoHundredsAreATie()
+    {
+        await Assert.That(LootDiceRules.PickWinner(Rolls(("Ayla", 99), ("Belanthas", 100)), _ => 0)).IsEqualTo("Belanthas");
+        await Assert.That(LootDiceRules.HighestRollers(Rolls(("Ayla", 100), ("Belanthas", 100), ("Corin", 99))))
+            .IsEquivalentTo(["Ayla", "Belanthas"], CollectionOrdering.Matching);
+    }
+
+    [Test]
     public async Task HighestRollers_KeepsTheOrderTheRollsAreListedIn()
     {
         var rolls = Rolls(("Corin", 33), ("Ayla", 90), ("Belanthas", 90));

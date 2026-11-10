@@ -32,6 +32,7 @@ using AAEmu.Game.Models.Game.Slaves;
 using AAEmu.Game.Models.Game.Static;
 using AAEmu.Game.Models.Game.Transfers;
 using AAEmu.Game.Models.Game.Quests.Static;
+using AAEmu.Game.Models.Game.Teleport;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.Units.Static;
 using AAEmu.Game.Models.Game.World;
@@ -758,6 +759,12 @@ public partial class Character : Unit, ICharacter
         _blinkSuppressUntilUtc = DateTime.MinValue;
         _blinkReassertUtc = DateTime.MinValue;
     }
+
+    /// <summary>
+    /// The landings <c>SkillTeleportLanding</c> sent this character's client to that it has not confirmed with
+    /// <c>CSTeleportEnded</c> yet. Forgotten whenever <see cref="GameObject.DisabledSetPosition"/> is released.
+    /// </summary>
+    public TeleportLandingWatch TeleportLandings { get; } = new();
 
     /// <summary>
     /// True when this move should be ignored because it is still the pre-blink cast stand.

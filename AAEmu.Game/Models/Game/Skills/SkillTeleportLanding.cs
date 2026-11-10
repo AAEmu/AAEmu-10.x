@@ -170,6 +170,11 @@ public static class SkillTeleportLanding
         character.StandingOnTransferId = 0;
         character.Transform.Parent = null;
 
+        // The client confirms the landing with CSTeleportEnded and reports the spot it stands on, which is checked
+        // against this one. Kept after the lock above is taken: releasing the lock is what gives it up.
+        character.TeleportLandings.Expect(new ExpectedTeleportLanding(
+            character.Transform.WorldId, character.Transform.InstanceId, new System.Numerics.Vector3(x, y, z)));
+
         character.SendPacket(new SCTeleportUnitPacket(reason, 0, x, y, z, yawRad));
         if (TeleportLandingRules.RelaysSameZoneBlink(stayInZone, WorldIntegration.ZoneAuthority))
         {

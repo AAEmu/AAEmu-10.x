@@ -629,7 +629,7 @@ public class LootingContainer(IBaseUnit owner)
         if (itemEntry == null)
             return;
 
-        var rollResult = rollRequest ? (sbyte)Random.Shared.Next(1, 100) : (sbyte)-1;
+        var rollResult = rollRequest ? LootDiceRules.Roll(Random.Shared.Next) : (sbyte)-1;
         itemEntry.PlayerRolls[player] = rollResult;
 
         // Notify the others of this roll result

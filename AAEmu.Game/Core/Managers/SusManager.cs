@@ -108,6 +108,17 @@ public class SusManager(IWorldManager worldManager) : Singleton<SusManager>, ISu
     }
 
     /// <summary>
+    /// The server put the player back at the spot it stands on now after its client claimed another (a teleport
+    /// confirmation far from the landing it was sent to). The check starts again from this spot, so the client's next
+    /// move from where it claimed to be is judged as movement from here.
+    /// </summary>
+    /// <param name="player"></param>
+    public void RestartAnalyzePlayerDeltaMovement(Character player)
+    {
+        LastPlayerPositions.Restart(player.Id, player.Transform.World.ClonePosition());
+    }
+
+    /// <summary>
     /// The server sent the player's client to <paramref name="landing"/> and the client makes the jump itself (an
     /// escape, a closed zone, a battlefield respawn, a GM goto). The check that falls on its arrival there only
     /// remembers the spot, while any other spot is still judged as movement. A move the server writes itself under

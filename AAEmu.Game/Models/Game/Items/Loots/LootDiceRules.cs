@@ -2,11 +2,23 @@ namespace AAEmu.Game.Models.Game.Items.Loots;
 
 /// <summary>
 /// Who wins a loot roll once every eligible member has answered (<c>LootingContainer.FinishRolling</c>): the
-/// highest roll, as on the official servers. Rolls are 1-99; a pass (-1) and a roll never answered (0) never win.
+/// highest roll, as on the official servers. Rolls are 1-100; a pass (-1) and a roll never answered (0) never win.
 /// The client only rolls or passes, so there is no need-before-greed order to respect.
 /// </summary>
 public static class LootDiceRules
 {
+    /// <summary>The lowest number a loot roll can come up with.</summary>
+    public const sbyte LowestRoll = 1;
+
+    /// <summary>The highest number a loot roll can come up with.</summary>
+    public const sbyte HighestRoll = 100;
+
+    /// <summary>
+    /// One member's loot roll, <see cref="LowestRoll"/> to <see cref="HighestRoll"/> with both ends included.
+    /// <paramref name="next"/> is <c>Random.Next(min, max)</c>, whose upper bound is excluded.
+    /// </summary>
+    public static sbyte Roll(Func<int, int, int> next) => (sbyte)next(LowestRoll, HighestRoll + 1);
+
     /// <summary>
     /// The member with the highest roll in <paramref name="rolls"/>, or default when nobody rolled (everybody
     /// passed). Members tied on that roll are settled by <paramref name="pickTied"/>, which is given how many are

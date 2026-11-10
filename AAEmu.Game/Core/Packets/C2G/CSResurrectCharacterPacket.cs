@@ -17,14 +17,26 @@ namespace AAEmu.Game.Core.Packets.C2G;
 
 public class CSResurrectCharacterPacket() : GamePacket(CSOffsets.CSResurrectCharacterPacket, 1)
 {
-    /// <summary>Duration of the post-revive Respawn-Cooldown debuff in milliseconds (5 min).</summary>
-    private const int RespawnCooldownDurationMs = 300_000;
-
     public override void Read(PacketStream stream)
     {
         var inPlace = stream.ReadBoolean();
 
         Logger.Debug("ResurrectCharacter, InPlace: {0}", inPlace);
+
+        var character = Connection.ActiveChar;
+        if (character == null)
+            return;
+
+        // Only the dead are resurrected. Every request the game makes comes from a dead character: the death
+        // window, an accepted resurrection offer (only ever made to the dead), a defendant's courthouse summons
+        // (made at death) and a dead bot's BotDeath. From the living it is a modified client using the request to
+        // jump to its return point, so nothing is changed and it is written down.
+        if (!character.IsDead)
+        {
+            SusManager.Instance.LogActivity(SusManager.CategoryCheating, character,
+                $"Player {character.Name} asked to be resurrected while alive (hp {character.Hp}/{character.MaxHp}, inPlace={inPlace}), refused");
+            return;
+        }
 
         var portal = new Portal();
 
@@ -80,8 +92,6 @@ public class CSResurrectCharacterPacket() : GamePacket(CSOffsets.CSResurrectChar
             }
         }
 
-        var character = Connection.ActiveChar;
-
         // A wanted character who died comes back as a defendant at their courthouse instead of the
         // temple - the resurrection below moves the server unit to whatever this portal holds.
         var defendantCourt = JusticeManager.Instance.TakeDefendantCourt(character);
@@ -125,9 +135,8 @@ public class CSResurrectCharacterPacket() : GamePacket(CSOffsets.CSResurrectChar
 
         // Coming back at a return point (or the courthouse) is a move the server makes, not movement: the speed
         // check forgets the spot it last saw, or the check that falls on this landing measures the trip from where
-        // the character died. Only for the dead - this packet is the client's, and a living character must not be
-        // able to clear its own check with it.
-        if (!whereFallen && character.IsDead)
+        // the character died. A living character never gets this far, so it cannot clear its own check with it.
+        if (!whereFallen)
             SusManager.Instance.ResetAnalyzePlayerDeltaMovement(character.Id);
 
         character.DisabledSetPosition = false;
@@ -139,29 +148,18 @@ public class CSResurrectCharacterPacket() : GamePacket(CSOffsets.CSResurrectChar
         character.IsUnderWater = false;
         character.Breath = character.LungCapacity;
 
+        // The costs follow the offer that is really used, not the client's flag: only coming back where it fell on
+        // an accepted offer restores the offer's share and gives no debuffs. A return point, the courthouse (a
+        // summoned defendant who accepted a revive included) and an in-place request without an offer all cost what
+        // a temple revive costs. The offer's share is spent with this resurrection either way.
+        var costs = CharacterDeathRules.Costs(whereFallen, character.ResurrectHpPercent, character.ResurrectMpPercent,
+            character.DiedInPvp, character.DiedInPvpWarZone);
+        character.ResurrectHpPercent = 1;
+        character.ResurrectMpPercent = 1;
+
         // Apply the final vital floor after revival debuffs so conversion effects cannot leave the
         // character dead immediately after resurrection.
-        int newHp;
-        int newMp;
-        if (inPlace)
-        {
-            var hpPct = character.ResurrectHpPercent;
-            var mpPct = character.ResurrectMpPercent;
-            if (hpPct == 0)
-                hpPct = 1;
-            if (mpPct == 0)
-                mpPct = 1;
-            newHp = Math.Max(1, (int)Math.Ceiling(character.MaxHp * (hpPct / 100.0)));
-            newMp = Math.Max(0, (int)Math.Ceiling(character.MaxMp * (mpPct / 100.0)));
-            character.ResurrectHpPercent = 1;
-            character.ResurrectMpPercent = 1;
-        }
-        else
-        {
-            // Temple / return-point res — 10% with a hard floor of 1.
-            newHp = Math.Max(1, (int)Math.Ceiling(character.MaxHp * 0.1));
-            newMp = Math.Max(0, (int)Math.Ceiling(character.MaxMp * 0.1));
-        }
+        var (newHp, newMp) = CharacterDeathRules.RevivalVitals(character.MaxHp, character.MaxMp, costs.HpPercent, costs.MpPercent);
 
         // Zone resurrection while World Hp is still 0 so leftover skill hits early-out.
         if (WorldIntegration.ZoneAuthority)
@@ -172,7 +170,7 @@ public class CSResurrectCharacterPacket() : GamePacket(CSOffsets.CSResurrectChar
         }
 
         // Debuffs first: OnStarted conversions clamp drain to current HP (0 → no-op).
-        ApplyRevivalDebuffs(character, inPlace);
+        ApplyRevivalDebuffs(character, costs.Debuffs);
 
         character.Hp = newHp;
         character.Mp = newMp;
@@ -207,44 +205,21 @@ public class CSResurrectCharacterPacket() : GamePacket(CSOffsets.CSResurrectChar
     }
 
     /// <summary>
-    /// Apply post-revive debuffs based on the death context:
-    ///   inPlace (player-res) → no debuffs at all
+    /// Apply the post-revive debuffs <see cref="CharacterDeathRules.Costs"/> chose for the death context:
+    ///   accepted offer used  → no debuffs at all
     ///   DiedInPvpWarZone     → Leech + 5 min Respawn-CD
     ///   DiedInPvp            → 5 min Respawn-CD only (no Weakened Body)
     ///   PvE death            → Weakened Body + 5 min Respawn-CD
+    /// The death flags are cleared either way.
     /// </summary>
-    private static void ApplyRevivalDebuffs(Character character, bool inPlace)
+    private static void ApplyRevivalDebuffs(Character character, IReadOnlyList<RevivalDebuff> debuffs)
     {
-        if (inPlace)
-        {
-            // Player-resurrected (e.g. by another player's resurrect skill): no debuffs.
-            character.DiedInPvpWarZone = false;
-            character.DiedInPvp = false;
-            return;
-        }
+        character.DiedInPvpWarZone = false;
+        character.DiedInPvp = false;
 
         var casterObj = new SkillCasterUnit(character.ObjId);
-
-        if (character.DiedInPvpWarZone)
-        {
-            // PvP death in War zone → Leech + Respawn-CD
-            character.DiedInPvpWarZone = false;
-            character.DiedInPvp = false;
-            ApplyBuff(character, casterObj, (uint)BuffConstants.WarZoneLeech);
-            ApplyBuff(character, casterObj, (uint)BuffConstants.RespawnCooldown, RespawnCooldownDurationMs);
-        }
-        else if (character.DiedInPvp)
-        {
-            // PvP death outside War zone → Respawn-CD only (no Weakened Body)
-            character.DiedInPvp = false;
-            ApplyBuff(character, casterObj, (uint)BuffConstants.RespawnCooldown, RespawnCooldownDurationMs);
-        }
-        else
-        {
-            // PvE death → Weakened Body + Respawn-CD
-            ApplyBuff(character, casterObj, (uint)BuffConstants.WeakenedBody);
-            ApplyBuff(character, casterObj, (uint)BuffConstants.RespawnCooldown, RespawnCooldownDurationMs);
-        }
+        foreach (var debuff in debuffs)
+            ApplyBuff(character, casterObj, debuff.BuffId, debuff.ForcedDurationMs);
     }
 
     private static void ApplyBuff(Character character, SkillCasterUnit casterObj, uint buffId, int forcedDurationMs = 0)

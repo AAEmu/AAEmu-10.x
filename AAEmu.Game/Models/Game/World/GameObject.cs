@@ -24,7 +24,13 @@ public class GameObject : IGameObject
         {
             _disabledSetPosition = value;
             if (!value)
+            {
+                // A landing is only waited for while the position is locked for it. Whatever releases the lock - the
+                // client's confirmation, an instance load's arrival, a resurrection - ends the wait, so a later move
+                // the server makes another way is never checked against an old landing.
+                (this as Character)?.TeleportLandings?.Forget();
                 return;
+            }
 
             // Only the server locks a position, around a move it makes itself (a landing, an instance load, a GM
             // freeze or teleport), so the speed check forgets the last spot on every lock. Also when the lock was

@@ -12,6 +12,7 @@ public interface ISusManager
     bool LogActivity(string category, string description);
     void AnalyzePlayerDeltaMovement(Character player, float deltaTime);
     void ResetAnalyzePlayerDeltaMovement(uint playerId);
+    void RestartAnalyzePlayerDeltaMovement(Character player);
     void ExpectPlayerLanding(uint playerId, Vector3 landing);
     void AnalyzeMountDeltaMovement(Mate pet, float deltaTime);
     void ResetAnalyzeMountDeltaMovement(uint petId);

@@ -98,6 +98,21 @@ public class SusMovementTracker
     }
 
     /// <summary>
+    /// Forgets an id and records <paramref name="position"/> as the last position it was seen at, ready to be checked:
+    /// the next observation is judged as movement from there.
+    /// </summary>
+    /// <param name="id">Character or mate Id</param>
+    /// <param name="position">World position the server put the id at</param>
+    public void Restart(uint id, Vector3 position)
+    {
+        lock (_lock)
+        {
+            _ = _expectedLandings.Remove(id);
+            _lastPositions[id] = (position, 0f);
+        }
+    }
+
+    /// <summary>
     /// The server has sent the id's client to <paramref name="landing"/> without writing that position itself: the
     /// client makes the jump when the packet arrives. The first observation that reaches the landing (no faster
     /// than the limit, measured from it) only remembers the position. Observations anywhere else are judged from
