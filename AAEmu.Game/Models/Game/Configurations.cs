@@ -134,6 +134,17 @@ public class WorldConfig
     public float TeleportLandingToleranceMeters { get; set; } = 20f;
 
     /// <summary>
+    /// Extra horizontal reach, in metres, for a doodad purchase (<c>CSDoodadPurchaseItem</c>) paid in an item, keyed
+    /// by that item's id (<c>doodad_func_purchases.coin_item_id</c>). Every purchase is first measured in 3D against
+    /// its func skill's <c>max_range</c>. One that fails and is paid in an item named here is measured again: flat
+    /// distance within <c>max_range</c> plus this value, height difference still within <c>max_range</c>.
+    /// There is no built-in value: a purchase whose coin item is not listed, and every purchase paid in currency,
+    /// keeps the skill's range alone.
+    /// Configure in <c>AAEmu.Game/Configurations/World.json</c> under <c>World.DoodadCoinPurchaseExtraReachMeters</c>.
+    /// </summary>
+    public Dictionary<uint, float> DoodadCoinPurchaseExtraReachMeters { get; set; } = [];
+
+    /// <summary>
     /// When enabled, players take no damage at all
     /// </summary>
     public bool GodMode { get; set; }
