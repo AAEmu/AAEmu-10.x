@@ -53,7 +53,9 @@ internal class IndunActionSendMailReward : IndunAction
             return;
         }
 
-        var result = IndunRewardDeliveryService.Instance.Deliver(worldInstance, InstanceRewardKindId, verdict.SelectionValue);
+        var result = verdict.Classification == InstanceRewardSelectionClass.RankBacked
+            ? IndunRewardDeliveryService.Instance.DeliverRanked(worldInstance, InstanceRewardKindId)
+            : IndunRewardDeliveryService.Instance.Deliver(worldInstance, InstanceRewardKindId, verdict.SelectionValue);
         switch (result)
         {
             case IndunRewardDeliveryResult.Delivered:

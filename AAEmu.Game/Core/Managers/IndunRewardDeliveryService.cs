@@ -113,6 +113,60 @@ public sealed class IndunRewardDeliveryService : Singleton<IndunRewardDeliverySe
     }
 
     /// <summary>
+    /// Rank-backed delivery: each player's selection value is their rank by the copy's gain points
+    /// (<see cref="InstanceRewardRankRules"/>), so the rewards are chosen and claimed per player.
+    /// </summary>
+    public IndunRewardDeliveryResult DeliverRanked(WorldInstance world, uint instanceRewardKindId)
+    {
+        var dungeon = world?.DungeonInstance;
+        var instanceId = dungeon?.GetInstanceCatalogId ?? 0;
+        if (instanceId == 0)
+        {
+            Logger.Error("Ranked instance reward delivery has no dungeon copy");
+            return IndunRewardDeliveryResult.SelectionUnavailable;
+        }
+
+        var recipients = ResolveRecipients(world.GetAllCharacters());
+        var ranks = InstanceRewardRankRules.Rank(recipients.Select(r => r.Id), dungeon.GainPointsSnapshot());
+        var delivered = 0;
+        var claimed = 0;
+        foreach (var recipient in recipients)
+        {
+            var rank = ranks[recipient.Id];
+            IReadOnlyList<InstanceReward> rewards;
+            IReadOnlyList<InstanceRewardBonusCount> bonusCounts;
+            InstanceRewardMailText mailText;
+            try
+            {
+                rewards = IndunGameData.Instance.GetInstanceRewards(instanceId, instanceRewardKindId, rank);
+                bonusCounts = rewards
+                    .SelectMany(reward => IndunGameData.Instance.GetInstanceRewardBonusCounts(reward.Id))
+                    .ToArray();
+                mailText = IndunGameData.Instance.GetInstanceRewardMailText(instanceId);
+            }
+            catch (Exception ex) when (ex is InvalidDataException or InvalidOperationException)
+            {
+                Logger.Error(ex, "Ranked instance reward content is not deliverable for instance {0}, kind {1}, rank {2}",
+                    instanceId, instanceRewardKindId, rank);
+                continue;
+            }
+
+            Logger.Info("Ranked instance reward: {0} ({1}) rank {2}, {3} reward row(s)",
+                recipient.Name, recipient.Id, rank, rewards.Count);
+            var result = DeliverForRun(dungeon.RewardRunId, instanceId, instanceRewardKindId, rank,
+                [recipient], rewards, mailText, bonusCounts);
+            if (result == IndunRewardDeliveryResult.Delivered)
+                delivered++;
+            else if (result == IndunRewardDeliveryResult.AlreadyClaimed)
+                claimed++;
+        }
+
+        return delivered > 0 ? IndunRewardDeliveryResult.Delivered
+            : claimed > 0 ? IndunRewardDeliveryResult.AlreadyClaimed
+            : IndunRewardDeliveryResult.SelectionUnavailable;
+    }
+
+    /// <summary>
     /// Resolves the world roster into one delivery target per character id, in a stable order.
     /// <para>
     /// The de-duplication is a delivery guarantee, not a convenience. A world roster is keyed by object

@@ -8,6 +8,8 @@ using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.GameData;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.DoodadObj;
+using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.Indun.Events;
 using AAEmu.Game.Models.Game.Indun.Matching;
 using AAEmu.Game.Models.Game.NPChar;
@@ -1322,34 +1324,52 @@ public class Dungeon : IPreparedIndunInstance
         return units;
     }
 
+    private readonly IndunGainScoreboard _gainScores = new();
+
+    /// <summary>
+    /// Scores a harvest: a player whose use moved <paramref name="doodad"/> into a phase an instance_gain_rules
+    /// row points at earns one point on that rule, and the copy's HUD is refreshed.
+    /// </summary>
+    /// <summary>Character id → gain rule → points scored in this copy.</summary>
+    public IReadOnlyDictionary<ulong, IReadOnlyDictionary<uint, uint>> GainPointsSnapshot() => _gainScores.Snapshot();
+
+    public void RecordGainPoints(BaseUnit caster, Doodad doodad)
+    {
+        if (caster is not Character character || doodad == null)
+            return;
+
+        var rules = IndunGainRules.RulesFor(
+            doodad.TemplateId,
+            doodad.FuncGroupId,
+            IndunGameData.Instance.GetInstanceGainRules(GetInstanceCatalogId),
+            IndunGameData.Instance.GetInstancePointDoodadPhaseChanges());
+        if (rules.Count == 0)
+            return;
+
+        foreach (var rule in rules)
+            _gainScores.Add(character.Id, rule);
+        SendPlayingInfoBroadcast();
+    }
+
     private SCIndunPlayingInfoBroadcastingPacket BuildPlayingInfoPacket() =>
         BuildPlayingInfoPacket(ReadPlayingInfoRows(freshUnits: true, log: true));
 
     private SCIndunPlayingInfoBroadcastingPacket BuildPlayingInfoPacket(List<IndunPlayingInfoNpc> rows)
     {
-        // The handler reads the gain-rule ids twice — once as a 32-bit list and once as a 64-bit list — and
-        // resolves both through the same lookup into its gainRuleInfo readout; missing the first list shifts
-        // the second count and the client drops the whole packet. The copy's authored instance_gain_rules
-        // ids are the one source, so they fill both from the table (empty for a zone group that authors none).
-        var gainRuleIds = new List<uint>();
-        var gainRules = new List<ulong>();
-        // instance_gain_rules.instance_id is instances.id (catalog), not zone_group_id.
-        foreach (var rule in IndunGameData.Instance.GetInstanceGainRules(GetInstanceCatalogId))
-        {
-            gainRuleIds.Add(rule.Id);
-            gainRules.Add(rule.Id);
-        }
+        // Points per character per gain rule; the client shows the local player's row (gainRuleInfo).
+        var characterPoints = _gainScores.Snapshot();
 
         Logger.Debug(
-            "HUD readout world {0} zoneGroup {1}: {2} npcInfo row(s) [{3}], gainRules={4}",
+            "HUD readout world {0} zoneGroup {1}: {2} npcInfo row(s) [{3}], scoring characters={4}",
             World?.Id, GetZoneGroupId, rows.Count,
             string.Join(",", rows.Select(r => $"npc{r.NpcId}/buff{r.BuffId}={r.Value}/{r.Limit}")),
-            gainRuleIds.Count);
+            characterPoints.Count);
 
         lock (_lock)
             _lastReadoutShape = IndunPlayingInfoRules.Shape(rows);
 
-        return new SCIndunPlayingInfoBroadcastingPacket(_zoneInstanceId, rows, gainRuleIds, gainRules);
+        return new SCIndunPlayingInfoBroadcastingPacket(
+            _zoneInstanceId, rows, new Dictionary<uint, IReadOnlyDictionary<uint, uint>>(), characterPoints);
     }
 
     /// <summary>
