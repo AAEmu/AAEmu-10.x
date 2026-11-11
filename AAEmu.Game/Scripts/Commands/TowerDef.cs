@@ -88,6 +88,17 @@ public class TowerDef : ICommand
                     return;
                 }
 
+                // Inside a dungeon copy the wave belongs to that copy's own run.
+                if (character.ParentWorld?.DungeonInstance is { IsSystem: false })
+                {
+                    var moved = WorldIntegration.ForceInstanceTowerDefWave?.Invoke(
+                        towerDefId, character.ParentWorld.Id, step) == true;
+                    CommandManager.SendNormalText(this, messageOutput, moved
+                        ? $"towerDef {towerDefId} in this copy advanced to step {step}"
+                        : $"towerDef {towerDefId} is not running in this copy (or no step {step})");
+                    break;
+                }
+
                 var result = WorldIntegration.TriggerTowerDef?.Invoke("wave", towerDefId, step);
                 CommandManager.SendNormalText(this, messageOutput,
                     result ?? "Tower defense scheduler is not running");

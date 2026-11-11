@@ -453,6 +453,24 @@ public static class TowerDefScheduler
     }
 
     /// <summary>Advances a running event to an explicit progression step. Used by the GM trigger.</summary>
+    /// <summary>GM: jumps a running instance copy's run to <paramref name="step"/> (skips the waits before it).</summary>
+    public static bool ForceInstanceWave(uint towerDefId, uint instanceId, uint step)
+    {
+        lock (Sync)
+        {
+            var towerDef = TowerDefGameData.Instance.GetTowerDef(towerDefId);
+            if (towerDef?.Progs == null || step >= towerDef.Progs.Count
+                || !RunningInstances.TryGetValue((towerDefId, instanceId), out var state))
+                return false;
+
+            var now = DateTime.UtcNow;
+            OpenStep(towerDef, state, (int)step, "manual wave");
+            state.NextStep = (int)step + 1;
+            ArmPostStep(towerDef, state, (int)step, now);
+            return true;
+        }
+    }
+
     public static bool ForceWave(uint towerDefId, uint step)
     {
         lock (Sync)
@@ -638,6 +656,15 @@ public static class TowerDefScheduler
                 continue;
 
             OpenDueSteps(towerDef, state, now, "instance");
+            if (TowerDefRunEndRules.IsComplete(
+                    state.NextStep, towerDef.Progs?.Count ?? 0, state.KillWaitStep, state.NextWaveAt, now))
+            {
+                RunningInstances.Remove(key);
+                FinishRun(towerDef, state, "last step complete");
+                WorldIntegration.MarkInstanceTowerDefFinished(key.InstanceId, key.TowerDefId);
+                continue;
+            }
+
             RunningInstances[key] = state;
         }
     }
@@ -686,14 +713,7 @@ public static class TowerDefScheduler
             return;
         }
 
-        if (state.NextStep >= progs.Count)
-        {
-            state.NextWaveAt = DateTime.MaxValue;
-            state.KillWaitStep = -1;
-            state.KillRemaining = null;
-            return;
-        }
-
+        // The last step is armed like any other: its time (or kill quota) is when an instance run is complete.
         var prog = progs[openedStep];
         if (prog.KillTargets is { Count: > 0 })
         {

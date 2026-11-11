@@ -153,4 +153,29 @@ public class IndunInstancePhaseRulesTests
         await Assert.That(state.Phase).IsEqualTo(IndunInstancePhase.Ready);
         await Assert.That(state.SecondsRemaining).IsEqualTo(10);
     }
+
+    [Test]
+    public async Task ScriptEnd_CutsPlayShortAndStartsTheEndWindow()
+    {
+        // Island of Abundance: ready 3 / play 1800 / end 180; its tower_def run is over after ~423 s.
+        var island = new IndunZoneOption(202, 3, 1800, 180);
+        var scriptEnded = T0.AddSeconds(426);
+
+        var s = IndunInstancePhaseRules.StateAt(island, T0, T0.AddSeconds(430), scriptEnded);
+        await Assert.That(s.Phase).IsEqualTo(IndunInstancePhase.End);
+        await Assert.That(s.SecondsRemaining).IsEqualTo(176);
+
+        s = IndunInstancePhaseRules.StateAt(island, T0, scriptEnded.AddSeconds(180), scriptEnded);
+        await Assert.That(s.Phase).IsEqualTo(IndunInstancePhase.Finished);
+    }
+
+    [Test]
+    public async Task ScriptEnd_AfterThePlayBudget_ChangesNothing()
+    {
+        var late = T0.AddSeconds(2000);
+
+        var s = IndunInstancePhaseRules.StateAt(Hereafter, T0, T0.AddSeconds(1030), late);
+        await Assert.That(s.Phase).IsEqualTo(IndunInstancePhase.End);
+        await Assert.That(s.SecondsRemaining).IsEqualTo(40);
+    }
 }
