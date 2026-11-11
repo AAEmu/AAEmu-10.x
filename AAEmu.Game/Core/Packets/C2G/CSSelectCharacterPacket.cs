@@ -201,6 +201,7 @@ public class CSSelectCharacterPacket() : GamePacket(CSOffsets.CSSelectCharacterP
 
             // Load persistent buffs from database
             character.Buffs.LoadActiveBuffs(character);
+            CharacterSkillCooldowns.Load(character);
             character.CheckWantedThreshold();
             
             character.UpdateGearBonuses(null, null);

@@ -495,6 +495,7 @@ public static class SCOffsets
     public const ushort SCMouldTakenPacket = 0x1f0;
     public const ushort SCToggleBeautyshopResponsePacket = 0x271; // 10.0.2.13
     public const ushort SCCharacterGenderAndModelModifiedPacket = 0x272; // 10.0.2.13
+    public const ushort SCCharacterVisualRaceModifiedPacket = 0x273; // 10.0.2.13: u64 charId, 6 x u32 body parts, appearance block
     public const ushort SCSpecialtyCurrentPacket = 0x278; // 10.0.2.13
     public const ushort SCUnitIdleStatusPacket = 0x279; // 10.0.2.13
     public const ushort SCRaceCondPacket = 0x1f6;
@@ -758,6 +759,7 @@ public static class SCOffsets
     public const ushort SCInstantGameUnearnedWinPacket = 0x1E5;
     public const ushort SCInstantGameUpdateTimePacket = 0x1DB;
     public const ushort SCInstantTimePacket = 0x2E8;
+    public const ushort SCDisarmamentChangedPacket = 0x2E9; // 10.0.2.13: bc unitId, bool use, 4 x sbyte slot (-1 = none)
     public const ushort SCIntegrationDummyFactionPacket = 0x352;
     public const ushort SCInvitationAnswerPacket = 0x1D5;
     public const ushort SCItemElementResultPacket = 0x359;

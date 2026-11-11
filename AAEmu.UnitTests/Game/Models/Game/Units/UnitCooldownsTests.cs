@@ -256,4 +256,29 @@ public class UnitCooldownsTests
 
         throw new InvalidOperationException($"Cooldown {skillId} did not expire within the timeout.");
     }
+
+    [Test]
+    public async Task Restore_KeepsTheOriginalDurationAndTheTimeLeft()
+    {
+        // Daru Transformation 50650: 4 h cooldown, 1 h left at relog.
+        var cooldowns = new UnitCooldowns();
+
+        cooldowns.Restore(50650, 14_400_000, 3_600_000, [7]);
+
+        var snapshot = cooldowns.GetActiveSnapshots(10).Single();
+        await Assert.That(snapshot.Duration).IsEqualTo(14_400_000u);
+        await Assert.That(snapshot.Remaining).IsLessThanOrEqualTo(3_600_000u);
+        await Assert.That(snapshot.Remaining).IsGreaterThan(3_590_000u);
+        await Assert.That(cooldowns.CheckTagCooldown([7])).IsTrue();
+    }
+
+    [Test]
+    public async Task Restore_OfNothingLeft_DoesNothing()
+    {
+        var cooldowns = new UnitCooldowns();
+
+        cooldowns.Restore(50650, 14_400_000, 0, null);
+
+        await Assert.That(cooldowns.CheckCooldown(50650)).IsFalse();
+    }
 }

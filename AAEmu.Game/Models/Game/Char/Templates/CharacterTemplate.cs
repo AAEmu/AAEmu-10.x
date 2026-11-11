@@ -8,6 +8,9 @@ public class CharacterTemplate
     public Race Race { get; set; }
     public Gender Gender { get; set; }
     public uint ModelId { get; set; }
+
+    /// <summary><c>characters.face_item_id</c>: the face a transform into this race wears.</summary>
+    public uint FaceItemId { get; set; }
     public uint ZoneId { get; set; }
     public FactionsEnum FactionId { get; set; }
     public uint ReturnDistrictId { get; set; }

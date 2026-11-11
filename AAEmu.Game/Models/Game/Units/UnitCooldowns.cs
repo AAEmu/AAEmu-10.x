@@ -66,6 +66,22 @@ public class UnitCooldowns
         return token;
     }
 
+    /// <summary>Re-arms a saved cooldown with its original duration and the time it had left.</summary>
+    public void Restore(uint skillId, uint duration, uint remaining, IReadOnlyList<int> tagIds)
+    {
+        if (remaining == 0)
+            return;
+
+        var state = new CooldownState(DateTime.UtcNow + TimeSpan.FromMilliseconds(remaining), duration,
+            Interlocked.Increment(ref _nextOwnerToken));
+        _cooldowns[skillId] = state;
+        foreach (var tagId in tagIds ?? [])
+        {
+            if (tagId > 0)
+                _tagCooldowns[(uint)tagId] = state;
+        }
+    }
+
     /// <summary>
     /// Clears the skill id and its tags only while <paramref name="ownerToken"/> is still the arm
     /// that wrote them. A newer cast of the same skill keeps its timer.

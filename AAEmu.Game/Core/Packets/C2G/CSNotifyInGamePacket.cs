@@ -125,6 +125,10 @@ public class CSNotifyInGamePacket() : GamePacket(CSOffsets.CSNotifyInGamePacket,
 
         Connection.ActiveChar.UpdateGearBonuses(null, null);
 
+        // A transform restored with its saved buff is only shown once the player unit exists.
+        if (Connection.ActiveChar.IsCharTransformed)
+            Models.Game.Skills.Effects.CharTransformEffect.AnnounceForm(Connection.ActiveChar);
+
         // Combat resources (combat_resources) after Spawn seeding applies each pool's bar buff, and
         // both that buff and the point packet address the local player unit, which only exists once the
         // character is spawned. default_point had never been read, so every pool started each session at

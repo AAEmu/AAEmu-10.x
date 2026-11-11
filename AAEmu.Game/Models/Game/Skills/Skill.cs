@@ -375,6 +375,22 @@ public class Skill
             }
         }
 
+        // Before unit reqs, so Shoot Arrow gets the Daru message instead of a silent equip_ranged failure.
+        if (unit.IsCharTransformed &&
+            CharTransformCombatRules.BlocksSkill(true, Template.Id, SkillManager.Instance.GetSkillBookCategoryId(Template.Id),
+                CharTransformCombatRules.HasOnlySpecialEffects(Template)))
+        {
+            Logger.Trace("Skill {0} blocked for {1}: no combat skills in a character transform", Template.Id, caster.Name);
+            var now = DateTime.UtcNow;
+            if (character != null && CharTransformCombatRules.ShouldNotifyRefusal(character.LastCharTransformRefusalNoticeUtc, now))
+            {
+                character.LastCharTransformRefusalNoticeUtc = now;
+                character.SendErrorMessage(ErrorMessageType.CanNotDoWhileCharTransform);
+            }
+            Cancelled = true;
+            return SkillResult.SkillReqFail;
+        }
+
         var requirementResult = UnitRequirementsGameData.Instance.CanUseSkill(
             Template,
             caster,
