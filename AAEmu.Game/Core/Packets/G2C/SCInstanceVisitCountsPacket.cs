@@ -20,8 +20,8 @@ public class SCInstanceVisitCountsPacket(IReadOnlyList<InstanceVisitCountRecord>
 
     internal static void WriteVisitRow(PacketStream stream, InstanceVisitCountRecord row)
     {
-        stream.Write(row.ZoneGroupId);
-        stream.Write(row.InstanceCatalogId);
+        stream.Write(row.ZoneId);
+        stream.Write(row.Data);
         stream.Write(row.UsedCount);
         stream.Write(row.ResetCount);
         stream.Write(row.PermittedCount);

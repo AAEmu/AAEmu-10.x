@@ -79,7 +79,40 @@ public static class IndunEntryRules
     public static bool CanBuyReset(int currentResetCount, int resetLimit) =>
         resetLimit <= 0 || currentResetCount < resetLimit;
 
-    /// <summary>Effective daily enter cap after PERMIT buys.</summary>
-    public static int EffectivePermittedCount(uint enterCount, int permitBonus) =>
-        (int)enterCount + Math.Max(0, permitBonus);
+    /// <summary>
+    /// The client's entry check: today's entries stay below enter_count and, where the dungeon needs a pass
+    /// (permit_enter_count_item_id), below the passes registered today.
+    /// </summary>
+    public static bool CanEnter(uint enterCount, bool needsPermit, int used, int permitsUsed) =>
+        used < enterCount && (!needsPermit || used < permitsUsed);
+
+    /// <summary>
+    /// Drops a character's daily records for one zone group, or every group when <paramref name="zoneGroupId"/> is 0.
+    /// </summary>
+    public static int ClearDaily(
+        Dictionary<uint, Dictionary<uint, List<DateTime>>> store, uint characterId, uint zoneGroupId)
+    {
+        if (!store.TryGetValue(characterId, out var byZone))
+            return 0;
+
+        if (zoneGroupId != 0)
+            return byZone.TryGetValue(zoneGroupId, out var one) ? one.RemoveAll(_ => true) : 0;
+
+        var total = byZone.Values.Sum(entries => entries.Count);
+        byZone.Clear();
+        return total;
+    }
+
+    /// <summary>Passes registered today never exceed enter_count (the client shows them as "Allowed Entries x/enter_count").</summary>
+    public static bool CanRegisterPermit(uint enterCount, int permitsUsed) => permitsUsed < enterCount;
+
+    /// <summary>
+    /// The zone_key a dungeon's visit row is keyed by: the first zones row (lowest id) of its group, or 0 when none.
+    /// </summary>
+    public static uint VisitRowZoneKey(uint zoneGroupId, IEnumerable<(uint Id, uint ZoneKey, uint GroupId)> zones) =>
+        zones.Where(z => z.GroupId == zoneGroupId).OrderBy(z => z.Id).Select(z => z.ZoneKey).FirstOrDefault();
+
+    /// <summary>A dungeon's visit row; permittedCount is the passes registered today.</summary>
+    public static InstanceVisitCountRecord VisitRow(uint zoneKey, int used, int resetCount, int permitsUsed) =>
+        new((int)zoneKey, 0, used, resetCount, permitsUsed);
 }

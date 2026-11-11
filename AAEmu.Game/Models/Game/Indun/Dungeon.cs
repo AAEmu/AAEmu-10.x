@@ -440,6 +440,8 @@ public class Dungeon : IPreparedIndunInstance
             }
 
             _chargedEntryIds.Add(character.Id);
+            character.SendPacket(new SCInstanceVisitCountChangePacket(
+                IndunManager.Instance.GetVisitRow(character.Id, _indunZone)));
         }
 
         PlayersWithAccess.Add(character.Id);

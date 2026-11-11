@@ -43,6 +43,22 @@ public class IndunManagerTests
     }
 
     [Test]
+    public async Task VisitRow_CountsAnEntryAsSoonAsItIsCharged()
+    {
+        // The island entry was charged but the client only learned of it at the next character select.
+        var manager = new IndunManager(
+            Mock.Of<ITickManager>().Object,
+            Mock.Of<IWorldManager>().Object,
+            Mock.Of<IZoneManager>().Object,
+            Mock.Of<ITeamManager>().Object);
+        var island = new IndunZone { ZoneGroupId = 158, EnterCount = 2 };
+
+        manager.CheckEntryAttemptCount(1001, 158, island, true);
+
+        await Assert.That(manager.GetVisitRow(1001, island).UsedCount).IsEqualTo(1);
+    }
+
+    [Test]
     public void Initialize_SubscribesToTickManager()
     {
         var mockTick = Mock.Of<ITickManager>();

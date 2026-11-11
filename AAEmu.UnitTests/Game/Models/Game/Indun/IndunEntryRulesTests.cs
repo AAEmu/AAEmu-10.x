@@ -71,10 +71,44 @@ public class IndunEntryRulesTests
     }
 
     [Test]
-    public async Task EffectivePermittedCount_AddsPermitBonus()
+    public async Task CanEnter_WithoutPermitItem_OnlyCountsEntries()
     {
-        await Assert.That(IndunEntryRules.EffectivePermittedCount(3, 0)).IsEqualTo(3);
-        await Assert.That(IndunEntryRules.EffectivePermittedCount(3, 2)).IsEqualTo(5);
+        await Assert.That(IndunEntryRules.CanEnter(enterCount: 3, needsPermit: false, used: 2, permitsUsed: 0)).IsTrue();
+        await Assert.That(IndunEntryRules.CanEnter(enterCount: 3, needsPermit: false, used: 3, permitsUsed: 0)).IsFalse();
+    }
+
+    [Test]
+    public async Task CanEnter_PermitDungeon_NeedsAPassPerEntry()
+    {
+        // Island of Abundance: enter_count 1, permit item 54614.
+        await Assert.That(IndunEntryRules.CanEnter(enterCount: 1, needsPermit: true, used: 0, permitsUsed: 0)).IsFalse();
+        await Assert.That(IndunEntryRules.CanEnter(enterCount: 1, needsPermit: true, used: 0, permitsUsed: 1)).IsTrue();
+        await Assert.That(IndunEntryRules.CanEnter(enterCount: 1, needsPermit: true, used: 1, permitsUsed: 1)).IsFalse();
+    }
+
+    [Test]
+    public async Task CanRegisterPermit_StopsAtEnterCount()
+    {
+        await Assert.That(IndunEntryRules.CanRegisterPermit(enterCount: 1, permitsUsed: 0)).IsTrue();
+        await Assert.That(IndunEntryRules.CanRegisterPermit(enterCount: 1, permitsUsed: 1)).IsFalse();
+    }
+
+    [Test]
+    public async Task VisitRowZoneKey_IsTheFirstZoneOfTheGroup()
+    {
+        // The client keys a dungeon's visit row by the zone_key of the first zones row in its group.
+        (uint Id, uint ZoneKey, uint GroupId)[] zones = [(400, 999, 158), (323, 410, 158), (1, 1, 1)];
+
+        await Assert.That(IndunEntryRules.VisitRowZoneKey(158, zones)).IsEqualTo(410u);
+        await Assert.That(IndunEntryRules.VisitRowZoneKey(77, zones)).IsEqualTo(0u);
+    }
+
+    [Test]
+    public async Task VisitRow_CarriesZoneKeyAndPassesUsed()
+    {
+        var row = IndunEntryRules.VisitRow(zoneKey: 410, used: 0, resetCount: 2, permitsUsed: 1);
+
+        await Assert.That(row).IsEqualTo(new InstanceVisitCountRecord(ZoneId: 410, Data: 0, UsedCount: 0, ResetCount: 2, PermittedCount: 1));
     }
 
     [Test]
@@ -86,5 +120,36 @@ public class IndunEntryRulesTests
         await Assert.That(IndunEntryRules.IsCreateOnCooldown(lastCreate, now, 3600)).IsTrue();
         // After ClearCreateCooldown, lastCreate is null → not on cooldown.
         await Assert.That(IndunEntryRules.IsCreateOnCooldown(null, now, 3600)).IsFalse();
+    }
+
+    [Test]
+    public async Task ClearDaily_DropsOneZoneGroupForOneCharacter()
+    {
+        // Island passes (zone group 158) blocked a GM retest after /indun reset cleared only the entries.
+        var t = new DateTime(2026, 11, 11, 16, 0, 0, DateTimeKind.Utc);
+        var store = new Dictionary<uint, Dictionary<uint, List<DateTime>>>
+        {
+            [1001] = new() { [158] = [t, t], [7] = [t] },
+            [1002] = new() { [158] = [t] }
+        };
+
+        await Assert.That(IndunEntryRules.ClearDaily(store, 1001, 158)).IsEqualTo(2);
+        await Assert.That(store[1001][158]).IsEmpty();
+        await Assert.That(store[1001][7].Count).IsEqualTo(1);
+        await Assert.That(store[1002][158].Count).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task ClearDaily_ZoneGroupZero_DropsEveryGroupOfThatCharacter()
+    {
+        var t = new DateTime(2026, 11, 11, 16, 0, 0, DateTimeKind.Utc);
+        var store = new Dictionary<uint, Dictionary<uint, List<DateTime>>>
+        {
+            [1001] = new() { [158] = [t], [7] = [t, t] }
+        };
+
+        await Assert.That(IndunEntryRules.ClearDaily(store, 1001, 0)).IsEqualTo(3);
+        await Assert.That(store[1001]).IsEmpty();
+        await Assert.That(IndunEntryRules.ClearDaily(store, 9999, 0)).IsEqualTo(0);
     }
 }
