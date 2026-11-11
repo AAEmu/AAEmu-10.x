@@ -8,6 +8,7 @@ using AAEmu.Game.GameData;
 using AAEmu.Game.Models.Game.Families;
 using AAEmu.Game.Models.Game.Units;
 
+using System.Collections.Concurrent;
 using System.Reflection;
 using AAEmu.Commons.Network.Core;
 
@@ -321,7 +322,7 @@ public class FamilyManagerTests
             FamilyPurchaseFailure.None,
             () =>
             {
-                callbackWorker = Task.Run(() => manager.GetFamilyOfCharacter(uint.MaxValue));
+                callbackWorker = Task.Run(() => manager.AcquireCharacterDeletionLock().Dispose());
                 if (!callbackWorker.Wait(TimeSpan.FromSeconds(5)))
                     throw new TimeoutException("Family purchase callback could not reacquire family state.");
             }));
@@ -720,7 +721,7 @@ public class FamilyManagerTests
             FamilyPurchaseFailure.None,
             () =>
             {
-                callbackWorker = Task.Run(() => manager.GetFamilyOfCharacter(uint.MaxValue));
+                callbackWorker = Task.Run(() => manager.AcquireCharacterDeletionLock().Dispose());
                 if (!callbackWorker.Wait(TimeSpan.FromSeconds(5)))
                     throw new TimeoutException("Family departure callback could not reacquire family state.");
             }));
@@ -739,6 +740,108 @@ public class FamilyManagerTests
         }
     }
 
+    [Test]
+    public async Task GetFamilyOfCharacter_DoesNotWaitForTheFamilyLock()
+    {
+        // A doodad packet is written under the viewer's connection send lock, and family code sends
+        // packets while it holds the family lock: a lookup that waited for the family lock could deadlock.
+        var owner = NewCharacter(1, 10, "Owner");
+        var manager = NewManager(Mock.Of<IWorldManager>(), _ => { }, NewFamily(owner, NewCharacter(2, 10, "Member")));
+
+        Task<uint> lookup;
+        bool finished;
+        using (manager.AcquireCharacterDeletionLock())
+        {
+            lookup = Task.Run(() => manager.GetFamilyOfCharacter(owner.Id));
+            finished = lookup.Wait(TimeSpan.FromSeconds(5));
+        }
+
+        await Assert.That(finished).IsTrue();
+        await Assert.That(await lookup).IsEqualTo(10u);
+        await Assert.That(manager.GetFamilyOfCharacter(99)).IsEqualTo(0u);
+    }
+
+    [Test]
+    public async Task MembershipChanges_ResendTheOwnersDoodadsAfterTheCommit()
+    {
+        var founder = NewCharacter(1, 0, "Founder");
+        var second = NewCharacter(2, 0, "Second");
+        var third = NewCharacter(3, 0, "Third");
+        var world = Mock.Of<IWorldManager>();
+        world.GetCharacter(second.Name).Returns(second);
+        world.GetCharacter(third.Name).Returns(third);
+        world.GetCharacterById(founder.Id).Returns(founder);
+        world.GetCharacterById(third.Id).Returns(third);
+        FamilyManager manager = null;
+        var resent = new List<(uint[] Owners, uint[] Families, bool LockWasFree)>();
+        manager = NewManager(world, _ => { }, StandInPurchases(_ => { }), owners =>
+        {
+            // The create packets written from here must already carry the new family, and sending
+            // them must not happen under the family lock.
+            var families = owners.Select(manager.GetFamilyOfCharacter).ToArray();
+            var lockWasFree = Task.Run(() => manager.AcquireCharacterDeletionLock().Dispose())
+                .Wait(TimeSpan.FromSeconds(5));
+            resent.Add((owners.ToArray(), families, lockWasFree));
+        }, []);
+
+        manager.InviteToFamily(founder, second.Name, "Child");
+        manager.ReplyToInvite(founder.Id, second, true, "Child");
+        manager.InviteToFamily(founder, third.Name, "Child");
+        manager.ReplyToInvite(founder.Id, third, true, "Child");
+        manager.KickMember(founder, third.Id);
+        manager.LeaveFamily(second);
+
+        await Assert.That(resent.Count).IsEqualTo(4);
+        await Assert.That(resent.All(x => x.LockWasFree)).IsTrue();
+        // Created: both founders now carry family 100.
+        await Assert.That(string.Join(",", resent[0].Owners.Order())).IsEqualTo("1,2");
+        await Assert.That(string.Join(",", resent[0].Families)).IsEqualTo("100,100");
+        // Joined.
+        await Assert.That(string.Join(",", resent[1].Owners)).IsEqualTo("3");
+        await Assert.That(string.Join(",", resent[1].Families)).IsEqualTo("100");
+        // Kicked.
+        await Assert.That(string.Join(",", resent[2].Owners)).IsEqualTo("3");
+        await Assert.That(string.Join(",", resent[2].Families)).IsEqualTo("0");
+        // Left a two-member family: it disbands, so the remaining member's doodads change too.
+        await Assert.That(string.Join(",", resent[3].Owners.Order())).IsEqualTo("1,2");
+        await Assert.That(string.Join(",", resent[3].Families)).IsEqualTo("0,0");
+    }
+
+    [Test]
+    public async Task FailedMembershipChange_KeepsTheFamilyAndResendsNothing()
+    {
+        var owner = NewCharacter(1, 10, "Owner");
+        var member = NewCharacter(2, 10, "Member");
+        var third = NewCharacter(3, 10, "Three");
+        var resends = 0;
+        var manager = NewManager(Mock.Of<IWorldManager>(), _ => throw new InvalidOperationException("save failed"),
+            StandInPurchases(_ => throw new InvalidOperationException("save failed")), _ => resends++,
+            [NewFamily(owner, member, third)]);
+
+        await Assert.That(() => manager.LeaveFamily(member)).Throws<InvalidOperationException>();
+        await Assert.That(() => manager.KickMember(owner, third.Id)).Throws<InvalidOperationException>();
+
+        await Assert.That(resends).IsEqualTo(0);
+        await Assert.That(manager.GetFamilyOfCharacter(member.Id)).IsEqualTo(10u);
+        await Assert.That(manager.GetFamilyOfCharacter(third.Id)).IsEqualTo(10u);
+    }
+
+    [Test]
+    public async Task ResendFailure_DoesNotFailTheCommittedChange()
+    {
+        var owner = NewCharacter(1, 10, "Owner");
+        var member = NewCharacter(2, 10, "Member");
+        var manager = NewManager(Mock.Of<IWorldManager>(), _ => { }, StandInPurchases(_ => { }),
+            _ => throw new InvalidOperationException("resend failed"),
+            [NewFamily(owner, member, NewCharacter(3, 10, "Three"))]);
+
+        manager.LeaveFamily(member);
+
+        await Assert.That(member.Family).IsEqualTo(0u);
+        await Assert.That(manager.GetFamilyOfCharacter(member.Id)).IsEqualTo(0u);
+        await Assert.That(manager.GetFamilyOfCharacter(owner.Id)).IsEqualTo(10u);
+    }
+
     private static Character NewCharacter(uint id, uint family, string name) =>
         new(new UnitCustomModelParams()) { Id = id, Family = family, Name = name };
 
@@ -752,6 +855,9 @@ public class FamilyManagerTests
     }
 
     private static FamilyManager NewManager(Mock<IWorldManager> world, Action<Family> save, params Family[] families)
+        => NewManager(world, save, StandInPurchases(save), families);
+
+    private static Mock<IFamilyPurchaseService> StandInPurchases(Action<Family> save)
     {
         var purchases = Mock.Of<IFamilyPurchaseService>();
         purchases.ConsumeInvitation(Any<Character>())
@@ -763,11 +869,16 @@ public class FamilyManagerTests
                 save(family);
                 return new FamilyPurchaseResult(true, FamilyPurchaseFailure.None);
             });
-        return NewManager(world, save, purchases, families);
+        return purchases;
     }
 
     private static FamilyManager NewManager(Mock<IWorldManager> world, Action<Family> save,
         Mock<IFamilyPurchaseService> purchases, params Family[] families)
+        => NewManager(world, save, purchases, null, families);
+
+    private static FamilyManager NewManager(Mock<IWorldManager> world, Action<Family> save,
+        Mock<IFamilyPurchaseService> purchases, Action<IReadOnlyCollection<uint>> resendOwnedDoodads,
+        Family[] families)
     {
         ContentConfigGameData.Instance.SetForTest(FamilyContentConfig.MaximumCountKey, 8);
         ContentConfigGameData.Instance.SetForTest(FamilyContentConfig.LeaveExpPercentKey, 10);
@@ -775,9 +886,14 @@ public class FamilyManagerTests
         var ids = Mock.Of<IFamilyIdManager>();
         ids.GetNextId().Returns(100);
         var manager = new FamilyManager(world.Object, Mock.Of<IChatManager>().Object, ids.Object,
-            purchases.Object, save, isCurrentSession: _ => true);
+            purchases.Object, save, isCurrentSession: _ => true, resendOwnedDoodads: resendOwnedDoodads);
         SetField(manager, "_families", families.ToDictionary(x => x.Id));
         SetField(manager, "_familyMembers", families.SelectMany(x => x.Members).ToDictionary(x => x.Id));
+        var familyIdByCharacter = (ConcurrentDictionary<uint, uint>)typeof(FamilyManager)
+            .GetField("_familyIdByCharacter", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(manager)!;
+        foreach (var family in families)
+            foreach (var member in family.Members)
+                familyIdByCharacter[member.Id] = family.Id;
         return manager;
     }
 

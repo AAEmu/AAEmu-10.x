@@ -1,4 +1,5 @@
-﻿using AAEmu.Commons.Utils;
+﻿using System.Collections.Concurrent;
+using AAEmu.Commons.Utils;
 using AAEmu.Commons.Utils.DB;
 using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.World;
@@ -7,6 +8,7 @@ using AAEmu.Game.GameData;
 using AAEmu.Game.GameData.Framework;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.DoodadObj;
 using AAEmu.Game.Models.Game.Families;
 
 using NLog;
@@ -25,6 +27,15 @@ public class FamilyManager(IWorldManager worldManager, IChatManager chatManager,
     private Dictionary<uint, FamilyMember> _familyMembers = [];
     private readonly Dictionary<uint, PendingFamilyInvitation> _pendingInvitations = [];
     private readonly object _familyMutationLock = new();
+    // Committed character -> family id. Packet writes read it without _familyMutationLock: a doodad is
+    // written while the viewer's connection send lock is held, and family code sends packets while it
+    // holds the family lock, so taking the family lock in a packet write would invert the lock order.
+    private readonly ConcurrentDictionary<uint, uint> _familyIdByCharacter = new();
+    // Characters whose committed membership changed and whose doodads still have to be sent again.
+    // Filled under _familyMutationLock, drained by PublishMembershipChanges.
+    private readonly List<uint> _membershipChanges = [];
+    private readonly Action<IReadOnlyCollection<uint>> _resendOwnedDoodads =
+        ownerIds => DoodadFamilyRefresh.ResendOwnedDoodads(ownerIds, worldManager);
     private readonly Action<Family> _persistFamily = SaveFamily;
     private readonly Func<long> _unixTime = () => DateTimeOffset.UtcNow.ToUnixTimeSeconds();
     private readonly Func<Character, bool> _isCurrentSession = character =>
@@ -99,13 +110,15 @@ public class FamilyManager(IWorldManager worldManager, IChatManager chatManager,
 
     internal FamilyManager(IWorldManager worldManager, IChatManager chatManager, IFamilyIdManager familyIdManager,
         IFamilyPurchaseService familyPurchaseService, Action<Family> persistFamily, Func<long> unixTime = null,
-        Func<Character, bool> isCurrentSession = null, FamilyGameData familyGameData = null)
+        Func<Character, bool> isCurrentSession = null, FamilyGameData familyGameData = null,
+        Action<IReadOnlyCollection<uint>> resendOwnedDoodads = null)
         : this(worldManager, chatManager, familyIdManager, familyPurchaseService, null)
     {
         _persistFamily = persistFamily;
         _unixTime = unixTime ?? _unixTime;
         _isCurrentSession = isCurrentSession ?? _isCurrentSession;
         _familyGameData = familyGameData ?? FamilyGameData.Instance;
+        _resendOwnedDoodads = resendOwnedDoodads ?? _resendOwnedDoodads;
     }
 
     /// <summary>
@@ -115,6 +128,7 @@ public class FamilyManager(IWorldManager worldManager, IChatManager chatManager,
     {
         _families = [];
         _familyMembers = [];
+        _familyIdByCharacter.Clear();
 
         Logger.Info("Loading families...");
         using (var connection = MySQL.CreateConnection())
@@ -147,7 +161,10 @@ public class FamilyManager(IWorldManager worldManager, IChatManager chatManager,
                         }
 
                         foreach (var member in family.Members)
+                        {
                             _familyMembers.Add(member.Id, member);
+                            _familyIdByCharacter[member.Id] = family.Id;
+                        }
                     }
                 }
             }
@@ -268,6 +285,12 @@ public class FamilyManager(IWorldManager worldManager, IChatManager chatManager,
     /// <param name="title"></param>
     public void ReplyToInvite(uint invitorId, Character invitedChar, bool join, string title)
     {
+        ApplyInviteReply(invitorId, invitedChar, join);
+        PublishMembershipChanges();
+    }
+
+    private void ApplyInviteReply(uint invitorId, Character invitedChar, bool join)
+    {
         using var persistence = new PersistenceOperation();
         lock (_familyMutationLock)
         {
@@ -310,6 +333,7 @@ public class FamilyManager(IWorldManager worldManager, IChatManager chatManager,
                 invitedChar.Family = 0;
                 throw;
             }
+            CommitMembership(invitedChar.Id, family.Id);
             invitedChar.FamilyRejoinUntil = 0;
             chatManager.GetFamilyChat(family.Id)?.JoinChannel(invitedChar);
             ApplyLevelBuff(invitedChar, family.Level);
@@ -348,6 +372,8 @@ public class FamilyManager(IWorldManager worldManager, IChatManager chatManager,
             }
             throw;
         }
+        foreach (var member in family.Members)
+            CommitMembership(member.Id, family.Id);
         foreach (var member in family.Members)
             if (member.Character != null)
             {
@@ -591,6 +617,7 @@ public class FamilyManager(IWorldManager worldManager, IChatManager chatManager,
             Restore();
             return;
         }
+        CommitMembership(character.Id, 0);
         if (disbandedMembers == null)
             changedFamily = SnapshotForPacket(family);
         character.SendPacket(new SCFamilyRemovedPacket(family.Id));
@@ -603,6 +630,7 @@ public class FamilyManager(IWorldManager worldManager, IChatManager chatManager,
         PublishDisband(familyId, disbandedMembers);
         if (changedFamily != null)
             PublishExperience(changedFamily.Id, character.Id);
+        PublishMembershipChanges();
     }
 
     /// <summary>
@@ -682,6 +710,8 @@ public class FamilyManager(IWorldManager worldManager, IChatManager chatManager,
             return false;
         }
         _families.Remove(family.Id);
+        foreach (var member in removedMembers)
+            CommitMembership(member.Id, 0);
         var online = removedMembers.Where(x => x.Character != null).Select(x => x.Character).ToList();
         foreach (var character in online)
         {
@@ -772,6 +802,7 @@ public class FamilyManager(IWorldManager worldManager, IChatManager chatManager,
             Restore();
             return;
         }
+        CommitMembership(kickedMember.Id, 0);
         if (disbandedMembers == null)
             changedFamily = SnapshotForPacket(family);
         if (isOnline)
@@ -787,6 +818,7 @@ public class FamilyManager(IWorldManager worldManager, IChatManager chatManager,
         PublishDisband(familyId, disbandedMembers);
         if (changedFamily != null)
             PublishExperience(changedFamily.Id, kickedId);
+        PublishMembershipChanges();
     }
 
     /// <summary>
@@ -1048,6 +1080,44 @@ public class FamilyManager(IWorldManager worldManager, IChatManager chatManager,
         }
     }
 
+    /// <summary>
+    /// Records a membership change that has been persisted. Call with <see cref="_familyMutationLock"/> held.
+    /// </summary>
+    private void CommitMembership(uint characterId, uint familyId)
+    {
+        if (familyId == 0)
+            _familyIdByCharacter.TryRemove(characterId, out _);
+        else
+            _familyIdByCharacter[characterId] = familyId;
+        _membershipChanges.Add(characterId);
+    }
+
+    /// <summary>
+    /// A doodad's family reaches the client only in its create packet, so the doodads of every character
+    /// whose membership was committed are sent to their viewers again. Called once the mutation has left
+    /// <see cref="_familyMutationLock"/>; a failure here must not undo or fail the committed change.
+    /// </summary>
+    private void PublishMembershipChanges()
+    {
+        uint[] changed;
+        lock (_familyMutationLock)
+        {
+            if (_membershipChanges.Count == 0)
+                return;
+            changed = [.. _membershipChanges];
+            _membershipChanges.Clear();
+        }
+
+        try
+        {
+            _resendOwnedDoodads(changed);
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Failed to resend the doodads of characters whose family changed");
+        }
+    }
+
     private bool TryGetOwnedFamily(Character owner, out Family family)
     {
         if (_isCurrentSession(owner) && _families.TryGetValue(owner.Family, out family) &&
@@ -1155,20 +1225,11 @@ public class FamilyManager(IWorldManager worldManager, IChatManager chatManager,
     }
 
     /// <summary>
-    /// Gets FamilyId of an offline or online character
+    /// Gets FamilyId of an offline or online character. Lock-free: packet writes call this while a
+    /// connection send lock is held, so it must never wait for <see cref="_familyMutationLock"/>.
     /// </summary>
     /// <param name="characterId"></param>
     /// <returns></returns>
     public uint GetFamilyOfCharacter(uint characterId)
-    {
-        lock (_familyMutationLock)
-        {
-        foreach (var family in _families.Values)
-            foreach (var member in family.Members)
-                if (member.Id == characterId)
-                    return family.Id;
-
-        return 0;
-        }
-    }
+        => _familyIdByCharacter.TryGetValue(characterId, out var familyId) ? familyId : 0;
 }
