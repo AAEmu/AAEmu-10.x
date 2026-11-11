@@ -1,0 +1,112 @@
+// Generated from the client's level_design/zone/*/editor/slave.xml (cannons, siege weapons, wagons, turrets).
+// Placements already in the hand-written slave_spawns.json are left out. Yaw = 2*atan2(Rotate[3], Rotate[0]).
+[
+    {
+        "UnitId": 5, // Siege Tower; client level_design zone 352 (instance_golden_plains) slave.xml Slave_30
+        "Position": {
+            "X": 10360.9,
+            "Y": 6258.3,
+            "Z": 215.7,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 5, // Siege Tower; client level_design zone 352 (instance_golden_plains) slave.xml Slave_32
+        "Position": {
+            "X": 10385.5,
+            "Y": 6264.2,
+            "Z": 216.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 5, // Siege Tower; client level_design zone 352 (instance_golden_plains) slave.xml Slave_33
+        "Position": {
+            "X": 10455.3,
+            "Y": 6264.0,
+            "Z": 213.1,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 5, // Siege Tower; client level_design zone 352 (instance_golden_plains) slave.xml Slave_34
+        "Position": {
+            "X": 10554.8,
+            "Y": 6280.1,
+            "Z": 207.7,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 51, // Ironclad; client level_design zone 352 (instance_golden_plains) slave.xml Slave_29
+        "Position": {
+            "X": 10392.6,
+            "Y": 6087.6,
+            "Z": 200.3,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 51, // Ironclad; client level_design zone 352 (instance_golden_plains) slave.xml Slave_42
+        "Position": {
+            "X": 10397.5,
+            "Y": 6077.7,
+            "Z": 200.2,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 51, // Ironclad; client level_design zone 352 (instance_golden_plains) slave.xml Slave_44
+        "Position": {
+            "X": 10433.1,
+            "Y": 6135.0,
+            "Z": 200.2,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 51, // Ironclad; client level_design zone 352 (instance_golden_plains) slave.xml Slave_43
+        "Position": {
+            "X": 10435.7,
+            "Y": 6075.9,
+            "Z": 199.9,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 51, // Ironclad; client level_design zone 352 (instance_golden_plains) slave.xml Slave_41
+        "Position": {
+            "X": 10540.5,
+            "Y": 6103.2,
+            "Z": 194.7,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 51, // Ironclad; client level_design zone 352 (instance_golden_plains) slave.xml Slave_22
+        "Position": {
+            "X": 10576.2,
+            "Y": 6200.3,
+            "Z": 193.9,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 51, // Ironclad; client level_design zone 352 (instance_golden_plains) slave.xml Slave_40
+        "Position": {
+            "X": 10588.3,
+            "Y": 6084.7,
+            "Z": 194.6,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 51, // Ironclad; client level_design zone 352 (instance_golden_plains) slave.xml Slave_23
+        "Position": {
+            "X": 10607.7,
+            "Y": 6197.1,
+            "Z": 193.5,
+            "Yaw": 0.0
+        }
+    }
+]

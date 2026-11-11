@@ -1,0 +1,40 @@
+// Generated from the client's level_design/zone/*/editor/slave.xml (cannons, siege weapons, wagons, turrets).
+// Placements already in the hand-written slave_spawns.json are left out. Yaw = 2*atan2(Rotate[3], Rotate[0]).
+[
+    {
+        "UnitId": 85, // Farm Wagon; client level_design zone 260 (arche_mall) slave.xml Slave_14
+        "Position": {
+            "X": 3836.5,
+            "Y": 4744.7,
+            "Z": 109.1,
+            "Yaw": 4.0
+        }
+    },
+    {
+        "UnitId": 85, // Farm Wagon; client level_design zone 260 (arche_mall) slave.xml Slave_12
+        "Position": {
+            "X": 3847.1,
+            "Y": 4745.4,
+            "Z": 108.1,
+            "Yaw": 5.0
+        }
+    },
+    {
+        "UnitId": 85, // Farm Wagon; client level_design zone 260 (arche_mall) slave.xml Slave_13
+        "Position": {
+            "X": 3857.4,
+            "Y": 4746.7,
+            "Z": 109.6,
+            "Yaw": 5.0
+        }
+    },
+    {
+        "UnitId": 85, // Farm Wagon; client level_design zone 260 (arche_mall) slave.xml Slave_11
+        "Position": {
+            "X": 3868.2,
+            "Y": 4747.3,
+            "Z": 110.2,
+            "Yaw": 5.0
+        }
+    }
+]

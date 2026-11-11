@@ -1,0 +1,175 @@
+// Generated from the client's level_design/zone/*/editor/slave.xml (cannons, siege weapons, wagons, turrets).
+// Placements already in the hand-written slave_spawns.json are left out. Yaw = 2*atan2(Rotate[3], Rotate[0]).
+[
+    {
+        "UnitId": 66, // Grenwolf Human Cannon; client level_design zone 409 (instance_noryette_battlefield) slave.xml Slave_6
+        "Position": {
+            "X": 1256.3,
+            "Y": 2004.7,
+            "Z": 114.2,
+            "Yaw": 148.0
+        }
+    },
+    {
+        "UnitId": 66, // Grenwolf Human Cannon; client level_design zone 409 (instance_noryette_battlefield) slave.xml Slave_4
+        "Position": {
+            "X": 1259.8,
+            "Y": 2002.8,
+            "Z": 114.2,
+            "Yaw": 148.0
+        }
+    },
+    {
+        "UnitId": 66, // Grenwolf Human Cannon; client level_design zone 409 (instance_noryette_battlefield) slave.xml Slave_5
+        "Position": {
+            "X": 1263.1,
+            "Y": 2001.1,
+            "Z": 114.2,
+            "Yaw": 148.0
+        }
+    },
+    {
+        "UnitId": 67, // Golden Fable Human Cannon; client level_design zone 409 (instance_noryette_battlefield) slave.xml Slave_8
+        "Position": {
+            "X": 1265.9,
+            "Y": 2007.9,
+            "Z": 114.4,
+            "Yaw": -72.0
+        }
+    },
+    {
+        "UnitId": 67, // Golden Fable Human Cannon; client level_design zone 409 (instance_noryette_battlefield) slave.xml Slave_7
+        "Position": {
+            "X": 1266.2,
+            "Y": 2011.5,
+            "Z": 114.2,
+            "Yaw": -72.0
+        }
+    },
+    {
+        "UnitId": 67, // Golden Fable Human Cannon; client level_design zone 409 (instance_noryette_battlefield) slave.xml Slave_9
+        "Position": {
+            "X": 1267.3,
+            "Y": 2004.4,
+            "Z": 114.4,
+            "Yaw": -72.0
+        }
+    },
+    {
+        "UnitId": 68, // Blueglass Human Cannon; client level_design zone 409 (instance_noryette_battlefield) slave.xml Slave_12
+        "Position": {
+            "X": 2501.1,
+            "Y": 2426.9,
+            "Z": 104.6,
+            "Yaw": 108.0
+        }
+    },
+    {
+        "UnitId": 68, // Blueglass Human Cannon; client level_design zone 409 (instance_noryette_battlefield) slave.xml Slave_10
+        "Position": {
+            "X": 2502.8,
+            "Y": 2424.7,
+            "Z": 104.6,
+            "Yaw": 108.0
+        }
+    },
+    {
+        "UnitId": 68, // Blueglass Human Cannon; client level_design zone 409 (instance_noryette_battlefield) slave.xml Slave_11
+        "Position": {
+            "X": 2504.6,
+            "Y": 2422.3,
+            "Z": 104.6,
+            "Yaw": 108.0
+        }
+    },
+    {
+        "UnitId": 71, // Human Cannon; client level_design zone 409 (instance_noryette_battlefield) slave.xml Slave_14
+        "Position": {
+            "X": 1655.5,
+            "Y": 2458.2,
+            "Z": 160.8,
+            "Yaw": -89.0
+        }
+    },
+    {
+        "UnitId": 71, // Human Cannon; client level_design zone 409 (instance_noryette_battlefield) slave.xml Slave_13
+        "Position": {
+            "X": 1655.6,
+            "Y": 2455.2,
+            "Z": 161.0,
+            "Yaw": -89.0
+        }
+    },
+    {
+        "UnitId": 71, // Human Cannon; client level_design zone 409 (instance_noryette_battlefield) slave.xml Slave_15
+        "Position": {
+            "X": 1655.7,
+            "Y": 2452.1,
+            "Z": 161.1,
+            "Yaw": -89.0
+        }
+    },
+    {
+        "UnitId": 73, // Cotton Wagon; client level_design zone 409 (instance_noryette_battlefield) slave.xml Slave_30
+        "Position": {
+            "X": 2277.2,
+            "Y": 2796.3,
+            "Z": 158.7,
+            "Yaw": -93.6
+        }
+    },
+    {
+        "UnitId": 73, // Cotton Wagon; client level_design zone 409 (instance_noryette_battlefield) slave.xml Slave_29
+        "Position": {
+            "X": 2278.6,
+            "Y": 2804.1,
+            "Z": 157.7,
+            "Yaw": -100.6
+        }
+    },
+    {
+        "UnitId": 73, // Cotton Wagon; client level_design zone 409 (instance_noryette_battlefield) slave.xml Slave_28
+        "Position": {
+            "X": 2281.7,
+            "Y": 2811.8,
+            "Z": 156.8,
+            "Yaw": -111.6
+        }
+    },
+    {
+        "UnitId": 73, // Cotton Wagon; client level_design zone 409 (instance_noryette_battlefield) slave.xml Slave_27
+        "Position": {
+            "X": 2285.5,
+            "Y": 2818.7,
+            "Z": 156.5,
+            "Yaw": -119.6
+        }
+    },
+    {
+        "UnitId": 73, // Cotton Wagon; client level_design zone 409 (instance_noryette_battlefield) slave.xml Slave_26
+        "Position": {
+            "X": 2290.1,
+            "Y": 2824.4,
+            "Z": 156.1,
+            "Yaw": -124.6
+        }
+    },
+    {
+        "UnitId": 73, // Cotton Wagon; client level_design zone 409 (instance_noryette_battlefield) slave.xml Slave_25
+        "Position": {
+            "X": 2295.9,
+            "Y": 2829.8,
+            "Z": 155.8,
+            "Yaw": -146.6
+        }
+    },
+    {
+        "UnitId": 73, // Cotton Wagon; client level_design zone 409 (instance_noryette_battlefield) slave.xml Slave_17
+        "Position": {
+            "X": 2303.3,
+            "Y": 2833.5,
+            "Z": 155.2,
+            "Yaw": -160.6
+        }
+    }
+]

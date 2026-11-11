@@ -1,0 +1,949 @@
+// Generated from the client's level_design/zone/*/editor/slave.xml (cannons, siege weapons, wagons, turrets).
+// Placements already in the hand-written slave_spawns.json are left out. Yaw = 2*atan2(Rotate[3], Rotate[0]).
+[
+    {
+        "UnitId": 57, // Bloodhand Base Cannon; client level_design zone 139 (e_ynystere_1) slave.xml Slave_6
+        "Position": {
+            "X": 19759.7,
+            "Y": 11758.0,
+            "Z": 126.4,
+            "Yaw": -29.0
+        }
+    },
+    {
+        "UnitId": 57, // Bloodhand Base Cannon; client level_design zone 139 (e_ynystere_1) slave.xml Slave_5
+        "Position": {
+            "X": 19765.5,
+            "Y": 11754.8,
+            "Z": 126.4,
+            "Yaw": -26.0
+        }
+    },
+    {
+        "UnitId": 57, // Bloodhand Base Cannon; client level_design zone 139 (e_ynystere_1) slave.xml Slave_4
+        "Position": {
+            "X": 19775.9,
+            "Y": 11753.7,
+            "Z": 128.3,
+            "Yaw": -26.0
+        }
+    },
+    {
+        "UnitId": 57, // Bloodhand Base Cannon; client level_design zone 139 (e_ynystere_1) slave.xml Slave_3
+        "Position": {
+            "X": 19781.9,
+            "Y": 11746.1,
+            "Z": 126.4,
+            "Yaw": -26.0
+        }
+    },
+    {
+        "UnitId": 57, // Bloodhand Base Cannon; client level_design zone 139 (e_ynystere_1) slave.xml Slave_2
+        "Position": {
+            "X": 19787.1,
+            "Y": 11743.4,
+            "Z": 126.4,
+            "Yaw": -26.0
+        }
+    },
+    {
+        "UnitId": 57, // Bloodhand Base Cannon; client level_design zone 139 (e_ynystere_1) slave.xml Slave_1
+        "Position": {
+            "X": 19798.7,
+            "Y": 11741.6,
+            "Z": 128.3,
+            "Yaw": -21.0
+        }
+    },
+    {
+        "UnitId": 5, // Siege Tower; client level_design zone 151 (w_golden_plains_1) slave.xml Slave_30
+        "Position": {
+            "X": 8312.9,
+            "Y": 10354.3,
+            "Z": 215.7,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 5, // Siege Tower; client level_design zone 151 (w_golden_plains_1) slave.xml Slave_32
+        "Position": {
+            "X": 8337.5,
+            "Y": 10360.2,
+            "Z": 216.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 5, // Siege Tower; client level_design zone 151 (w_golden_plains_1) slave.xml Slave_33
+        "Position": {
+            "X": 8407.3,
+            "Y": 10360.0,
+            "Z": 213.1,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 5, // Siege Tower; client level_design zone 151 (w_golden_plains_1) slave.xml Slave_34
+        "Position": {
+            "X": 8506.8,
+            "Y": 10376.1,
+            "Z": 207.7,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 51, // Ironclad; client level_design zone 151 (w_golden_plains_1) slave.xml Slave_29
+        "Position": {
+            "X": 8344.6,
+            "Y": 10183.6,
+            "Z": 200.3,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 51, // Ironclad; client level_design zone 151 (w_golden_plains_1) slave.xml Slave_42
+        "Position": {
+            "X": 8349.5,
+            "Y": 10173.7,
+            "Z": 200.2,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 51, // Ironclad; client level_design zone 151 (w_golden_plains_1) slave.xml Slave_44
+        "Position": {
+            "X": 8385.1,
+            "Y": 10231.0,
+            "Z": 200.2,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 51, // Ironclad; client level_design zone 151 (w_golden_plains_1) slave.xml Slave_43
+        "Position": {
+            "X": 8387.7,
+            "Y": 10171.9,
+            "Z": 199.9,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 51, // Ironclad; client level_design zone 151 (w_golden_plains_1) slave.xml Slave_41
+        "Position": {
+            "X": 8492.5,
+            "Y": 10199.2,
+            "Z": 194.7,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 51, // Ironclad; client level_design zone 151 (w_golden_plains_1) slave.xml Slave_22
+        "Position": {
+            "X": 8528.2,
+            "Y": 10296.3,
+            "Z": 193.9,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 51, // Ironclad; client level_design zone 151 (w_golden_plains_1) slave.xml Slave_40
+        "Position": {
+            "X": 8540.3,
+            "Y": 10180.7,
+            "Z": 194.6,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 51, // Ironclad; client level_design zone 151 (w_golden_plains_1) slave.xml Slave_23
+        "Position": {
+            "X": 8559.7,
+            "Y": 10293.1,
+            "Z": 193.5,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 619, // Cannon; client level_design zone 157 (e_sunny_wilderness_1) slave.xml Slave_9
+        "Position": {
+            "X": 19113.7,
+            "Y": 6090.5,
+            "Z": 203.1,
+            "Yaw": -106.0
+        }
+    },
+    {
+        "UnitId": 619, // Cannon; client level_design zone 157 (e_sunny_wilderness_1) slave.xml Slave_11
+        "Position": {
+            "X": 19115.2,
+            "Y": 6095.8,
+            "Z": 203.2,
+            "Yaw": -116.0
+        }
+    },
+    {
+        "UnitId": 619, // Cannon; client level_design zone 157 (e_sunny_wilderness_1) slave.xml Slave_6
+        "Position": {
+            "X": 19118.2,
+            "Y": 6100.9,
+            "Z": 203.4,
+            "Yaw": -126.0
+        }
+    },
+    {
+        "UnitId": 619, // Cannon; client level_design zone 157 (e_sunny_wilderness_1) slave.xml Slave_12
+        "Position": {
+            "X": 19121.5,
+            "Y": 6105.4,
+            "Z": 203.5,
+            "Yaw": -130.0
+        }
+    },
+    {
+        "UnitId": 619, // Cannon; client level_design zone 157 (e_sunny_wilderness_1) slave.xml Slave_5
+        "Position": {
+            "X": 19125.8,
+            "Y": 6110.0,
+            "Z": 203.7,
+            "Yaw": -141.0
+        }
+    },
+    {
+        "UnitId": 619, // Cannon; client level_design zone 157 (e_sunny_wilderness_1) slave.xml Slave_13
+        "Position": {
+            "X": 19130.1,
+            "Y": 6113.0,
+            "Z": 203.9,
+            "Yaw": -142.0
+        }
+    },
+    {
+        "UnitId": 619, // Cannon; client level_design zone 157 (e_sunny_wilderness_1) slave.xml Slave_4
+        "Position": {
+            "X": 19134.8,
+            "Y": 6115.6,
+            "Z": 203.7,
+            "Yaw": -144.0
+        }
+    },
+    {
+        "UnitId": 619, // Cannon; client level_design zone 157 (e_sunny_wilderness_1) slave.xml Slave_14
+        "Position": {
+            "X": 19140.2,
+            "Y": 6117.8,
+            "Z": 203.7,
+            "Yaw": -164.0
+        }
+    },
+    {
+        "UnitId": 619, // Cannon; client level_design zone 157 (e_sunny_wilderness_1) slave.xml Slave_10
+        "Position": {
+            "X": 19145.7,
+            "Y": 6119.3,
+            "Z": 203.7,
+            "Yaw": -168.0
+        }
+    },
+    {
+        "UnitId": 49, // Broken Cannon; client level_design zone 178 (w_solzreed_2) slave.xml Slave_8
+        "Position": {
+            "X": 14858.4,
+            "Y": 13592.6,
+            "Z": 100.9,
+            "Yaw": -99.0
+        }
+    },
+    {
+        "UnitId": 49, // Broken Cannon; client level_design zone 178 (w_solzreed_2) slave.xml Slave_1
+        "Position": {
+            "X": 14860.1,
+            "Y": 13603.9,
+            "Z": 100.9,
+            "Yaw": -89.0
+        }
+    },
+    {
+        "UnitId": 49, // Broken Cannon; client level_design zone 178 (w_solzreed_2) slave.xml Slave_3
+        "Position": {
+            "X": 14861.5,
+            "Y": 13613.3,
+            "Z": 100.9,
+            "Yaw": -110.0
+        }
+    },
+    {
+        "UnitId": 38, // Shuun's Cannon; client level_design zone 194 (e_singing_land_2) slave.xml Slave_1
+        "Position": {
+            "X": 20593.6,
+            "Y": 10444.4,
+            "Z": 106.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 38, // Shuun's Cannon; client level_design zone 194 (e_singing_land_2) slave.xml Slave_2
+        "Position": {
+            "X": 20593.8,
+            "Y": 10450.6,
+            "Z": 106.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 38, // Shuun's Cannon; client level_design zone 194 (e_singing_land_2) slave.xml Slave_3
+        "Position": {
+            "X": 20598.7,
+            "Y": 10455.4,
+            "Z": 106.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 38, // Shuun's Cannon; client level_design zone 194 (e_singing_land_2) slave.xml Slave_4
+        "Position": {
+            "X": 20599.2,
+            "Y": 10440.0,
+            "Z": 106.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 501, // Ezi's Blessing Cannon; client level_design zone 213 (s_silent_sea_4) slave.xml Slave_1
+        "Position": {
+            "X": 20104.8,
+            "Y": 21000.1,
+            "Z": 102.1,
+            "Yaw": 145.0
+        }
+    },
+    {
+        "UnitId": 501, // Ezi's Blessing Cannon; client level_design zone 213 (s_silent_sea_4) slave.xml Slave_3
+        "Position": {
+            "X": 20124.4,
+            "Y": 21014.5,
+            "Z": 102.0,
+            "Yaw": -130.0
+        }
+    },
+    {
+        "UnitId": 73, // Cotton Wagon; client level_design zone 245 (w_long_sand_2) slave.xml Slave_30
+        "Position": {
+            "X": 10469.2,
+            "Y": 9964.3,
+            "Z": 158.7,
+            "Yaw": -93.6
+        }
+    },
+    {
+        "UnitId": 73, // Cotton Wagon; client level_design zone 245 (w_long_sand_2) slave.xml Slave_29
+        "Position": {
+            "X": 10470.6,
+            "Y": 9972.1,
+            "Z": 157.7,
+            "Yaw": -100.6
+        }
+    },
+    {
+        "UnitId": 73, // Cotton Wagon; client level_design zone 245 (w_long_sand_2) slave.xml Slave_28
+        "Position": {
+            "X": 10473.7,
+            "Y": 9979.8,
+            "Z": 156.8,
+            "Yaw": -111.6
+        }
+    },
+    {
+        "UnitId": 73, // Cotton Wagon; client level_design zone 245 (w_long_sand_2) slave.xml Slave_27
+        "Position": {
+            "X": 10477.5,
+            "Y": 9986.7,
+            "Z": 156.5,
+            "Yaw": -119.6
+        }
+    },
+    {
+        "UnitId": 73, // Cotton Wagon; client level_design zone 245 (w_long_sand_2) slave.xml Slave_26
+        "Position": {
+            "X": 10482.1,
+            "Y": 9992.4,
+            "Z": 156.1,
+            "Yaw": -124.6
+        }
+    },
+    {
+        "UnitId": 73, // Cotton Wagon; client level_design zone 245 (w_long_sand_2) slave.xml Slave_25
+        "Position": {
+            "X": 10487.9,
+            "Y": 9997.8,
+            "Z": 155.8,
+            "Yaw": -146.6
+        }
+    },
+    {
+        "UnitId": 73, // Cotton Wagon; client level_design zone 245 (w_long_sand_2) slave.xml Slave_17
+        "Position": {
+            "X": 10495.3,
+            "Y": 10001.5,
+            "Z": 155.2,
+            "Yaw": -160.6
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_24
+        "Position": {
+            "X": 20053.2,
+            "Y": 18326.1,
+            "Z": 107.9,
+            "Yaw": 30.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_23
+        "Position": {
+            "X": 20059.8,
+            "Y": 18326.4,
+            "Z": 107.9,
+            "Yaw": -30.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_25
+        "Position": {
+            "X": 20064.4,
+            "Y": 18318.9,
+            "Z": 107.9,
+            "Yaw": -80.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_28
+        "Position": {
+            "X": 20095.4,
+            "Y": 18246.3,
+            "Z": 107.9,
+            "Yaw": -170.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_26
+        "Position": {
+            "X": 20097.9,
+            "Y": 18260.0,
+            "Z": 107.9,
+            "Yaw": -45.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_27
+        "Position": {
+            "X": 20100.4,
+            "Y": 18250.3,
+            "Z": 107.9,
+            "Yaw": -115.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_29
+        "Position": {
+            "X": 20108.5,
+            "Y": 18320.0,
+            "Z": 108.1,
+            "Yaw": 35.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_32
+        "Position": {
+            "X": 20117.1,
+            "Y": 18304.5,
+            "Z": 108.1,
+            "Yaw": -145.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_30
+        "Position": {
+            "X": 20120.7,
+            "Y": 18320.8,
+            "Z": 108.1,
+            "Yaw": -35.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_31
+        "Position": {
+            "X": 20124.1,
+            "Y": 18314.0,
+            "Z": 108.1,
+            "Yaw": -95.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_11
+        "Position": {
+            "X": 20899.6,
+            "Y": 19851.1,
+            "Z": 107.7,
+            "Yaw": 70.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_10
+        "Position": {
+            "X": 20900.8,
+            "Y": 19844.9,
+            "Z": 107.7,
+            "Yaw": 120.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_9
+        "Position": {
+            "X": 20911.0,
+            "Y": 19841.5,
+            "Z": 107.7,
+            "Yaw": -165.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_7
+        "Position": {
+            "X": 20935.1,
+            "Y": 19802.2,
+            "Z": 109.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_6
+        "Position": {
+            "X": 20939.3,
+            "Y": 19793.3,
+            "Z": 109.0,
+            "Yaw": 145.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_5
+        "Position": {
+            "X": 20946.5,
+            "Y": 19792.4,
+            "Z": 109.0,
+            "Yaw": -160.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_4
+        "Position": {
+            "X": 20953.1,
+            "Y": 19806.8,
+            "Z": 109.0,
+            "Yaw": -85.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_3
+        "Position": {
+            "X": 20953.4,
+            "Y": 19803.0,
+            "Z": 109.0,
+            "Yaw": -95.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_8
+        "Position": {
+            "X": 20974.3,
+            "Y": 19841.2,
+            "Z": 107.7,
+            "Yaw": 160.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_2
+        "Position": {
+            "X": 20982.7,
+            "Y": 19842.4,
+            "Z": 107.7,
+            "Yaw": -150.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_1
+        "Position": {
+            "X": 20986.6,
+            "Y": 19849.3,
+            "Z": 107.7,
+            "Yaw": -85.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_15
+        "Position": {
+            "X": 21742.6,
+            "Y": 18314.5,
+            "Z": 108.0,
+            "Yaw": 95.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_14
+        "Position": {
+            "X": 21743.5,
+            "Y": 18319.4,
+            "Z": 108.0,
+            "Yaw": 55.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_12
+        "Position": {
+            "X": 21744.8,
+            "Y": 18310.4,
+            "Z": 108.0,
+            "Yaw": 145.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_16
+        "Position": {
+            "X": 21747.7,
+            "Y": 18321.7,
+            "Z": 108.0,
+            "Yaw": 15.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_13
+        "Position": {
+            "X": 21751.9,
+            "Y": 18320.8,
+            "Z": 108.0,
+            "Yaw": -35.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_19
+        "Position": {
+            "X": 21762.9,
+            "Y": 18257.3,
+            "Z": 106.8,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_18
+        "Position": {
+            "X": 21764.2,
+            "Y": 18253.0,
+            "Z": 106.8,
+            "Yaw": 135.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_17
+        "Position": {
+            "X": 21764.2,
+            "Y": 18261.7,
+            "Z": 106.8,
+            "Yaw": 45.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_20
+        "Position": {
+            "X": 21805.5,
+            "Y": 18319.8,
+            "Z": 106.8,
+            "Yaw": 60.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_21
+        "Position": {
+            "X": 21809.3,
+            "Y": 18321.4,
+            "Z": 106.8,
+            "Yaw": 15.0
+        }
+    },
+    {
+        "UnitId": 10, // Cannon; client level_design zone 283 (s_freedom_island) slave.xml Slave_22
+        "Position": {
+            "X": 21813.4,
+            "Y": 18320.7,
+            "Z": 106.8,
+            "Yaw": -30.0
+        }
+    },
+    {
+        "UnitId": 56, // Pirate Cannon; client level_design zone 284 (s_pirate_island) slave.xml Slave_8
+        "Position": {
+            "X": 14969.8,
+            "Y": 22699.6,
+            "Z": 120.3,
+            "Yaw": 103.0
+        }
+    },
+    {
+        "UnitId": 56, // Pirate Cannon; client level_design zone 284 (s_pirate_island) slave.xml Slave_9
+        "Position": {
+            "X": 14990.7,
+            "Y": 22691.6,
+            "Z": 122.3,
+            "Yaw": 143.0
+        }
+    },
+    {
+        "UnitId": 56, // Pirate Cannon; client level_design zone 284 (s_pirate_island) slave.xml Slave_10
+        "Position": {
+            "X": 15002.6,
+            "Y": 22683.7,
+            "Z": 122.3,
+            "Yaw": -174.0
+        }
+    },
+    {
+        "UnitId": 56, // Pirate Cannon; client level_design zone 284 (s_pirate_island) slave.xml Slave_16
+        "Position": {
+            "X": 15012.1,
+            "Y": 22685.5,
+            "Z": 122.2,
+            "Yaw": 175.0
+        }
+    },
+    {
+        "UnitId": 56, // Pirate Cannon; client level_design zone 284 (s_pirate_island) slave.xml Slave_11
+        "Position": {
+            "X": 15024.8,
+            "Y": 22685.4,
+            "Z": 122.0,
+            "Yaw": -180.0
+        }
+    },
+    {
+        "UnitId": 56, // Pirate Cannon; client level_design zone 284 (s_pirate_island) slave.xml Slave_12
+        "Position": {
+            "X": 15036.9,
+            "Y": 22687.1,
+            "Z": 119.5,
+            "Yaw": -136.0
+        }
+    },
+    {
+        "UnitId": 56, // Pirate Cannon; client level_design zone 284 (s_pirate_island) slave.xml Slave_15
+        "Position": {
+            "X": 15040.2,
+            "Y": 22735.1,
+            "Z": 106.3,
+            "Yaw": -38.0
+        }
+    },
+    {
+        "UnitId": 56, // Pirate Cannon; client level_design zone 284 (s_pirate_island) slave.xml Slave_13
+        "Position": {
+            "X": 15046.1,
+            "Y": 22699.7,
+            "Z": 115.9,
+            "Yaw": -120.0
+        }
+    },
+    {
+        "UnitId": 56, // Pirate Cannon; client level_design zone 284 (s_pirate_island) slave.xml Slave_14
+        "Position": {
+            "X": 15052.9,
+            "Y": 22712.5,
+            "Z": 114.6,
+            "Yaw": -96.0
+        }
+    },
+    {
+        "UnitId": 56, // Pirate Cannon; client level_design zone 284 (s_pirate_island) slave.xml Slave_5
+        "Position": {
+            "X": 15206.7,
+            "Y": 22751.4,
+            "Z": 115.7,
+            "Yaw": 140.0
+        }
+    },
+    {
+        "UnitId": 56, // Pirate Cannon; client level_design zone 284 (s_pirate_island) slave.xml Slave_7
+        "Position": {
+            "X": 15207.6,
+            "Y": 22743.2,
+            "Z": 116.1,
+            "Yaw": 103.0
+        }
+    },
+    {
+        "UnitId": 56, // Pirate Cannon; client level_design zone 284 (s_pirate_island) slave.xml Slave_6
+        "Position": {
+            "X": 15210.1,
+            "Y": 22735.7,
+            "Z": 116.1,
+            "Yaw": 131.0
+        }
+    },
+    {
+        "UnitId": 706, // Shadow Cannon; client level_design zone 310 (o_whale_song_bay) slave.xml Slave_8
+        "Position": {
+            "X": 17251.5,
+            "Y": 29276.5,
+            "Z": 178.8,
+            "Yaw": -90.0
+        }
+    },
+    {
+        "UnitId": 706, // Shadow Cannon; client level_design zone 310 (o_whale_song_bay) slave.xml Slave_9
+        "Position": {
+            "X": 17261.0,
+            "Y": 29300.8,
+            "Z": 178.8,
+            "Yaw": -138.0
+        }
+    },
+    {
+        "UnitId": 706, // Shadow Cannon; client level_design zone 310 (o_whale_song_bay) slave.xml Slave_7
+        "Position": {
+            "X": 17261.3,
+            "Y": 29252.0,
+            "Z": 178.8,
+            "Yaw": -45.0
+        }
+    },
+    {
+        "UnitId": 706, // Shadow Cannon; client level_design zone 310 (o_whale_song_bay) slave.xml Slave_3
+        "Position": {
+            "X": 17308.1,
+            "Y": 29252.2,
+            "Z": 178.8,
+            "Yaw": 42.0
+        }
+    },
+    {
+        "UnitId": 706, // Shadow Cannon; client level_design zone 310 (o_whale_song_bay) slave.xml Slave_10
+        "Position": {
+            "X": 17308.3,
+            "Y": 29300.5,
+            "Z": 178.8,
+            "Yaw": 136.0
+        }
+    },
+    {
+        "UnitId": 706, // Shadow Cannon; client level_design zone 310 (o_whale_song_bay) slave.xml Slave_2
+        "Position": {
+            "X": 17318.0,
+            "Y": 29276.4,
+            "Z": 178.8,
+            "Yaw": 92.0
+        }
+    },
+    {
+        "UnitId": 709, // Shadow Cannon; client level_design zone 310 (o_whale_song_bay) slave.xml Slave_11
+        "Position": {
+            "X": 16476.9,
+            "Y": 28538.6,
+            "Z": 141.8,
+            "Yaw": -90.0
+        }
+    },
+    {
+        "UnitId": 709, // Shadow Cannon; client level_design zone 310 (o_whale_song_bay) slave.xml Slave_16
+        "Position": {
+            "X": 16486.6,
+            "Y": 28563.0,
+            "Z": 141.8,
+            "Yaw": -135.0
+        }
+    },
+    {
+        "UnitId": 709, // Shadow Cannon; client level_design zone 310 (o_whale_song_bay) slave.xml Slave_14
+        "Position": {
+            "X": 16510.1,
+            "Y": 28505.0,
+            "Z": 141.8,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 709, // Shadow Cannon; client level_design zone 310 (o_whale_song_bay) slave.xml Slave_13
+        "Position": {
+            "X": 16510.1,
+            "Y": 28572.4,
+            "Z": 141.7,
+            "Yaw": -180.0
+        }
+    },
+    {
+        "UnitId": 709, // Shadow Cannon; client level_design zone 310 (o_whale_song_bay) slave.xml Slave_15
+        "Position": {
+            "X": 16533.8,
+            "Y": 28514.2,
+            "Z": 141.8,
+            "Yaw": 45.0
+        }
+    },
+    {
+        "UnitId": 709, // Shadow Cannon; client level_design zone 310 (o_whale_song_bay) slave.xml Slave_12
+        "Position": {
+            "X": 16543.5,
+            "Y": 28538.6,
+            "Z": 141.8,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 711, // Shadow Cannon; client level_design zone 310 (o_whale_song_bay) slave.xml Slave_29
+        "Position": {
+            "X": 16481.4,
+            "Y": 29264.0,
+            "Z": 178.8,
+            "Yaw": -45.0
+        }
+    },
+    {
+        "UnitId": 711, // Shadow Cannon; client level_design zone 310 (o_whale_song_bay) slave.xml Slave_34
+        "Position": {
+            "X": 16481.5,
+            "Y": 29312.0,
+            "Z": 178.8,
+            "Yaw": -134.0
+        }
+    },
+    {
+        "UnitId": 711, // Shadow Cannon; client level_design zone 310 (o_whale_song_bay) slave.xml Slave_33
+        "Position": {
+            "X": 16504.8,
+            "Y": 29321.3,
+            "Z": 178.8,
+            "Yaw": -177.0
+        }
+    },
+    {
+        "UnitId": 711, // Shadow Cannon; client level_design zone 310 (o_whale_song_bay) slave.xml Slave_30
+        "Position": {
+            "X": 16504.9,
+            "Y": 29254.8,
+            "Z": 178.8,
+            "Yaw": 1.0
+        }
+    },
+    {
+        "UnitId": 711, // Shadow Cannon; client level_design zone 310 (o_whale_song_bay) slave.xml Slave_32
+        "Position": {
+            "X": 16528.1,
+            "Y": 29311.9,
+            "Z": 178.8,
+            "Yaw": 134.0
+        }
+    },
+    {
+        "UnitId": 711, // Shadow Cannon; client level_design zone 310 (o_whale_song_bay) slave.xml Slave_31
+        "Position": {
+            "X": 16528.2,
+            "Y": 29264.1,
+            "Z": 178.8,
+            "Yaw": 45.0
+        }
+    }
+]

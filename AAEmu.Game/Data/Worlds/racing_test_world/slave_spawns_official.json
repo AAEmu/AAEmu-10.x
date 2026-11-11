@@ -1,0 +1,76 @@
+// Generated from the client's level_design/zone/*/editor/slave.xml (cannons, siege weapons, wagons, turrets).
+// Placements already in the hand-written slave_spawns.json are left out. Yaw = 2*atan2(Rotate[3], Rotate[0]).
+[
+    {
+        "UnitId": 84, // Wheeled Mortar; client level_design zone 291 (racing_test) slave.xml Slave_10
+        "Position": {
+            "X": 3450.3,
+            "Y": 4389.4,
+            "Z": 106.0,
+            "Yaw": -37.0
+        }
+    },
+    {
+        "UnitId": 84, // Wheeled Mortar; client level_design zone 291 (racing_test) slave.xml Slave_9
+        "Position": {
+            "X": 3476.3,
+            "Y": 4375.8,
+            "Z": 105.8,
+            "Yaw": -85.0
+        }
+    },
+    {
+        "UnitId": 84, // Wheeled Mortar; client level_design zone 291 (racing_test) slave.xml Slave_16
+        "Position": {
+            "X": 3823.5,
+            "Y": 4750.4,
+            "Z": 109.4,
+            "Yaw": -60.0
+        }
+    },
+    {
+        "UnitId": 84, // Wheeled Mortar; client level_design zone 291 (racing_test) slave.xml Slave_15
+        "Position": {
+            "X": 3828.8,
+            "Y": 4736.1,
+            "Z": 109.4,
+            "Yaw": -70.0
+        }
+    },
+    {
+        "UnitId": 85, // Farm Wagon; client level_design zone 291 (racing_test) slave.xml Slave_11
+        "Position": {
+            "X": 3506.0,
+            "Y": 4389.4,
+            "Z": 106.0,
+            "Yaw": 73.0
+        }
+    },
+    {
+        "UnitId": 85, // Farm Wagon; client level_design zone 291 (racing_test) slave.xml Slave_12
+        "Position": {
+            "X": 3507.4,
+            "Y": 4393.8,
+            "Z": 106.0,
+            "Yaw": 65.0
+        }
+    },
+    {
+        "UnitId": 85, // Farm Wagon; client level_design zone 291 (racing_test) slave.xml Slave_14
+        "Position": {
+            "X": 3847.0,
+            "Y": 4709.4,
+            "Z": 109.4,
+            "Yaw": 35.0
+        }
+    },
+    {
+        "UnitId": 85, // Farm Wagon; client level_design zone 291 (racing_test) slave.xml Slave_13
+        "Position": {
+            "X": 3851.4,
+            "Y": 4711.6,
+            "Z": 109.3,
+            "Yaw": 35.0
+        }
+    }
+]

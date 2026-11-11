@@ -18,30 +18,201 @@
         }
      },
 	     {
-        "UnitId": 68, // Blueglass Human Cannon
+        "UnitId": 65, // Blueglass Human Cannon (1080 m jump to Blueglass; client level_design zone 162 slave.xml)
         "Position": {
-            "X": 8855.7,
-            "Y": 8219.2,
-            "Z": 154.1,
-            "Yaw": 157.5
+            "X": 8852.3,
+            "Y": 8224.3,
+            "Z": 153.9,
+            "Yaw": -31.0
         }
      },
 	     {
-        "UnitId": 68, // Blueglass Human Cannon
+        "UnitId": 65, // Blueglass Human Cannon (1080 m jump to Blueglass; client level_design zone 162 slave.xml)
         "Position": {
-            "X": 8853.3,
-            "Y": 8219.6,
-            "Z": 154.2,
-            "Yaw":157.5
+            "X": 8855.4,
+            "Y": 8222.6,
+            "Z": 153.8,
+            "Yaw": -31.0
         }
      },
 	     {
-        "UnitId": 68, // Blueglass Human Cannon
+        "UnitId": 65, // Blueglass Human Cannon (1080 m jump to Blueglass; client level_design zone 162 slave.xml)
         "Position": {
-            "X": 8851.2,
-            "Y": 8220.1,
-            "Z": 154.5,
-            "Yaw": 157.5
+            "X": 8858.4,
+            "Y": 8221.0,
+            "Z": 153.7,
+            "Yaw": -31.0
+        }
+     },
+	     {
+        "UnitId": 68, // Blueglass Human Cannon (1300 m jump back to Blueglass; client level_design zone 245 slave.xml)
+        "Position": {
+            "X": 10693.1,
+            "Y": 9594.9,
+            "Z": 104.6,
+            "Yaw": 108.0
+        }
+     },
+	     {
+        "UnitId": 68, // Blueglass Human Cannon (1300 m jump back to Blueglass; client level_design zone 245 slave.xml)
+        "Position": {
+            "X": 10694.8,
+            "Y": 9592.7,
+            "Z": 104.6,
+            "Yaw": 108.0
+        }
+     },
+	     {
+        "UnitId": 68, // Blueglass Human Cannon (1300 m jump back to Blueglass; client level_design zone 245 slave.xml)
+        "Position": {
+            "X": 10696.6,
+            "Y": 9590.3,
+            "Z": 104.6,
+            "Yaw": 108.0
+        }
+     },
+	     {
+        "UnitId": 66, // Grenwolf Human Cannon (1080 m jump, Blueglass -> Sanddeep cannons); client level_design slave.xml
+        "Position": {
+            "X": 9448.3,
+            "Y": 9172.7,
+            "Z": 114.2,
+            "Yaw": 148.0
+        }
+     },
+	     {
+        "UnitId": 66, // Grenwolf Human Cannon (1080 m jump, Blueglass -> Sanddeep cannons); client level_design slave.xml
+        "Position": {
+            "X": 9451.8,
+            "Y": 9170.8,
+            "Z": 114.2,
+            "Yaw": 148.0
+        }
+     },
+	     {
+        "UnitId": 66, // Grenwolf Human Cannon (1080 m jump, Blueglass -> Sanddeep cannons); client level_design slave.xml
+        "Position": {
+            "X": 9455.1,
+            "Y": 9169.1,
+            "Z": 114.2,
+            "Yaw": 148.0
+        }
+     },
+	     {
+        "UnitId": 67, // Golden Fable Human Cannon (1300 m jump, Blueglass -> the slave 68 site); client level_design slave.xml
+        "Position": {
+            "X": 9457.9,
+            "Y": 9175.9,
+            "Z": 114.4,
+            "Yaw": -72.0
+        }
+     },
+	     {
+        "UnitId": 67, // Golden Fable Human Cannon (1300 m jump, Blueglass -> the slave 68 site); client level_design slave.xml
+        "Position": {
+            "X": 9458.2,
+            "Y": 9179.5,
+            "Z": 114.2,
+            "Yaw": -72.0
+        }
+     },
+	     {
+        "UnitId": 67, // Golden Fable Human Cannon (1300 m jump, Blueglass -> the slave 68 site); client level_design slave.xml
+        "Position": {
+            "X": 9459.3,
+            "Y": 9172.4,
+            "Z": 114.4,
+            "Yaw": -72.0
+        }
+     },
+	     {
+        "UnitId": 71, // Human Cannon (1000 m jump to Golden Fable Harbor); client level_design slave.xml
+        "Position": {
+            "X": 9847.5,
+            "Y": 9626.2,
+            "Z": 160.8,
+            "Yaw": -89.0
+        }
+     },
+	     {
+        "UnitId": 71, // Human Cannon (1000 m jump to Golden Fable Harbor); client level_design slave.xml
+        "Position": {
+            "X": 9847.6,
+            "Y": 9623.2,
+            "Z": 161.0,
+            "Yaw": -89.0
+        }
+     },
+	     {
+        "UnitId": 71, // Human Cannon (1000 m jump to Golden Fable Harbor); client level_design slave.xml
+        "Position": {
+            "X": 9847.7,
+            "Y": 9620.1,
+            "Z": 161.1,
+            "Yaw": -89.0
+        }
+     },
+	     {
+        "UnitId": 99, // Amed's Human Cannon (110 m hop onto Loka's pillar); client level_design slave.xml
+        "Position": {
+            "X": 25457.0,
+            "Y": 9787.8,
+            "Z": 714.0,
+            "Yaw": -103.0
+        }
+     },
+	     {
+        "UnitId": 99, // Amed's Human Cannon (110 m hop onto Loka's pillar); client level_design slave.xml
+        "Position": {
+            "X": 25458.6,
+            "Y": 9785.2,
+            "Z": 714.0,
+            "Yaw": -103.0
+        }
+     },
+	     {
+        "UnitId": 99, // Amed's Human Cannon (110 m hop onto Loka's pillar); client level_design slave.xml
+        "Position": {
+            "X": 25460.2,
+            "Y": 9782.5,
+            "Z": 714.0,
+            "Yaw": -103.0
+        }
+     },
+	     {
+        "UnitId": 609, // Andelph Cannon (quest 1401 Cannons for Questions, Giant's Canyon); client level_design zone 150 slave.xml
+        "Position": {
+            "X": 7730.5,
+            "Y": 12276.2,
+            "Z": 634.1,
+            "Yaw": 151.0
+        }
+     },
+	     {
+        "UnitId": 609, // Andelph Cannon (quest 1401 Cannons for Questions, Giant's Canyon); client level_design zone 150 slave.xml
+        "Position": {
+            "X": 7716.0,
+            "Y": 12277.2,
+            "Z": 635.3,
+            "Yaw": 162.0
+        }
+     },
+	     {
+        "UnitId": 609, // Andelph Cannon (quest 1401 Cannons for Questions, Giant's Canyon); client level_design zone 150 slave.xml
+        "Position": {
+            "X": 7723.1,
+            "Y": 12277.3,
+            "Z": 634.1,
+            "Yaw": 165.0
+        }
+     },
+	     {
+        "UnitId": 609, // Andelph Cannon (quest 1401 Cannons for Questions, Giant's Canyon); client level_design zone 150 slave.xml
+        "Position": {
+            "X": 7747.2,
+            "Y": 12259.6,
+            "Z": 635.6,
+            "Yaw": 135.0
         }
      }
 ]

@@ -1,0 +1,40 @@
+// Generated from the client's level_design/zone/*/editor/slave.xml (cannons, siege weapons, wagons, turrets).
+// Placements already in the hand-written slave_spawns.json are left out. Yaw = 2*atan2(Rotate[3], Rotate[0]).
+[
+    {
+        "UnitId": 133, // Warship Cannon; client level_design zone 300 (instance_prologue) slave.xml Slave_1
+        "Position": {
+            "X": 1691.2,
+            "Y": 283.3,
+            "Z": 104.6,
+            "Yaw": -172.0
+        }
+    },
+    {
+        "UnitId": 138, // Classic Siege Steamtank; client level_design zone 300 (instance_prologue) slave.xml Slave_2
+        "Position": {
+            "X": 959.3,
+            "Y": 1458.7,
+            "Z": 128.8,
+            "Yaw": 11.0
+        }
+    },
+    {
+        "UnitId": 133, // Warship Cannon; client level_design zone 348 (promotion) slave.xml Slave_1
+        "Position": {
+            "X": 1691.2,
+            "Y": 2331.3,
+            "Z": 104.6,
+            "Yaw": -172.0
+        }
+    },
+    {
+        "UnitId": 138, // Classic Siege Steamtank; client level_design zone 348 (promotion) slave.xml Slave_2
+        "Position": {
+            "X": 959.3,
+            "Y": 3506.7,
+            "Z": 128.8,
+            "Yaw": 11.0
+        }
+    }
+]

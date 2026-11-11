@@ -1,0 +1,22 @@
+// Generated from the client's level_design/zone/*/editor/slave.xml (cannons, siege weapons, wagons, turrets).
+// Placements already in the hand-written slave_spawns.json are left out. Yaw = 2*atan2(Rotate[3], Rotate[0]).
+[
+    {
+        "UnitId": 848, // Hiram Farm Cart; client level_design zone 367 (instance_the_last_day_of_hiramakand) slave.xml Slave_2
+        "Position": {
+            "X": 2678.6,
+            "Y": 2372.6,
+            "Z": 406.8,
+            "Yaw": 95.0
+        }
+    },
+    {
+        "UnitId": 848, // Hiram Farm Cart; client level_design zone 367 (instance_the_last_day_of_hiramakand) slave.xml Slave_1
+        "Position": {
+            "X": 2684.0,
+            "Y": 2383.5,
+            "Z": 407.4,
+            "Yaw": 70.0
+        }
+    }
+]

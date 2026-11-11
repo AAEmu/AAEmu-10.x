@@ -1,0 +1,940 @@
+// Generated from the client's level_design/zone/*/editor/slave.xml (cannons, siege weapons, wagons, turrets).
+// Placements already in the hand-written slave_spawns.json are left out. Yaw = 2*atan2(Rotate[3], Rotate[0]).
+[
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_243
+        "Position": {
+            "X": 1760.2,
+            "Y": 2270.6,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_146
+        "Position": {
+            "X": 1762.3,
+            "Y": 2197.5,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_239
+        "Position": {
+            "X": 1762.5,
+            "Y": 2230.4,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_231
+        "Position": {
+            "X": 1763.0,
+            "Y": 2386.0,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_230
+        "Position": {
+            "X": 1784.7,
+            "Y": 2423.3,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_147
+        "Position": {
+            "X": 1788.0,
+            "Y": 2167.0,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_240
+        "Position": {
+            "X": 1805.8,
+            "Y": 2133.8,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_217
+        "Position": {
+            "X": 1813.9,
+            "Y": 2443.9,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_150
+        "Position": {
+            "X": 1821.6,
+            "Y": 2101.7,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_227
+        "Position": {
+            "X": 1836.9,
+            "Y": 2471.5,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_151
+        "Position": {
+            "X": 1838.6,
+            "Y": 2082.1,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_237
+        "Position": {
+            "X": 1851.2,
+            "Y": 2246.5,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_233
+        "Position": {
+            "X": 1853.6,
+            "Y": 2329.2,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_148
+        "Position": {
+            "X": 1866.8,
+            "Y": 2220.7,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_216
+        "Position": {
+            "X": 1893.8,
+            "Y": 2528.0,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_212
+        "Position": {
+            "X": 1895.1,
+            "Y": 2428.1,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_152
+        "Position": {
+            "X": 1900.5,
+            "Y": 2142.2,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_228
+        "Position": {
+            "X": 1905.2,
+            "Y": 2445.1,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_154
+        "Position": {
+            "X": 1916.0,
+            "Y": 2037.3,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_153
+        "Position": {
+            "X": 1928.6,
+            "Y": 2124.1,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_223
+        "Position": {
+            "X": 1934.5,
+            "Y": 2553.7,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_155
+        "Position": {
+            "X": 1947.3,
+            "Y": 2015.4,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_224
+        "Position": {
+            "X": 1952.3,
+            "Y": 2467.6,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_238
+        "Position": {
+            "X": 1961.3,
+            "Y": 2112.8,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_213
+        "Position": {
+            "X": 1977.9,
+            "Y": 2479.4,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_156
+        "Position": {
+            "X": 1980.6,
+            "Y": 2102.4,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_158
+        "Position": {
+            "X": 2020.4,
+            "Y": 2010.3,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_219
+        "Position": {
+            "X": 2032.5,
+            "Y": 2481.2,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_220
+        "Position": {
+            "X": 2033.0,
+            "Y": 2571.7,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_235
+        "Position": {
+            "X": 2036.2,
+            "Y": 2094.7,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_187
+        "Position": {
+            "X": 2059.2,
+            "Y": 2492.7,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_210
+        "Position": {
+            "X": 2076.1,
+            "Y": 2567.5,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_201
+        "Position": {
+            "X": 2080.5,
+            "Y": 2484.7,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_169
+        "Position": {
+            "X": 2117.0,
+            "Y": 2019.5,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_184
+        "Position": {
+            "X": 2120.0,
+            "Y": 2473.7,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_192
+        "Position": {
+            "X": 2131.9,
+            "Y": 2462.3,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_163
+        "Position": {
+            "X": 2141.0,
+            "Y": 2124.2,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_161
+        "Position": {
+            "X": 2149.8,
+            "Y": 2028.0,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_207
+        "Position": {
+            "X": 2152.0,
+            "Y": 2454.2,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_174
+        "Position": {
+            "X": 2181.1,
+            "Y": 2161.2,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_164
+        "Position": {
+            "X": 2194.1,
+            "Y": 2183.4,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_172
+        "Position": {
+            "X": 2210.7,
+            "Y": 2065.2,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_189
+        "Position": {
+            "X": 2215.8,
+            "Y": 2373.7,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_183
+        "Position": {
+            "X": 2221.7,
+            "Y": 2201.5,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_162
+        "Position": {
+            "X": 2230.5,
+            "Y": 2227.3,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_205
+        "Position": {
+            "X": 2272.0,
+            "Y": 2449.6,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_176
+        "Position": {
+            "X": 2279.8,
+            "Y": 2153.1,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_197
+        "Position": {
+            "X": 2289.2,
+            "Y": 2414.0,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_204
+        "Position": {
+            "X": 2312.3,
+            "Y": 2377.7,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 595, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_181
+        "Position": {
+            "X": 2327.8,
+            "Y": 2267.8,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 721, // Dahuta's Barrier; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_259
+        "Position": {
+            "X": 1649.3,
+            "Y": 2135.0,
+            "Z": 110.0,
+            "Yaw": -64.0
+        }
+    },
+    {
+        "UnitId": 721, // Dahuta's Barrier; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_257
+        "Position": {
+            "X": 1878.2,
+            "Y": 2682.9,
+            "Z": 110.0,
+            "Yaw": -166.0
+        }
+    },
+    {
+        "UnitId": 721, // Dahuta's Barrier; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_253
+        "Position": {
+            "X": 2191.4,
+            "Y": 1905.2,
+            "Z": 110.0,
+            "Yaw": 10.0
+        }
+    },
+    {
+        "UnitId": 721, // Dahuta's Barrier; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_258
+        "Position": {
+            "X": 2439.4,
+            "Y": 2452.0,
+            "Z": 105.0,
+            "Yaw": 105.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_234
+        "Position": {
+            "X": 1747.2,
+            "Y": 2316.3,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_218
+        "Position": {
+            "X": 1760.6,
+            "Y": 2356.9,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_144
+        "Position": {
+            "X": 1845.4,
+            "Y": 2288.3,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_211
+        "Position": {
+            "X": 1846.2,
+            "Y": 2308.6,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_226
+        "Position": {
+            "X": 1849.8,
+            "Y": 2513.4,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_145
+        "Position": {
+            "X": 1854.5,
+            "Y": 2269.6,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_232
+        "Position": {
+            "X": 1856.0,
+            "Y": 2348.3,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_149
+        "Position": {
+            "X": 1866.9,
+            "Y": 2196.8,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_214
+        "Position": {
+            "X": 1866.9,
+            "Y": 2380.0,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_229
+        "Position": {
+            "X": 1872.5,
+            "Y": 2405.5,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_241
+        "Position": {
+            "X": 1878.4,
+            "Y": 2054.2,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_236
+        "Position": {
+            "X": 1891.5,
+            "Y": 2167.8,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_225
+        "Position": {
+            "X": 1924.2,
+            "Y": 2450.2,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_222
+        "Position": {
+            "X": 1970.6,
+            "Y": 2552.9,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_242
+        "Position": {
+            "X": 1983.8,
+            "Y": 2021.1,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_221
+        "Position": {
+            "X": 1999.6,
+            "Y": 2476.1,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_215
+        "Position": {
+            "X": 1999.6,
+            "Y": 2574.9,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_157
+        "Position": {
+            "X": 2007.1,
+            "Y": 2097.2,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_193
+        "Position": {
+            "X": 2056.1,
+            "Y": 2584.3,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_159
+        "Position": {
+            "X": 2060.5,
+            "Y": 2002.3,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_166
+        "Position": {
+            "X": 2063.9,
+            "Y": 2096.0,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_182
+        "Position": {
+            "X": 2082.0,
+            "Y": 2093.9,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_167
+        "Position": {
+            "X": 2088.0,
+            "Y": 2005.7,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_168
+        "Position": {
+            "X": 2095.2,
+            "Y": 2110.5,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_209
+        "Position": {
+            "X": 2098.0,
+            "Y": 2473.8,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_202
+        "Position": {
+            "X": 2111.7,
+            "Y": 2571.2,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_170
+        "Position": {
+            "X": 2112.5,
+            "Y": 2112.7,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_208
+        "Position": {
+            "X": 2142.2,
+            "Y": 2563.6,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_194
+        "Position": {
+            "X": 2164.6,
+            "Y": 2536.4,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_173
+        "Position": {
+            "X": 2167.2,
+            "Y": 2137.7,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_200
+        "Position": {
+            "X": 2168.1,
+            "Y": 2443.7,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_185
+        "Position": {
+            "X": 2175.7,
+            "Y": 2424.3,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_171
+        "Position": {
+            "X": 2178.2,
+            "Y": 2049.4,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_198
+        "Position": {
+            "X": 2193.9,
+            "Y": 2410.8,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_199
+        "Position": {
+            "X": 2194.6,
+            "Y": 2525.7,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_191
+        "Position": {
+            "X": 2212.5,
+            "Y": 2393.1,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_180
+        "Position": {
+            "X": 2218.5,
+            "Y": 2282.3,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_195
+        "Position": {
+            "X": 2218.9,
+            "Y": 2323.1,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_188
+        "Position": {
+            "X": 2224.0,
+            "Y": 2510.7,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_196
+        "Position": {
+            "X": 2225.0,
+            "Y": 2345.3,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_179
+        "Position": {
+            "X": 2226.2,
+            "Y": 2253.1,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_186
+        "Position": {
+            "X": 2238.0,
+            "Y": 2305.3,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_160
+        "Position": {
+            "X": 2239.5,
+            "Y": 2096.0,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_206
+        "Position": {
+            "X": 2256.5,
+            "Y": 2491.0,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_175
+        "Position": {
+            "X": 2261.6,
+            "Y": 2126.5,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_177
+        "Position": {
+            "X": 2299.7,
+            "Y": 2179.6,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_178
+        "Position": {
+            "X": 2310.8,
+            "Y": 2204.7,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_203
+        "Position": {
+            "X": 2320.6,
+            "Y": 2308.3,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_190
+        "Position": {
+            "X": 2323.2,
+            "Y": 2344.9,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 725, // Tormented Soul; client level_design zone 338 (instance_sea_of_chaos) slave.xml Slave_165
+        "Position": {
+            "X": 2325.4,
+            "Y": 2231.5,
+            "Z": 98.0,
+            "Yaw": 0.0
+        }
+    }
+]

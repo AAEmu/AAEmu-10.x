@@ -1,0 +1,1408 @@
+// Generated from the client's level_design/zone/*/editor/slave.xml (cannons, siege weapons, wagons, turrets).
+// Placements already in the hand-written slave_spawns.json are left out. Yaw = 2*atan2(Rotate[3], Rotate[0]).
+[
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_8
+        "Position": {
+            "X": 8487.1,
+            "Y": 10891.0,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_83
+        "Position": {
+            "X": 8572.4,
+            "Y": 11420.7,
+            "Z": 33.0,
+            "Yaw": -29.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_6
+        "Position": {
+            "X": 8595.3,
+            "Y": 9131.2,
+            "Z": 33.0,
+            "Yaw": -65.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_5
+        "Position": {
+            "X": 8645.2,
+            "Y": 10759.9,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_78
+        "Position": {
+            "X": 8740.4,
+            "Y": 9231.3,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_76
+        "Position": {
+            "X": 8801.8,
+            "Y": 9835.7,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_82
+        "Position": {
+            "X": 8808.1,
+            "Y": 11562.5,
+            "Z": 33.0,
+            "Yaw": -29.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_85
+        "Position": {
+            "X": 8819.9,
+            "Y": 10387.4,
+            "Z": 33.0,
+            "Yaw": -29.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_84
+        "Position": {
+            "X": 8955.9,
+            "Y": 11110.2,
+            "Z": 33.0,
+            "Yaw": -29.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_60
+        "Position": {
+            "X": 9020.5,
+            "Y": 11530.8,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_49
+        "Position": {
+            "X": 9047.5,
+            "Y": 10006.9,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_50
+        "Position": {
+            "X": 9072.2,
+            "Y": 8796.6,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_77
+        "Position": {
+            "X": 9075.8,
+            "Y": 9251.5,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_4
+        "Position": {
+            "X": 9088.5,
+            "Y": 11866.2,
+            "Z": 35.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_18
+        "Position": {
+            "X": 9253.4,
+            "Y": 11178.1,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_79
+        "Position": {
+            "X": 9362.5,
+            "Y": 8463.8,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_75
+        "Position": {
+            "X": 9387.7,
+            "Y": 9991.3,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_11
+        "Position": {
+            "X": 9468.5,
+            "Y": 8924.7,
+            "Z": 33.0,
+            "Yaw": -100.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_52
+        "Position": {
+            "X": 9521.7,
+            "Y": 9759.7,
+            "Z": 35.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_62
+        "Position": {
+            "X": 9547.4,
+            "Y": 11830.9,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_81
+        "Position": {
+            "X": 9592.1,
+            "Y": 11547.9,
+            "Z": 33.0,
+            "Yaw": -29.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_10
+        "Position": {
+            "X": 9645.5,
+            "Y": 9518.7,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_19
+        "Position": {
+            "X": 9723.9,
+            "Y": 12185.0,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_80
+        "Position": {
+            "X": 9932.7,
+            "Y": 8620.8,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_9
+        "Position": {
+            "X": 9995.8,
+            "Y": 11038.0,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_61
+        "Position": {
+            "X": 10004.7,
+            "Y": 11463.3,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_63
+        "Position": {
+            "X": 10030.4,
+            "Y": 10332.7,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_1
+        "Position": {
+            "X": 10073.4,
+            "Y": 9275.8,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_74
+        "Position": {
+            "X": 10099.6,
+            "Y": 9790.5,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_51
+        "Position": {
+            "X": 10225.8,
+            "Y": 11270.2,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_102
+        "Position": {
+            "X": 10262.8,
+            "Y": 8596.5,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_101
+        "Position": {
+            "X": 10262.8,
+            "Y": 9403.0,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_97
+        "Position": {
+            "X": 10396.7,
+            "Y": 10167.2,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_42
+        "Position": {
+            "X": 10476.7,
+            "Y": 10779.6,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_98
+        "Position": {
+            "X": 10589.3,
+            "Y": 8352.7,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_57
+        "Position": {
+            "X": 10686.7,
+            "Y": 12351.7,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_89
+        "Position": {
+            "X": 10698.3,
+            "Y": 10698.5,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_71
+        "Position": {
+            "X": 10762.1,
+            "Y": 8725.0,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_88
+        "Position": {
+            "X": 10771.9,
+            "Y": 11556.9,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_73
+        "Position": {
+            "X": 10790.7,
+            "Y": 9432.0,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_7
+        "Position": {
+            "X": 10860.2,
+            "Y": 9928.1,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_69
+        "Position": {
+            "X": 10865.6,
+            "Y": 8940.5,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_20
+        "Position": {
+            "X": 10890.0,
+            "Y": 12224.7,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_93
+        "Position": {
+            "X": 10997.9,
+            "Y": 10640.4,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_92
+        "Position": {
+            "X": 11008.9,
+            "Y": 12010.5,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_53
+        "Position": {
+            "X": 11052.8,
+            "Y": 10493.2,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_16
+        "Position": {
+            "X": 11164.7,
+            "Y": 9259.9,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_2
+        "Position": {
+            "X": 11170.3,
+            "Y": 10103.2,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_68
+        "Position": {
+            "X": 11208.6,
+            "Y": 9896.7,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_70
+        "Position": {
+            "X": 11214.7,
+            "Y": 8280.1,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_58
+        "Position": {
+            "X": 11237.2,
+            "Y": 12265.4,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_103
+        "Position": {
+            "X": 11257.6,
+            "Y": 9746.0,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_95
+        "Position": {
+            "X": 11315.3,
+            "Y": 9072.1,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_54
+        "Position": {
+            "X": 11389.7,
+            "Y": 10432.6,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_17
+        "Position": {
+            "X": 11392.8,
+            "Y": 10122.6,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_72
+        "Position": {
+            "X": 11395.3,
+            "Y": 9530.0,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_13
+        "Position": {
+            "X": 11471.4,
+            "Y": 10610.2,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_94
+        "Position": {
+            "X": 11474.7,
+            "Y": 10761.3,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_96
+        "Position": {
+            "X": 11548.6,
+            "Y": 9925.3,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_87
+        "Position": {
+            "X": 11567.2,
+            "Y": 11965.6,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_3
+        "Position": {
+            "X": 11581.0,
+            "Y": 8785.1,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_41
+        "Position": {
+            "X": 11647.9,
+            "Y": 9694.5,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_21
+        "Position": {
+            "X": 11709.5,
+            "Y": 11836.1,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_99
+        "Position": {
+            "X": 11760.9,
+            "Y": 8990.1,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_55
+        "Position": {
+            "X": 11793.1,
+            "Y": 10363.5,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_59
+        "Position": {
+            "X": 11903.0,
+            "Y": 12181.3,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_64
+        "Position": {
+            "X": 11905.5,
+            "Y": 10583.7,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_86
+        "Position": {
+            "X": 11998.9,
+            "Y": 11410.6,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_91
+        "Position": {
+            "X": 12007.8,
+            "Y": 11986.3,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_100
+        "Position": {
+            "X": 12013.6,
+            "Y": 9568.1,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_67
+        "Position": {
+            "X": 12013.8,
+            "Y": 9984.4,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_56
+        "Position": {
+            "X": 12035.9,
+            "Y": 10547.2,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_66
+        "Position": {
+            "X": 12058.1,
+            "Y": 11265.2,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_90
+        "Position": {
+            "X": 12081.8,
+            "Y": 10634.9,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_65
+        "Position": {
+            "X": 12116.9,
+            "Y": 10888.7,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_12
+        "Position": {
+            "X": 12118.5,
+            "Y": 9715.6,
+            "Z": 33.0,
+            "Yaw": 0.0
+        }
+    },
+    {
+        "UnitId": 868, // Small Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_14
+        "Position": {
+            "X": 12264.2,
+            "Y": 9721.7,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_31
+        "Position": {
+            "X": 8281.8,
+            "Y": 8439.6,
+            "Z": 33.0,
+            "Yaw": -130.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_18
+        "Position": {
+            "X": 8405.8,
+            "Y": 9425.4,
+            "Z": 33.0,
+            "Yaw": -89.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_32
+        "Position": {
+            "X": 8422.3,
+            "Y": 8821.4,
+            "Z": 33.0,
+            "Yaw": -130.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_44
+        "Position": {
+            "X": 8444.0,
+            "Y": 8975.9,
+            "Z": 34.9,
+            "Yaw": 72.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_19
+        "Position": {
+            "X": 8494.1,
+            "Y": 8615.0,
+            "Z": 33.0,
+            "Yaw": -87.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_17
+        "Position": {
+            "X": 8583.1,
+            "Y": 8053.7,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_75
+        "Position": {
+            "X": 8606.7,
+            "Y": 8889.4,
+            "Z": 33.8,
+            "Yaw": 177.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_77
+        "Position": {
+            "X": 8631.9,
+            "Y": 9618.2,
+            "Z": 33.8,
+            "Yaw": -90.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_22
+        "Position": {
+            "X": 8643.4,
+            "Y": 10378.5,
+            "Z": 33.0,
+            "Yaw": -98.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_12
+        "Position": {
+            "X": 8676.6,
+            "Y": 10070.1,
+            "Z": 33.0,
+            "Yaw": 40.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_38
+        "Position": {
+            "X": 8697.0,
+            "Y": 11923.2,
+            "Z": 33.0,
+            "Yaw": 99.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_54
+        "Position": {
+            "X": 8786.5,
+            "Y": 11869.8,
+            "Z": 33.0,
+            "Yaw": 12.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_39
+        "Position": {
+            "X": 8813.6,
+            "Y": 10264.8,
+            "Z": 33.0,
+            "Yaw": 99.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_45
+        "Position": {
+            "X": 8866.4,
+            "Y": 12147.1,
+            "Z": 34.9,
+            "Yaw": 8.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_13
+        "Position": {
+            "X": 9041.7,
+            "Y": 8323.4,
+            "Z": 33.0,
+            "Yaw": -130.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_57
+        "Position": {
+            "X": 9132.5,
+            "Y": 10617.5,
+            "Z": 33.0,
+            "Yaw": 162.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_55
+        "Position": {
+            "X": 9248.7,
+            "Y": 11518.5,
+            "Z": 33.0,
+            "Yaw": 12.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_37
+        "Position": {
+            "X": 9323.1,
+            "Y": 12057.6,
+            "Z": 33.0,
+            "Yaw": 170.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_29
+        "Position": {
+            "X": 9339.3,
+            "Y": 8140.3,
+            "Z": 33.0,
+            "Yaw": -130.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_5
+        "Position": {
+            "X": 9414.9,
+            "Y": 11732.8,
+            "Z": 33.0,
+            "Yaw": 170.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_74
+        "Position": {
+            "X": 9574.8,
+            "Y": 9030.1,
+            "Z": 33.8,
+            "Yaw": -20.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_14
+        "Position": {
+            "X": 9583.7,
+            "Y": 11009.2,
+            "Z": 33.0,
+            "Yaw": 6.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_23
+        "Position": {
+            "X": 9598.9,
+            "Y": 10277.9,
+            "Z": 33.0,
+            "Yaw": -98.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_76
+        "Position": {
+            "X": 9828.5,
+            "Y": 8729.7,
+            "Z": 33.8,
+            "Yaw": 177.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_28
+        "Position": {
+            "X": 9852.3,
+            "Y": 8940.7,
+            "Z": 33.0,
+            "Yaw": -87.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_73
+        "Position": {
+            "X": 9886.2,
+            "Y": 9501.3,
+            "Z": 33.8,
+            "Yaw": -20.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_53
+        "Position": {
+            "X": 9997.0,
+            "Y": 12292.2,
+            "Z": 33.0,
+            "Yaw": 12.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_30
+        "Position": {
+            "X": 10013.2,
+            "Y": 8017.4,
+            "Z": 33.0,
+            "Yaw": -130.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_49
+        "Position": {
+            "X": 10099.3,
+            "Y": 10896.2,
+            "Z": 33.0,
+            "Yaw": 39.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_56
+        "Position": {
+            "X": 10127.4,
+            "Y": 11141.8,
+            "Z": 33.0,
+            "Yaw": 88.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_15
+        "Position": {
+            "X": 10141.5,
+            "Y": 11771.2,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_40
+        "Position": {
+            "X": 10237.5,
+            "Y": 12240.4,
+            "Z": 33.0,
+            "Yaw": 99.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_66
+        "Position": {
+            "X": 10344.0,
+            "Y": 9624.4,
+            "Z": 33.0,
+            "Yaw": 127.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_58
+        "Position": {
+            "X": 10363.7,
+            "Y": 10650.0,
+            "Z": 33.0,
+            "Yaw": 127.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_65
+        "Position": {
+            "X": 10385.4,
+            "Y": 11935.2,
+            "Z": 33.0,
+            "Yaw": 173.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_36
+        "Position": {
+            "X": 10401.6,
+            "Y": 8754.6,
+            "Z": 33.8,
+            "Yaw": -96.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_4
+        "Position": {
+            "X": 10402.6,
+            "Y": 8334.7,
+            "Z": 33.0,
+            "Yaw": 5.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_64
+        "Position": {
+            "X": 10437.0,
+            "Y": 11503.1,
+            "Z": 33.0,
+            "Yaw": 173.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_68
+        "Position": {
+            "X": 10452.9,
+            "Y": 8494.4,
+            "Z": 33.0,
+            "Yaw": 127.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_47
+        "Position": {
+            "X": 10537.5,
+            "Y": 10468.5,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_67
+        "Position": {
+            "X": 10556.2,
+            "Y": 9087.3,
+            "Z": 33.0,
+            "Yaw": 127.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_35
+        "Position": {
+            "X": 10652.9,
+            "Y": 8497.9,
+            "Z": 33.8,
+            "Yaw": -96.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_27
+        "Position": {
+            "X": 10683.3,
+            "Y": 8117.2,
+            "Z": 33.0,
+            "Yaw": -33.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_48
+        "Position": {
+            "X": 10691.5,
+            "Y": 10799.6,
+            "Z": 33.0,
+            "Yaw": 27.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_42
+        "Position": {
+            "X": 10740.7,
+            "Y": 11027.1,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_11
+        "Position": {
+            "X": 10788.6,
+            "Y": 11807.7,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_25
+        "Position": {
+            "X": 10847.6,
+            "Y": 12094.7,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_59
+        "Position": {
+            "X": 10889.4,
+            "Y": 11090.9,
+            "Z": 33.0,
+            "Yaw": 127.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_69
+        "Position": {
+            "X": 10967.6,
+            "Y": 8725.4,
+            "Z": 33.0,
+            "Yaw": 127.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_52
+        "Position": {
+            "X": 11184.2,
+            "Y": 11975.6,
+            "Z": 33.0,
+            "Yaw": 59.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_71
+        "Position": {
+            "X": 11190.2,
+            "Y": 9575.8,
+            "Z": 33.0,
+            "Yaw": 127.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_43
+        "Position": {
+            "X": 11216.3,
+            "Y": 12482.3,
+            "Z": 35.2,
+            "Yaw": 42.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_7
+        "Position": {
+            "X": 11225.4,
+            "Y": 11145.8,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_9
+        "Position": {
+            "X": 11247.1,
+            "Y": 11493.3,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_72
+        "Position": {
+            "X": 11366.2,
+            "Y": 8716.6,
+            "Z": 33.0,
+            "Yaw": 127.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_2
+        "Position": {
+            "X": 11375.4,
+            "Y": 8881.2,
+            "Z": 33.0,
+            "Yaw": -25.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_62
+        "Position": {
+            "X": 11439.0,
+            "Y": 11138.2,
+            "Z": 33.0,
+            "Yaw": 127.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_6
+        "Position": {
+            "X": 11466.2,
+            "Y": 12153.6,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_3
+        "Position": {
+            "X": 11477.9,
+            "Y": 8321.2,
+            "Z": 33.0,
+            "Yaw": 15.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_51
+        "Position": {
+            "X": 11539.7,
+            "Y": 11849.7,
+            "Z": 33.0,
+            "Yaw": 42.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_48
+        "Position": {
+            "X": 11577.9,
+            "Y": 10844.7,
+            "Z": 34.9,
+            "Yaw": 41.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_8
+        "Position": {
+            "X": 11578.8,
+            "Y": 11262.9,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_63
+        "Position": {
+            "X": 11591.1,
+            "Y": 11503.1,
+            "Z": 33.0,
+            "Yaw": 127.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_24
+        "Position": {
+            "X": 11689.7,
+            "Y": 10740.2,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_34
+        "Position": {
+            "X": 11690.3,
+            "Y": 9977.5,
+            "Z": 33.0,
+            "Yaw": -11.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_60
+        "Position": {
+            "X": 11726.1,
+            "Y": 10944.5,
+            "Z": 33.0,
+            "Yaw": 127.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_26
+        "Position": {
+            "X": 11754.5,
+            "Y": 8608.3,
+            "Z": 33.0,
+            "Yaw": -112.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_47
+        "Position": {
+            "X": 11792.4,
+            "Y": 12252.0,
+            "Z": 34.9,
+            "Yaw": 8.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_70
+        "Position": {
+            "X": 11878.7,
+            "Y": 9724.4,
+            "Z": 33.0,
+            "Yaw": 127.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_61
+        "Position": {
+            "X": 11878.9,
+            "Y": 11711.0,
+            "Z": 33.0,
+            "Yaw": 127.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_10
+        "Position": {
+            "X": 11892.1,
+            "Y": 11555.2,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_41
+        "Position": {
+            "X": 11959.5,
+            "Y": 12485.1,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_50
+        "Position": {
+            "X": 12044.9,
+            "Y": 9173.0,
+            "Z": 36.3,
+            "Yaw": 19.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_21
+        "Position": {
+            "X": 12093.0,
+            "Y": 10791.0,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_20
+        "Position": {
+            "X": 12093.0,
+            "Y": 11197.2,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_45
+        "Position": {
+            "X": 12098.3,
+            "Y": 11821.1,
+            "Z": 34.9,
+            "Yaw": 8.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_16
+        "Position": {
+            "X": 12275.6,
+            "Y": 10280.2,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_44
+        "Position": {
+            "X": 12302.9,
+            "Y": 12100.3,
+            "Z": 33.0,
+            "Yaw": 90.0
+        }
+    },
+    {
+        "UnitId": 879, // Large Shipwreck; client level_design zone 372 (instance_sea_survival_2) slave.xml Slave_wracked_ship_big_33
+        "Position": {
+            "X": 12423.0,
+            "Y": 9360.6,
+            "Z": 33.0,
+            "Yaw": -11.0
+        }
+    }
+]
