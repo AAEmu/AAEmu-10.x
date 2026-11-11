@@ -32,5 +32,7 @@ public enum EquipmentItemSlotType : byte
     Body = 28,
     Beard = 29,
     Backpack = 30,
-    Cosplay = 31
+    Cosplay = 31,
+    Stabilizer = 32,
+    RaceCosplay = 33
 }

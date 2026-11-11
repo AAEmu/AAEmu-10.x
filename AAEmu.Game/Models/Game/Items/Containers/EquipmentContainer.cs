@@ -14,8 +14,13 @@ public class EquipmentContainer : ItemContainer
     public EquipmentContainer(uint ownerId, SlotType containerType, bool createWithNewId, Unit parentUnit) : base(ownerId, containerType, createWithNewId, parentUnit)
     {
         // Fancy way of getting the last enum value + 1 for equipment slots
-        ContainerSize = (int)Enum.GetValues<EquipmentItemSlot>().Max() + 1;
+        ContainerSize = SlotTableSize;
     }
+
+    public static int SlotTableSize { get; } = (int)Enum.GetValues<EquipmentItemSlot>().Max() + 1;
+
+    // Characters saved with the old 28-slot table must still reach slots 28-33.
+    public static int ResolveLoadedSize(int storedSize) => Math.Max(storedSize, SlotTableSize);
 
     public static List<EquipmentItemSlot> GetAllowedGearSlots(EquipmentItemSlotType slotTypeId)
     {
@@ -124,6 +129,10 @@ public class EquipmentContainer : ItemContainer
                 break;
             case EquipmentItemSlotType.Cosplay:
                 allowedSlots.Add(EquipmentItemSlot.Cosplay);
+                break;
+            case EquipmentItemSlotType.RaceCosplay:
+                allowedSlots.Add(EquipmentItemSlot.RaceCosplay);
+                allowedSlots.Add(EquipmentItemSlot.RaceCosplayLooks);
                 break;
         }
         return allowedSlots;

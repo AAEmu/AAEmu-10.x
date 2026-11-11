@@ -87,7 +87,7 @@ public class SpecialEffectOwnershipRulesTests
         SpecialType.ReportBotExpired, SpecialType.ReportBotArrested, SpecialType.EngraveOnGuardTower,
         SpecialType.ArrestBot, SpecialType.AddCharacterSlot, SpecialType.ExpToItem,
         SpecialType.StartDominionNonPvpDuration, SpecialType.AuctionPostAuthority, SpecialType.RevertItemLook,
-        SpecialType.RechargeItemSkill, SpecialType.RechargeItemRndAttrUnitModifier,
+        SpecialType.RechargeItemSkill,
         SpecialType.GainGachaLootPackItem, SpecialType.ExpandDecoLimit, SpecialType.LearnSpecialAbility,
         SpecialType.ResidentServicePoint, SpecialType.ItemSmelting,
     ];

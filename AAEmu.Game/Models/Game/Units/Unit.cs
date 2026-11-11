@@ -1816,6 +1816,9 @@ public class Unit : BaseUnit, IUnit
             if (item is not EquipItem ei)
                 continue;
 
+            if (!CostumeSlotRules.CountsTowardStats((EquipmentItemSlot)item.Slot, IsCharTransformed))
+                continue;
+
             // Mods on the gear Itself
             foreach (var template in ItemManager.Instance.GetUnitModifiers(item.TemplateId))
                 AddBonus(GearBonusesIndex, new Bonus { Template = template, Value = template.Value });
@@ -1840,7 +1843,8 @@ public class Unit : BaseUnit, IUnit
             // Synthesis effects. The item stores the effect's group; what it is worth follows from
             // the grade the piece is at and how far into it the piece has come, so a line grows both
             // when a grade is gained and as the bar toward the next one fills.
-            foreach (var groupId in ei.UsedRndAttrGroupIds)
+            var synthesisActive = ItemRndAttrLifetimeRules.IsActive(ei, DateTime.UtcNow);
+            foreach (var groupId in synthesisActive ? ei.UsedRndAttrGroupIds : [])
             {
                 var modifier = ItemEnchantGameData.Instance.GetRndAttrModifier(groupId, ei.Grade, ei.EvolvingExp);
                 // Not "> 0": the reducing lines are the negative ones, and they count too.

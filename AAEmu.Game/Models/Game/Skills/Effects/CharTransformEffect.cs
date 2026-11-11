@@ -55,6 +55,8 @@ public class CharTransformEffect : EffectTemplate
             .ToArray();
         character.BroadcastPacket(new SCUnitEquipmentsChangedPacket(character.ObjId, weapons, transformed), true);
 
+        if (character.Equipment?.GetItemBySlot((int)EquipmentItemSlot.RaceCosplay) != null)
+            character.UpdateGearBonuses(null, null);
     }
 
     /// <summary>A newly arriving observer: the unit state carries the real body parts, so send the form's.</summary>
