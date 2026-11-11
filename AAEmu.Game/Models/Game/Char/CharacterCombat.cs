@@ -38,6 +38,25 @@ public partial class Character
 
     public uint ResurrectHpPercent { get; set; } = 1;
     public uint ResurrectMpPercent { get; set; } = 1;
+
+    /// <summary>
+    /// Another player's resurrection was offered since the character last died (the Resurrection effect). Only
+    /// then does the client's in-place request leave the character where it fell.
+    /// </summary>
+    public bool ResurrectOfferPending { get; set; }
+
+    /// <summary>
+    /// Spends the waiting resurrection offer on this resurrection, whatever it turns out to be, and says whether the
+    /// character comes back where it fell (<see cref="CharacterDeathRules.ResurrectsWhereFallen"/>). An offer is
+    /// used once: a second request finds none.
+    /// </summary>
+    public bool TakeResurrectOffer(ResurrectionKind kind, bool summonedToCourt)
+    {
+        var whereFallen = CharacterDeathRules.ResurrectsWhereFallen(kind, ResurrectOfferPending, summonedToCourt);
+        ResurrectOfferPending = false;
+        return whereFallen;
+    }
+
     public uint HostileFactionKills { get; set; }
     public uint HonorGainedInCombat { get; set; }
 
@@ -92,6 +111,8 @@ public partial class Character
         {
             // Heal history intentionally survives death.
             _pvpDamageHistory.Clear();
+            // An offer to resurrect belongs to the death it was made for.
+            ResurrectOfferPending = false;
             ClearAllAggro();
             if (WorldIntegration.ZoneAuthority)
                 WorldIntegration.RelayUnitDeathToZone?.Invoke(ObjId);
