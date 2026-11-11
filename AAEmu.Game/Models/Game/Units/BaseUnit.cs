@@ -52,6 +52,19 @@ public class BaseUnit : GameObject, IBaseUnit
     /// <returns></returns>
     public bool CanAttack(BaseUnit target)
     {
+        // A unit that fights on someone else's side (an ownerless world cannon under its gunner) attacks
+        // only what is hostile to that unit. The side's own force-attack and flagged-target answers are
+        // left out on purpose: those are attacks on friendly targets, and the criminal state, assault
+        // evidence and PvP kill attribution all stop at an attacker that is not a character, so through
+        // the vehicle they would cost nothing. The side never attacks the vehicle it is sitting in.
+        var side = CombatSide;
+        if (side != null && side != this)
+        {
+            return target != null && target.ObjId != ObjId
+                && side.GetRelationStateTo(target) == RelationState.Hostile
+                && side.CanAttack(target);
+        }
+
         if (this.Faction == null || target.Faction == null)
             return true;
         if (this.ObjId == target.ObjId)
@@ -144,8 +157,25 @@ public class BaseUnit : GameObject, IBaseUnit
         return !target.Buffs.CheckBuffTag((uint)TagsEnum.Stealth);
     }
 
+    /// <summary>
+    /// The unit whose faction this one uses as an attacker. Normally itself; an ownerless world-spawned
+    /// vehicle whose own faction is Friendly (the Andelph cannons of quest 1401) answers with its
+    /// driver, because Friendly (1) is friendly to every faction and left every shot with no target.
+    /// Summoned vehicles already carry their owner's faction.
+    /// </summary>
+    /// <remarks>
+    /// Attacker side only: <see cref="CanAttack"/> and <see cref="GetRelationStateTo"/> ask it for the
+    /// unit doing the attacking. A unit judging its relation <em>to</em> such a vehicle still sees the
+    /// vehicle's own faction.
+    /// </remarks>
+    public virtual BaseUnit CombatSide => this;
+
     public RelationState GetRelationStateTo(BaseUnit unit)
     {
+        var side = CombatSide;
+        if (side != null && side != this)
+            return side.GetRelationStateTo(unit);
+
         // Guild War: members of two expeditions at war with each other are mutually hostile for the
         // war's duration, overriding their normal (usually identical) faction relation.
         if (AreGuildWarEnemies(this, unit))

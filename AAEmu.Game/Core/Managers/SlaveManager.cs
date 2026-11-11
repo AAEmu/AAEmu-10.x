@@ -319,7 +319,8 @@ public class SlaveManager(WorldInstance parentWorldInstance)
         var attachPoint = slave.AttachedCharacters.FirstOrDefault(x => x.Value == character).Key;
         if (attachPoint != default)
         {
-            slave.AttachedCharacters.Remove(attachPoint);
+            lock (slave.SeatLock)
+                slave.AttachedCharacters.Remove(attachPoint);
             character.Transform.Parent = null;
             character.Transform.StickyParent = null;
             ShipHarpoonRopeController.OnOperatorLeftSlave(slave, character);
@@ -389,7 +390,8 @@ public class SlaveManager(WorldInstance parentWorldInstance)
                 SlaveOccupyBuffs.ApplyBuffEffects(character, occupySkillId > 0 ? (uint)occupySkillId : 0, slave);
         }
 
-        slave.AttachedCharacters.Add(attachPoint, character);
+        lock (slave.SeatLock)
+            slave.AttachedCharacters.Add(attachPoint, character);
         character.Transform.Parent = slave.Transform;
         if (!ApplyAttachPointLocation(slave, character, attachPoint))
             character.Transform.Local.SetPosition(0, 0, 0, 0, 0, 0);
