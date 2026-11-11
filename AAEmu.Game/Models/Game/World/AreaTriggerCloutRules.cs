@@ -1,3 +1,6 @@
+using AAEmu.Game.Models.Game.Skills;
+using AAEmu.Game.Models.Game.Units;
+
 namespace AAEmu.Game.Models.Game.World;
 
 /// <summary>
@@ -7,6 +10,20 @@ namespace AAEmu.Game.Models.Game.World;
 /// </summary>
 public static class AreaTriggerCloutRules
 {
+    /// <summary>
+    /// <c>target_max_count</c>: the clout acts on at most that many units, the unit that set it off first.
+    /// 0 is unlimited.
+    /// </summary>
+    public static List<Unit> Targets(IReadOnlyList<Unit> inShape, Unit caster, int targetMaxCount, Func<Unit, double> distance)
+    {
+        if (targetMaxCount <= 0 || inShape.Count <= targetMaxCount)
+            return inShape.ToList();
+
+        return SkillAreaRules.KeepNearest(inShape, caster, targetMaxCount, unit => distance((Unit)unit))
+            .Cast<Unit>()
+            .ToList();
+    }
+
     /// <summary>
     /// Whether units inside the shape should be tracked even when there is no inside-buff.
     /// </summary>

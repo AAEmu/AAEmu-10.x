@@ -638,6 +638,7 @@ public class DoodadManager(INonUnitObjectIdManager objectIdManager, IDoodadIdMan
                             TargetBuffTagId = reader.GetUInt32("target_buff_tag_id", 0),
                             TargetNoBuffTagId = reader.GetUInt32("target_no_buff_tag_id", 0),
                             UseOriginSource = reader.GetBoolean("use_origin_source", true),
+                            TargetMaxCount = reader.GetInt32("target_max_count", 0),
                             Effects = []
                         };
                         _phaseFuncTemplates["DoodadFuncClout"].Add(func.Id, func);

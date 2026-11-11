@@ -44,6 +44,8 @@ public class AreaTrigger
     public uint TargetBuffTagId { get; set; }
     public uint TargetNoBuffTagId { get; set; }
     public BuffTemplate InsideBuffTemplate { get; set; }
+    /// <summary><c>doodad_func_clouts.target_max_count</c>; 0 is unlimited.</summary>
+    public int TargetMaxCount { get; set; }
     public Dictionary<uint, List<EffectTemplate>> EffectsPerBuff { get; set; } = new();
     public int TickRate { get; set; }
     private DateTime _lastTick = DateTime.MinValue;
@@ -72,6 +74,10 @@ public class AreaTrigger
 
         // Get units currently in the shape
         var currentUnitsInShape = WorldManager.GetAroundByShape<Unit>(Owner, Shape) ?? [];
+        if (TargetMaxCount > 0)
+            currentUnitsInShape = AreaTriggerCloutRules.Targets(
+                currentUnitsInShape.Where(IsValidTarget).ToList(), Caster as Unit, TargetMaxCount,
+                unit => unit.GetDistanceTo(Owner));
 
         // Check who left since last check
         var leftUnits = Units?.Where(oldU => currentUnitsInShape.All(newU => oldU.ObjId != newU.ObjId)) ?? [];
