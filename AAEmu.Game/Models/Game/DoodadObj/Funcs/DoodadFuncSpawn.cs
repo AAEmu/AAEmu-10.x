@@ -74,12 +74,14 @@ public class DoodadFuncSpawn : DoodadFuncTemplate
         npc.Transform = owner.Transform.CloneDetached(npc);
         npc.Transform.Local.SetPosition(
             placement.Value.X, placement.Value.Y, placement.Value.Z, 0f, 0f, placement.Value.Yaw);
-        npc.OwnerId = caster switch
+        var summonerCharacterId = caster switch
         {
             Character character => character.Id,
             Npc creatorNpc => creatorNpc.OwnerId,
-            _ => 0
+            _ => 0u
         };
+        npc.OwnerId = SummonCompanionRules.OwnerIdFor(
+            summonerCharacterId, UseSummonerFaction, npc.Template?.VisibleToCreatorOnly == true);
         if (UseSummonerFaction && caster is Unit summoner)
             npc.Faction = summoner.Faction;
 

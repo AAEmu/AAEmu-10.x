@@ -1601,6 +1601,8 @@ public static class WorldIntegration
             var terrainZ = world.Template?.GeoData?.GetHeight(worldPos) ?? 0f;
             if (MirrorHeightRules.ShouldSnapToTerrain(npc.IsOffGround, worldPos.Z, terrainZ))
                 worldPos.Z = terrainZ;
+            else
+                npc.ZoneSpawnPoint = worldPos;
 
             npc.Transform.ZoneId = zoneId;
             npc.Transform.Local.SetPosition(worldPos.X, worldPos.Y, worldPos.Z, 0f, 0f, zRot);

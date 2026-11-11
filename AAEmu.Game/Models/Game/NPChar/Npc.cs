@@ -101,6 +101,9 @@ public partial class Npc : Unit
     /// </summary>
     public float? ZoneSpawnScale { get; set; }
 
+    /// <summary>The zone's spawn point when the mirror could not be grounded (its Z still carries the spawn lift).</summary>
+    public System.Numerics.Vector3? ZoneSpawnPoint { get; set; }
+
     public override float Scale => ZoneSpawnScale ?? Template.Scale;
 
     public override byte RaceGender => (byte)(16 * Template.Gender + Template.Race);

@@ -22,6 +22,12 @@ public static class SummonCompanionRules
         && mateState is MateState.Passive or MateState.Protective or MateState.Aggressive;
 
     /// <summary>
+    /// The character a spawned NPC belongs to: the summoner's for a companion or a creator-only NPC, else nobody.
+    /// </summary>
+    public static uint OwnerIdFor(uint summonerCharacterId, bool useSummonerFaction, bool visibleToCreatorOnly) =>
+        useSummonerFaction || visibleToCreatorOnly ? summonerCharacterId : 0;
+
+    /// <summary>
     /// True when this World-authored NPC was created for <paramref name="characterId"/> and
     /// must be retired when that character leaves the copy.
     /// </summary>
