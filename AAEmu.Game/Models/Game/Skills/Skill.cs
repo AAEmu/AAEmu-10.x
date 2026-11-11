@@ -2395,7 +2395,12 @@ public class Skill
             {
                 var thisTargetCaster = EffectCastTarget(target, targetCaster);
 
-                effect.Template.Apply(caster, casterCaster, target, thisTargetCaster, new CastSkill(Template.Id, TlId), new EffectSource(this), skillObject, DateTime.UtcNow, packets);
+                var effectSource = new EffectSource(this)
+                {
+                    AppliedToSource = effect.ApplicationMethod is SkillEffectApplicationMethod.Source
+                        or SkillEffectApplicationMethod.SourceOnce
+                };
+                effect.Template.Apply(caster, casterCaster, target, thisTargetCaster, new CastSkill(Template.Id, TlId), effectSource, skillObject, DateTime.UtcNow, packets);
 
                 if (player is { SkillCancelled: true }) { Cancelled = true; }
 

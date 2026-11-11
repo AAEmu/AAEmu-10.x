@@ -26,6 +26,11 @@ public class EffectSource
     /// </remarks>
     public bool FromBuffTrigger { get; set; }
 
+    /// <summary>
+    /// The skill effect row is authored onto its caster (application method Source or SourceOnce).
+    /// </summary>
+    public bool AppliedToSource { get; set; }
+
     public EffectSource()
     {
     }
