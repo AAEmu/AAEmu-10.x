@@ -4528,6 +4528,10 @@ public partial class Character : Unit, ICharacter
         {
             using (var transaction = sqlConnection.BeginTransaction())
             {
+                // RankScoreManager.SaveCharacter forgets the ranking credit as soon as it is in the transaction;
+                // these copies put it back if the transaction does not commit.
+                Dictionary<(int Kind, int Method), long> rankTotalsBefore = null;
+                List<RankRecordEvent> rankRecordsBefore = null;
                 try
                 {
                     saved = Save(sqlConnection, transaction, out portalSaveToken);
@@ -4542,13 +4546,31 @@ public partial class Character : Unit, ICharacter
                     // everything from the DB (GameConnection.LoadAccount), so freshly-created gear — including the
                     // face/hair/body appearance parts — must be written now, not left for the periodic SaveManager.
                     ItemManager.Instance.Save(sqlConnection, transaction);
+                    // Ranking credit earned since the last world save goes with the character as well: the world
+                    // save is the only other writer, and it only reaches characters that are still in the world,
+                    // so a leave (a logout, or the shutdown logout before the final save) would drop it.
+                    if (RankGamePointTotals.HasPending || RankRecords.HasPending)
+                    {
+                        rankTotalsBefore = new Dictionary<(int Kind, int Method), long>(RankGamePointTotals.Pending);
+                        rankRecordsBefore = [.. RankRecords.Pending];
+                        RankScoreManager.Instance.SaveCharacter(sqlConnection, transaction, this);
+                    }
+
                     transaction.Commit();
+                    rankTotalsBefore = null;
+                    rankRecordsBefore = null;
                     ConfirmPortalSaveCommitted(portalSaveToken);
                     ConfirmAccountLiveSaved();
                 }
                 catch (Exception e)
                 {
                     saved = false;
+                    if (rankTotalsBefore != null)
+                    {
+                        RankGamePointTotals.ResetTo(rankTotalsBefore);
+                        RankRecords.ResetTo(rankRecordsBefore);
+                    }
+
                     DiscardPortalSaveCommit(portalSaveToken);
                     Logger.Error(e, $"Character save failed for {Id} - {Name}");
                     try

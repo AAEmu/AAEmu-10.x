@@ -41,4 +41,15 @@ public class GamePointTotals
 
     /// <summary>Forgets what has been written.</summary>
     public void Clear() => _pending.Clear();
+
+    /// <summary>
+    /// Puts the totals back to a copy of <see cref="Pending"/> taken before a write, for a write whose
+    /// transaction rolled back after <see cref="Clear"/> ran.
+    /// </summary>
+    public void ResetTo(IReadOnlyDictionary<(int Kind, int Method), long> pending)
+    {
+        _pending.Clear();
+        foreach (var (key, amount) in pending)
+            _pending[key] = amount;
+    }
 }

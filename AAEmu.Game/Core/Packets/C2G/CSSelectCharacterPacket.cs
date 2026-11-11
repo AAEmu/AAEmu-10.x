@@ -23,6 +23,15 @@ public class CSSelectCharacterPacket() : GamePacket(CSOffsets.CSSelectCharacterP
         var characterId = (uint)stream.ReadUInt64();
         _ = stream.ReadBoolean(); // exit (return-to-character-select flag)
 
+        // The shutdown logout already ran its leave handshake: a player entering now would never get one and
+        // would lose their UI data at the final save. Refused the same way as a failed world registration.
+        if (ShutdownLogout.WorldEntryClosed)
+        {
+            Logger.Info($"Character {characterId} of account {Connection.AccountId} refused: the server is shutting down");
+            Connection.Shutdown();
+            return;
+        }
+
         if (Connection.Characters.TryGetValue(characterId, out var character))
         {
             // Force player into main_world when coming from character select
@@ -190,9 +199,10 @@ public class CSSelectCharacterPacket() : GamePacket(CSOffsets.CSSelectCharacterP
                 ExpeditionManager.SendExpeditionInfo(Connection.ActiveChar);
             }
 
-            Connection.ActiveChar.SendOption(1);
-            Connection.ActiveChar.SendOption(2);
-            Connection.ActiveChar.SendOption(5);
+            // UI sections the client does not request itself (see UiData.SentAtCharacterSelect): without the
+            // push, 5-7 are never restored after a client restart or a server reboot.
+            foreach (var uiDataType in UiData.SentAtCharacterSelect)
+                Connection.ActiveChar.SendOption(uiDataType);
 
             Connection.ActiveChar.Buffs.AddBuff((uint)BuffConstants.LoggedOn, Connection.ActiveChar);
 

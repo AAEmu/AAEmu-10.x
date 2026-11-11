@@ -235,11 +235,12 @@ public class GameConnection
     /// <summary>
     /// Called when closing a connection
     /// </summary>
-    public static void SaveAndRemoveFromWorld(Character activeChar)
+    /// <returns>False when the character's save failed.</returns>
+    public static bool SaveAndRemoveFromWorld(Character activeChar)
     {
         // TODO: this needs a rewrite
         if (activeChar == null)
-            return;
+            return true;
 
         // Remove Radars
         RadarManager.Instance.UnRegister(activeChar);
@@ -255,6 +256,6 @@ public class GameConnection
 
         // Do a manual save here as it's no longer in _characters at this point
         // TODO: might need a better option like saving this transaction for later to be used by the SaveManager
-        activeChar.SaveDirectlyToDatabase();
+        return activeChar.SaveDirectlyToDatabase();
     }
 }

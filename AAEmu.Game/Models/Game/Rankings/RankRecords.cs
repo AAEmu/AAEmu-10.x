@@ -83,4 +83,14 @@ public class RankRecords
 
     /// <summary>Forgets what has been written.</summary>
     public void Clear() => _pending.Clear();
+
+    /// <summary>
+    /// Puts the records back to a copy of <see cref="Pending"/> taken before a write, for a write whose
+    /// transaction rolled back after <see cref="Clear"/> ran.
+    /// </summary>
+    public void ResetTo(IReadOnlyList<RankRecordEvent> pending)
+    {
+        _pending.Clear();
+        _pending.AddRange(pending);
+    }
 }

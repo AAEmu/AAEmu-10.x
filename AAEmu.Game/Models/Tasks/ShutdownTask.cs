@@ -3,12 +3,19 @@ using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets.G2C;
 
+using NLog;
+
+using DotNetTask = System.Threading.Tasks.Task;
+
 namespace AAEmu.Game.Models.Tasks;
 
 public class ShutdownTask : Task
 {
+    private static Logger Logger { get; } = LogManager.GetCurrentClassLogger();
+
     // private DateTime _lastCheckTime = DateTime.MinValue;
-    private bool _alreadyShuttingDown;
+    // 0 until the shutdown sequence starts; set once with Interlocked so overlapping runs of this task cannot start it twice.
+    private int _shuttingDown;
     private DateTime _shutdownTime;
     private DateTime _nextTriggerTime = DateTime.MinValue;
     private readonly int _exitCode;
@@ -43,6 +50,12 @@ public class ShutdownTask : Task
         _nextTriggerTime = CalculateLargestNextTrigger();
     }
 
+    /// <summary>
+    /// True once the shutdown sequence has started (players are being logged out): from then on it can no longer
+    /// be cancelled or moved, only forced.
+    /// </summary>
+    public bool Started => Volatile.Read(ref _shuttingDown) != 0;
+
     private DateTime CalculateLargestNextTrigger()
     {
         var remaining = _shutdownTime - DateTime.UtcNow;
@@ -66,35 +79,14 @@ public class ShutdownTask : Task
 
     public override void Execute()
     {
-        if (_alreadyShuttingDown)
-            return;
-
         if (_shutdownTime <= DateTime.UtcNow)
         {
-            _alreadyShuttingDown = true;
-            // Do server shut down now
-
-            // Wipe all BuyBack containers manually, as there will be no trigger for disconnected players
-            try
-            {
-                foreach (var character in WorldManager.Instance.GetAllCharacters())
-                    character.BuyBackItems.Wipe();
-            }
-            catch (Exception)
-            {
-                // Ignore
-            }
-
-            FactionPowerManager.Instance.Save();
-            if (SaveManager.Instance.DoSave())
-            {
-                WorldManager.Instance.BroadcastPacketToServer(new SCNoticeMessagePacket(3, Color.Magenta, 15000,
-                    "The server is shutting down right now!"));
-                Environment.Exit(_exitCode); // Manual Shutdown
-            }
-
+            ExecuteShutdown();
             return;
         }
+
+        if (Started)
+            return;
 
         var remainingTime = _shutdownTime - DateTime.UtcNow;
         var remainingSeconds = (int)Math.Ceiling(remainingTime.TotalSeconds);
@@ -131,5 +123,77 @@ public class ShutdownTask : Task
                 Color.Red,
                 popupTime,
                 shutdownText));
+    }
+
+    /// <summary>
+    /// Starts the shutdown once, however often the task runs after the shutdown time and even when its runs
+    /// overlap: players are sent to character select through the normal leave handshake (their clients only send
+    /// the quest tracker and the rest of their UI data when they leave the world, see <see cref="ShutdownLogout"/>),
+    /// then the world is saved and the process exits.
+    /// </summary>
+    private void ExecuteShutdown()
+    {
+        if (Interlocked.Exchange(ref _shuttingDown, 1) != 0)
+            return;
+
+        // Wipe all BuyBack containers manually, as there will be no trigger for disconnected players
+        try
+        {
+            foreach (var character in WorldManager.Instance.GetAllCharacters())
+                character.BuyBackItems.Wipe();
+        }
+        catch (Exception)
+        {
+            // Ignore
+        }
+
+        _ = RunShutdownAsync();
+    }
+
+    /// <summary>
+    /// The whole sequence in one flow, so nothing else can save and exit while it runs: the grace for the UI saves
+    /// starts only after every grant is done, and the final save waits for the logout to finish and for every
+    /// character whose save failed on leave to be saved.
+    /// </summary>
+    private async DotNetTask RunShutdownAsync()
+    {
+        var logout = ShutdownLogout.ForServer();
+        try
+        {
+            await logout.RunAsync(ShutdownLogout.DefaultCountdown, ShutdownLogout.DefaultGrace);
+        }
+        catch (Exception e)
+        {
+            Logger.Error(e, "Shutdown: logout failed, saving without the remaining UI data");
+        }
+
+        while (true)
+        {
+            try
+            {
+                // Characters that left the world with a failed save are not in the world save below.
+                if (!logout.SaveUnsaved())
+                {
+                    Logger.Error("Shutdown: {0} character(s) not saved yet, retrying", logout.Unsaved);
+                }
+                else
+                {
+                    FactionPowerManager.Instance.Save();
+                    if (SaveManager.Instance.DoSave())
+                    {
+                        WorldManager.Instance.BroadcastPacketToServer(new SCNoticeMessagePacket(3, Color.Magenta, 15000,
+                            "The server is shutting down right now!"));
+                        Environment.Exit(_exitCode); // Manual Shutdown
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Shutdown: final save failed, retrying");
+            }
+
+            // A save that did not go through (one already running, say) is retried, as the once-a-second task did.
+            await DotNetTask.Delay(TimeSpan.FromSeconds(1));
+        }
     }
 }

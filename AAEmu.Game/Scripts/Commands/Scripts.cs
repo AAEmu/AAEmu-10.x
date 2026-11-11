@@ -91,6 +91,15 @@ public class Scripts : ICommand
 
                 var shutdownTimeRemaining = shutdownTime - DateTime.UtcNow;
 
+                // Once players are being logged out the sequence runs to the end: a cancel here would announce a
+                // cancelled shutdown and then stop the server anyway.
+                if (SaveManager.Instance.ShutdownTask is { Started: true })
+                {
+                    CommandManager.SendErrorText(this, messageOutput,
+                        "The shutdown is already logging players out and can no longer be cancelled or moved, use |nn;/scripts forcedshutdown|r to stop at once.");
+                    return;
+                }
+
                 if (SaveManager.Instance.ShutdownTask != null && doCancel)
                 {
                     SaveManager.Instance.ShutdownTask.Cancel();

@@ -384,6 +384,33 @@ public class RankScoreManagerTests
         await Assert.That(manager.ReadBoard(RankingGameData.Instance.GetBoard(21), 100)).IsEmpty();
     }
 
+    [Test]
+    public async Task ResetTo_PutsBackTheCreditASaveClearedWhenItsTransactionRollsBack()
+    {
+        // Character.SaveDirectlyToDatabaseCore copies the pending credit before SaveCharacter clears it and resets
+        // it from the copies when the transaction does not commit, so a failed leave save loses no ranking credit.
+        var store = new InMemoryStore();
+        var manager = new RankScoreManager(store, Mock.Of<ITaskManager>().Object);
+        using var data = SeededBoard(permitTie: false, withFishingBoards: true);
+        var character = new Character(new UnitCustomModelParams()) { Id = 5 };
+        var caught = new DateTime(2026, 9, 17, 10, 0, 0, DateTimeKind.Utc);
+        character.RankGamePointTotals.Add(RankGamePoints.Honor, RankGamePoints.Gained, 700);
+        character.RankRecords.Add(RankRecordKind.FishLength, 249000, caught);
+        var totalsBefore = new Dictionary<(int Kind, int Method), long>(character.RankGamePointTotals.Pending);
+        List<RankRecordEvent> recordsBefore = [.. character.RankRecords.Pending];
+
+        manager.SaveCharacter(null, null, character);
+        await Assert.That(character.RankGamePointTotals.HasPending).IsFalse();
+        await Assert.That(character.RankRecords.HasPending).IsFalse();
+
+        character.RankGamePointTotals.ResetTo(totalsBefore);
+        character.RankRecords.ResetTo(recordsBefore);
+
+        await Assert.That(character.RankGamePointTotals.Pending[(RankGamePoints.Honor, RankGamePoints.Gained)]).IsEqualTo(700L);
+        await Assert.That(character.RankRecords.Pending.Count).IsEqualTo(1);
+        await Assert.That(character.RankRecords.Pending[0]).IsEqualTo(new RankRecordEvent(RankRecordKind.FishLength, 249000, caught));
+    }
+
     private sealed class InMemoryStore : IRankScoreStore
     {
         public List<RankScore> Rows { get; } = [];

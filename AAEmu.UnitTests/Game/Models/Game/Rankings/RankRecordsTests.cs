@@ -63,4 +63,38 @@ public class RankRecordsTests
 
         await Assert.That(records.HasPending).IsFalse();
     }
+
+    [Test]
+    public async Task ResetTo_ReplacesTheRecordsRatherThanAddingToThem()
+    {
+        // A save can fail before it cleared anything: putting the copy back must not count a figure twice.
+        var records = new RankRecords();
+        var caught = new DateTime(2026, 9, 17, 10, 0, 0, DateTimeKind.Utc);
+        records.Add(RankRecordKind.FishWeight, 448000, caught);
+        List<RankRecordEvent> before = [.. records.Pending];
+
+        records.ResetTo(before);
+        await Assert.That(records.Pending.Count).IsEqualTo(1);
+
+        records.Clear();
+        records.ResetTo(before);
+        await Assert.That(records.Pending.Count).IsEqualTo(1);
+        await Assert.That(records.Pending[0]).IsEqualTo(new RankRecordEvent(RankRecordKind.FishWeight, 448000, caught));
+    }
+
+    [Test]
+    public async Task GamePointTotals_ResetTo_ReplacesTheTotalsRatherThanAddingToThem()
+    {
+        var totals = new GamePointTotals();
+        totals.Add(RankGamePoints.Honor, RankGamePoints.Gained, 700);
+        var before = new Dictionary<(int Kind, int Method), long>(totals.Pending);
+
+        totals.ResetTo(before);
+        await Assert.That(totals.Pending[(RankGamePoints.Honor, RankGamePoints.Gained)]).IsEqualTo(700L);
+
+        totals.Clear();
+        totals.ResetTo(before);
+        await Assert.That(totals.Pending[(RankGamePoints.Honor, RankGamePoints.Gained)]).IsEqualTo(700L);
+        await Assert.That(totals.Pending.Count).IsEqualTo(1);
+    }
 }

@@ -245,7 +245,15 @@ public class EnterWorldManager(
     /// <param name="connection"></param>
     /// <param name="leaveWorldTarget"></param>
     /// <param name="activeChar"></param>
-    public void LeaveWorldTask(GameConnection connection, LeaveWorldTargetType leaveWorldTarget, Character activeChar)
+    public void LeaveWorldTask(GameConnection connection, LeaveWorldTargetType leaveWorldTarget, Character activeChar) =>
+        LeaveWorldAndSave(connection, leaveWorldTarget, activeChar);
+
+    /// <summary>
+    /// <see cref="LeaveWorldTask"/> that reports whether the character's final save went through. The leave
+    /// completes either way; a caller that must not lose the save (the shutdown logout) retries it.
+    /// </summary>
+    /// <returns>False when the character could not be saved.</returns>
+    public bool LeaveWorldAndSave(GameConnection connection, LeaveWorldTargetType leaveWorldTarget, Character activeChar)
     {
         if (activeChar != null)
         {
@@ -327,7 +335,7 @@ public class EnterWorldManager(
             worldManager.TryRemoveCharacter(activeChar.ObjId);
         }
 
-        GameConnection.SaveAndRemoveFromWorld(activeChar);
+        var saved = GameConnection.SaveAndRemoveFromWorld(activeChar);
 
         // connection isn't set if we are removing an orphaned Character object
         if (connection != null)
@@ -340,5 +348,7 @@ public class EnterWorldManager(
             connection.SendPacket(new SCLeaveWorldGrantedPacket(leaveWorldTarget));
             connection.SendPacket(new ChangeStatePacket(0));
         }
+
+        return saved;
     }
 }

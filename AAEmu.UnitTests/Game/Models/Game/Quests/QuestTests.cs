@@ -97,6 +97,43 @@ public class QuestTests
         await Assert.That(quest.QuestAcceptorType).IsEqualTo(QuestAcceptorType.Npc);
     }
 
+    [Test]
+    public async Task WriteData_ThenReadData_RestoresEveryPersistedField()
+    {
+        // The `quests.data` blob is the only place the objective counts, the step, the acceptor and the accept
+        // time survive a World restart (CharacterQuests.Save/Load). A field that drops out of WriteData or
+        // ReadData resets silently at the next login, which is what a "quest progress lost on reboot" report
+        // looks like from the player's side.
+        var saved = SetupQuest(out _, out _, out _, out _, out _, out _, out _);
+        saved.Step = QuestComponentKind.Progress; // SetStep resets the objectives, so it goes first
+        saved.Objectives[0] = 3;
+        saved.Objectives[1] = 0;
+        saved.Objectives[2] = 7;
+        saved.Objectives[3] = 1;
+        saved.Objectives[4] = 12;
+        saved.QuestAcceptorType = QuestAcceptorType.Doodad;
+        saved.ComponentId = 4521u;
+        saved.AcceptorId = 777001u;
+        var acceptTime = new DateTime(2026, 11, 1, 20, 15, 42, DateTimeKind.Utc);
+        saved.Time = acceptTime;
+
+        var blob = saved.WriteData();
+
+        var loaded = SetupQuest(out _, out _, out _, out _, out _, out _, out _);
+        loaded.ReadData(blob);
+
+        // Each index is its own objective's count, so the order matters: IsEquivalentTo would miss a swap.
+        await Assert.That(loaded.Objectives.Length).IsEqualTo(saved.Objectives.Length);
+        for (var i = 0; i < saved.Objectives.Length; i++)
+            await Assert.That(loaded.Objectives[i]).IsEqualTo(saved.Objectives[i]);
+        await Assert.That(loaded.Step).IsEqualTo(QuestComponentKind.Progress);
+        await Assert.That(loaded.QuestAcceptorType).IsEqualTo(QuestAcceptorType.Doodad);
+        await Assert.That(loaded.ComponentId).IsEqualTo(4521u);
+        await Assert.That(loaded.AcceptorId).IsEqualTo(777001u);
+        // The wire carries whole seconds.
+        await Assert.That((loaded.Time - acceptTime).Duration()).IsLessThan(TimeSpan.FromSeconds(1));
+    }
+
     #region Property Tests
 
     [Test]
