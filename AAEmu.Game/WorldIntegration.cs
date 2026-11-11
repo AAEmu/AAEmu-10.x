@@ -55,7 +55,8 @@ public sealed record WorldNpcSpawnerEventRequest(
     bool DespawnOnCreatorDeath,
     bool UseSummonerAggroTarget);
 
-public sealed record WorldNpcSpawnRequest(uint ZoneId, uint ObjId, byte[] Body, uint InstanceId = 0);
+public sealed record WorldNpcSpawnRequest(uint ZoneId, uint ObjId, byte[] Body, uint InstanceId = 0,
+    IReadOnlyList<Core.Packets.G2C.UnitState.UnitStateBuffSerializer.SnapshotEntry> WrittenBuffs = null);
 
 public sealed record WorldNpcAggroRequest(
     uint SkillTargetObjId,
@@ -1016,8 +1017,10 @@ public static class WorldIntegration
 
         npc.IsZoneMirror = true;
         npc.IsWorldAuthored = true;
+        npc.RegisterDeathSkills(NpcGameData.Instance.GetNpSkills(npc.TemplateId));
         // Continent on WZ, same as the player. Dedicate subtracts origin for sectors.
         // Sending zone-local here made Crimson army Create start `invalid sector pos` and fall through.
+        var writtenBuffs = new List<Core.Packets.G2C.UnitState.UnitStateBuffSerializer.SnapshotEntry>();
         var body = BuildWzNpcStateBody(
             npc,
             WorldAuthoredNpcSpawn with { Reason = reason, SpawnAction = spawnAction },
@@ -1026,7 +1029,8 @@ public static class WorldIntegration
             despawnOnCreatorDeath,
             useSummonerAggroTarget,
             zoneLocalPlacement: null,
-            forceLocalPlacement: false);
+            forceLocalPlacement: false,
+            writtenBuffs);
         if (body is not { Length: > 0 }
             || RelayNpcSpawnToZone?.Invoke(new WorldNpcSpawnRequest(
                 zoneId,
@@ -1034,7 +1038,8 @@ public static class WorldIntegration
                 body,
                 ZoneCopySpawnRouteRules.InstanceIdForSpawn(
                     npc.ParentWorld?.Id ?? 0,
-                    npc.Transform?.InstanceId ?? 0))) != true)
+                    npc.Transform?.InstanceId ?? 0),
+                writtenBuffs)) != true)
             return false;
 
         // Same OnSpawn plot path as ZW mirrors (tower stage → army SpawnEffect). Safe: zone skill
@@ -1328,6 +1333,10 @@ public static class WorldIntegration
             forceLocalPlacement: ZoneCoordBoundary.UseLocalOnZoneWire && zoneLocal.HasValue);
     }
 
+    /// <summary>A world-authored spawn body; <paramref name="writtenBuffs"/> receives the buffs it carries.</summary>
+    internal static byte[] BuildWorldAuthoredNpcStateBody(Npc npc, ICollection<Core.Packets.G2C.UnitState.UnitStateBuffSerializer.SnapshotEntry> writtenBuffs)
+        => BuildWzNpcStateBody(npc, WorldAuthoredNpcSpawn, null, 0f, false, false, null, false, writtenBuffs);
+
     private static byte[] BuildWzNpcStateBody(
         Npc npc,
         BaseUnit creator,
@@ -1346,7 +1355,8 @@ public static class WorldIntegration
         bool despawnOnCreatorDeath,
         bool useSummonerAggroTarget,
         Vector3? zoneLocalPlacement = null,
-        bool forceLocalPlacement = false)
+        bool forceLocalPlacement = false,
+        ICollection<Core.Packets.G2C.UnitState.UnitStateBuffSerializer.SnapshotEntry> writtenBuffs = null)
     {
         var stream = new PacketStream();
 
@@ -1406,7 +1416,7 @@ public static class WorldIntegration
         // Dedicate spawn/nav/sectors are zone-local. World Transform stays continent for SC;
         // MovementRelay lifts ZW moves when ZoneSimUsesLocalCoordinates is set.
         new SCUnitStatePacket(npc).WriteWzUnitStateAndBuffs(
-            stream, ResolveWzPlacement(npc, zoneLocalPlacement, forceLocalPlacement));
+            stream, ResolveWzPlacement(npc, zoneLocalPlacement, forceLocalPlacement), writtenBuffs);
 
         stream.Write(metadata.SpawningEffectTime);
 

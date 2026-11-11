@@ -612,6 +612,10 @@ public static class Program
 
             zone.SendPacket(new WZNpcStatePacket(request.Body));
             zone.Units.RegisterWithId(request.ObjId, request.Body);
+            // Buffs carried in the body exist on the zone now, so their removals must be relayed too.
+            if (request.WrittenBuffs != null)
+                AAEmu.World.Core.Relay.ZoneBuffRegistry.MarkSnapshot(
+                    zone.ZoneId, zone.InstanceId, request.ObjId, request.WrittenBuffs);
             var authored = WorldIntegration.FindUnitAcrossWorlds(request.ObjId) as Npc;
             if (authored != null)
             {
