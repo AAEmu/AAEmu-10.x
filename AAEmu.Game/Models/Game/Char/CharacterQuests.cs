@@ -668,13 +668,14 @@ public class CharacterQuests(Character owner)
     /// <param name="questId"></param>
     /// <param name="update"></param>
     /// <param name="forcibly"></param>
-    public void DropQuest(uint questId, bool update, bool forcibly = false)
+    /// <param name="completed">The quest was turned in; its acts' abandon (destroy_when_drop) rules are skipped</param>
+    public void DropQuest(uint questId, bool update, bool forcibly = false, bool completed = false)
     {
         if (!ActiveQuests.TryGetValue(questId, out var quest)) { return; }
 
         quest.SkipUpdatePackets(); // make sure no further "update packets" are send to the player
         quest.Cleanup();
-        quest.Drop(update);
+        quest.Drop(update, completed);
         quest.FinalizeQuestActs();
         if (QuestCinemaBindRules.ShouldClearCinemaEndOnDrop(HasQuestCompleted(questId), forcibly))
             ClearCinemaEndEffects(questId);
@@ -1350,7 +1351,10 @@ public class CharacterQuests(Character owner)
                 continue;
             if (!CanTriggerQuestAreaSphere(geo.SphereId))
                 continue;
-            nowIds.Add(geo.SphereId);
+            // One pass handles a sphere id once: a volume authored as several overlapping shapes
+            // with the same stype used to fire ENTER (and its quest work) once per shape.
+            if (!nowIds.Add(geo.SphereId))
+                continue;
             if (_insideQuestAreaSphereIds.Contains(geo.SphereId))
             {
                 // Still inside: re-push SphereBuffs if a skill/impulse stripped them from the hull

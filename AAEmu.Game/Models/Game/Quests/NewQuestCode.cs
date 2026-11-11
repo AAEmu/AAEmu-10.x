@@ -174,7 +174,7 @@ public partial class Quest
 
                     var nextQuestIds = QuestRewardAcceptRules.NextQuestIds(Template).ToArray();
                     var completedComponentId = QuestCompletedWire.ComponentIdForCompletedPacket(ComponentId, Template);
-                    Owner.Quests.DropQuest(TemplateId, false, false);
+                    Owner.Quests.DropQuest(TemplateId, false, false, completed: true);
                     Owner.SendPacket(new SCQuestContextCompletedPacket(TemplateId, completedComponentId));
 
                     foreach (var nextQuestId in nextQuestIds)

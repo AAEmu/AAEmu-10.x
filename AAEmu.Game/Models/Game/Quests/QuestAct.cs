@@ -38,10 +38,13 @@ public class QuestAct(QuestComponent parentComponent, QuestActTemplate template)
     /// </summary>
     /// <param name="quest"></param>
     /// <returns></returns>
-    public int GetObjective(Quest quest)
-    {
-        return quest?.Objectives[Template.ThisComponentObjectiveIndex] ?? 0;
-    }
+    /// <remarks>
+    /// An act that is no objective (an accept, a report, a supply) has no slot (<see cref="QuestObjectiveSlotRules.NoSlot"/>)
+    /// and counts 0; reading slot 0xFF threw IndexOutOfRangeException for a quest at its Ready step (bot Joreys,
+    /// quest 2260, Live 2026-10-31 and 2026-11-04).
+    /// </remarks>
+    public int GetObjective(Quest quest) =>
+        QuestObjectiveSlotRules.CountAt(quest?.Objectives, Template?.ThisComponentObjectiveIndex ?? QuestObjectiveSlotRules.NoSlot);
     #endregion
 
     public bool RunAct()

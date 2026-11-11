@@ -56,7 +56,8 @@ public class QuestStep(QuestComponentKind step, Quest parent)
 
         // Cache which components are active
         foreach (var questComponent in Components.Values)
-            questComponent.IsCurrentlyActive = UnitRequirementsGameData.Instance.CanComponentRun(questComponent.Template, (BaseUnit)Parent.Owner);
+            questComponent.IsCurrentlyActive = !QuestStartRequirementRules.GatesAcceptedQuest(ThisStep) ||
+                UnitRequirementsGameData.Instance.CanComponentRun(questComponent.Template, (BaseUnit)Parent.Owner);
 
         var componentsOrCheck = Parent.Template.Selective && ThisStep == QuestComponentKind.Progress;
 
