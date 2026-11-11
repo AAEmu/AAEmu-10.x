@@ -1,3 +1,4 @@
+using System.Numerics;
 using System.Reflection;
 
 using AAEmu.Commons.Network;
@@ -16,6 +17,7 @@ using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Models.Game.World.Zones;
 using AAEmu.Game.Models.StaticValues;
+using AAEmu.UnitTests.Utils;
 
 using System.Net;
 using System.Net.Sockets;
@@ -57,6 +59,12 @@ public class InstantGameLifecycleTests
         public int CountOf(ushort opcode) => Opcodes.Count(o => o == opcode);
     }
 
+    private sealed class RespawningCharacter() : Character(new UnitCustomModelParams())
+    {
+        public override int MaxHp => 1000;
+        public override int MaxMp => 500;
+    }
+
     private sealed class TestEnvironment : IDisposable
     {
         private const BindingFlags InstanceFields = BindingFlags.Instance | BindingFlags.NonPublic;
@@ -78,11 +86,11 @@ public class InstantGameLifecycleTests
 
         public int WorldReleases => _worldReleases;
 
-        public TestEnvironment(int corpsSize)
+        public TestEnvironment(int corpsSize, uint battlefieldId = BattlefieldId)
         {
             Battlefield = new Battlefield
             {
-                Id = BattlefieldId,
+                Id = battlefieldId,
                 ZoneKey = ZoneKey,
                 InstanceId = 0,
                 InstanceUiKindId = 0,
@@ -92,14 +100,14 @@ public class InstantGameLifecycleTests
                 MatchingCleanupTermMs = 300_000,
                 Spawns = new BattlefieldSpawns
                 {
-                    BattlefieldId = BattlefieldId,
+                    BattlefieldId = battlefieldId,
                     Corps1Spawn = new Point { X = 10, Y = 10, Z = 10 },
                     Corps2Spawn = new Point { X = 20, Y = 20, Z = 20 },
                 },
                 RuleSet = new GameRuleSet
                 {
                     Id = 17,
-                    BattlefieldId = BattlefieldId,
+                    BattlefieldId = battlefieldId,
                     CorpsSize = corpsSize,
                     Corps1FactionId = 1,
                     Corps2FactionId = 2,
@@ -116,7 +124,7 @@ public class InstantGameLifecycleTests
                 },
             };
 
-            var battlefields = new Dictionary<uint, Battlefield> { [BattlefieldId] = Battlefield };
+            var battlefields = new Dictionary<uint, Battlefield> { [battlefieldId] = Battlefield };
             var battlefieldData = new BattlefieldGameData();
             SetField(battlefieldData, "_battlefields", battlefields);
 
@@ -169,18 +177,20 @@ public class InstantGameLifecycleTests
 
         public void Advance(TimeSpan by) => _now += by;
 
-        public Character NewCharacter(uint id, uint seatedCorpsFaction)
+        /// <param name="respawns">
+        /// Level 1 with formula-free maximum health and mana, so the respawn after a kill runs to the end
+        /// (it skips a level 0 character and refills health and mana).
+        /// </param>
+        public Character NewCharacter(uint id, uint seatedCorpsFaction, bool respawns = false)
         {
             var session = new RecordingSession();
-            var character = new Character(new UnitCustomModelParams())
-            {
-                Id = id,
-                ObjId = id,
-                Name = $"Player{id}",
-                // SetFaction takes the "already established" branch for the seated corps, which is
-                // the only branch that does not need a loaded FactionManager.
-                Faction = new SystemFaction { Id = (FactionsEnum)seatedCorpsFaction },
-            };
+            var character = respawns ? new RespawningCharacter { Level = 1 } : new Character(new UnitCustomModelParams());
+            character.Id = id;
+            character.ObjId = id;
+            character.Name = $"Player{id}";
+            // SetFaction takes the "already established" branch for the seated corps, which is
+            // the only branch that does not need a loaded FactionManager.
+            character.Faction = new SystemFaction { Id = (FactionsEnum)seatedCorpsFaction };
             character.Connection = new GameConnection(session) { ActiveChar = character };
             _sessions[character] = session;
 
@@ -511,5 +521,60 @@ public class InstantGameLifecycleTests
         await Assert.That(remaining.CurrentInstantGame).IsNull();
         await Assert.That(env.Manager.IsTrackedGame(game)).IsFalse();
         await Assert.That(env.WorldReleases).IsEqualTo(1);
+    }
+
+    /// <summary>
+    /// The respawns after a kill send the clients to their spawns and the clients make the jumps: the victim, and in
+    /// the Gladiator arena the killer too. The speed check is told where each lands, so the first move there is not
+    /// measured from where the character fell or fought.
+    /// </summary>
+    [Test]
+    public async Task KillRespawns_TellTheSpeedCheckWhereTheVictimAndTheGladiatorKillerLand()
+    {
+        using var env = new TestEnvironment(corpsSize: 1, battlefieldId: (uint)InstantGameType.Gladiator);
+        // The respawn resets the skill cooldowns by tag before it moves on to the killer.
+        using var skills = new SingletonScope<SkillManager>(TestManagers.CreateSkillManager());
+        // The arena seats the first applicant Corps1 and the second Corps2.
+        var killer = env.NewCharacter(601, seatedCorpsFaction: 1, respawns: true);
+        var victim = env.NewCharacter(602, seatedCorpsFaction: 2, respawns: true);
+
+        foreach (var character in new[] { killer, victim })
+            env.Manager.ApplyToBattlefield(env.Battlefield.Id, InstantCorps.Any, character);
+        env.Manager.BattlefieldTick(TimeSpan.FromSeconds(15));
+
+        var game = env.CreatedGame;
+        foreach (var character in new[] { killer, victim })
+        {
+            game.PlayerInviteResponse(character, joins: true, 0ul);
+            game.OnEnterWorld(character, 0ul);
+        }
+
+        await WaitUntil(() => game.Phase == InstantGamePhase.Playing, "the match to start playing");
+
+        // Both were last checked where they fought, kilometres from either spawn.
+        var tracker = SusManager.Instance.LastPlayerPositions;
+        var fought = new Vector3(3000f, 3000f, 10f);
+        tracker.Analyze(killer.Id, fought, true, 5f, SusManager.PlayerCheckSpeed);
+        tracker.Analyze(victim.Id, fought, true, 5f, SusManager.PlayerCheckSpeed);
+
+        game.OnKill(killer, new OnKillArgs { Killer = killer, Victim = victim });
+        await WaitUntil(() => tracker.TryGetExpectedLanding(killer.Id, out _), "the killer's respawn");
+
+        // The victim goes to its own corps' spawn (Corps2), the killer to the other one.
+        var victimSpawn = new Vector3(20f, 20f, 20f);
+        var killerSpawn = new Vector3(10f, 10f, 10f);
+        var victimExpected = tracker.TryGetExpectedLanding(victim.Id, out var victimLanding);
+        tracker.TryGetExpectedLanding(killer.Id, out var killerLanding);
+        var victimArrival = tracker.Analyze(victim.Id, victimSpawn, true, 5f, SusManager.PlayerCheckSpeed);
+        var killerArrival = tracker.Analyze(killer.Id, killerSpawn, true, 5f, SusManager.PlayerCheckSpeed);
+
+        await Assert.That(victimExpected).IsTrue();
+        await Assert.That(victimLanding).IsEqualTo(victimSpawn);
+        await Assert.That(killerLanding).IsEqualTo(killerSpawn);
+        await Assert.That(victimArrival).IsNull();
+        await Assert.That(killerArrival).IsNull();
+
+        env.PlayingGate.SetResult();
+        await WaitUntil(() => game.Phase == InstantGamePhase.Finished, "the match to finish");
     }
 }

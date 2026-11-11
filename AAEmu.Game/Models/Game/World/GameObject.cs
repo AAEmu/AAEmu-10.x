@@ -14,6 +14,13 @@ public class GameObject : IGameObject
     protected static Logger Logger = LogManager.GetCurrentClassLogger();
     private bool _disabledSetPosition;
 
+    /// <summary>
+    /// Releases the position lock as setting <see cref="DisabledSetPosition"/> to false does, but keeps the landings a
+    /// character's client still has to confirm (<c>Character.TeleportLandings</c>): for <c>CSTeleportEnded</c>, which
+    /// can answer one landing of several or report no spot at all.
+    /// </summary>
+    public void ReleasePositionLockKeepingLandings() => _disabledSetPosition = false;
+
     public Guid Guid { get; set; } = Guid.NewGuid();
     public uint ObjId { get; set; }
 
@@ -22,16 +29,24 @@ public class GameObject : IGameObject
         get => _disabledSetPosition;
         set
         {
-            if (_disabledSetPosition == value)
-                return;
             _disabledSetPosition = value;
-            if (value)
+            if (!value)
             {
-                if (this is Character character)
-                    SusManager.Instance.ResetAnalyzePlayerDeltaMovement(character.Id);
-                if (this is Units.Mate pet)
-                    SusManager.Instance.ResetAnalyzeMountDeltaMovement(pet.Id);
+                // A landing is only waited for while the position is locked for it. Whatever releases the lock - the
+                // client's confirmation, an instance load's arrival, a resurrection - ends the wait, so a later move
+                // the server makes another way is never checked against an old landing.
+                (this as Character)?.TeleportLandings?.Forget();
+                return;
             }
+
+            // Only the server locks a position, around a move it makes itself (a landing, an instance load, a GM
+            // freeze or teleport), so the speed check forgets the last spot on every lock. Also when the lock was
+            // already held: a landing applied under it leaves the old spot recorded, and the move the client
+            // confirms afterwards would be judged against that spot.
+            if (this is Character character)
+                SusManager.Instance.ResetAnalyzePlayerDeltaMovement(character.Id);
+            if (this is Units.Mate pet)
+                SusManager.Instance.ResetAnalyzeMountDeltaMovement(pet.Id);
         }
     }
 

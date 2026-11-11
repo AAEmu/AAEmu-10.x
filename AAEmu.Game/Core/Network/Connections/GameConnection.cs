@@ -253,6 +253,11 @@ public class GameConnection
         // Removed ReleaseId here to try and fix party/raid disconnect and reconnect issues. Replaced with saving the data
         //ObjectIdManager.Instance.ReleaseId(ActiveChar.ObjId);
 
+        // Out of the world, the speed check forgets the spot it last saw. The next login places the character where
+        // the save below puts it (outside the dungeon or battlefield it was in), and its first move there is not
+        // movement. A crash or a dropped connection never takes LeaveWorldTask's position lock, which also forgets it.
+        SusManager.Instance.ResetAnalyzePlayerDeltaMovement(activeChar.Id);
+
         // Do a manual save here as it's no longer in _characters at this point
         // TODO: might need a better option like saving this transaction for later to be used by the SaveManager
         activeChar.SaveDirectlyToDatabase();
