@@ -263,6 +263,8 @@ public class CharacterBackpackDropTests
             "player" => new CharacterMock { Id = 2, ObjId = 2 },
             _ => new SilentNpc { ObjId = 2 }
         };
+        // An offer to resurrect made for an earlier death must not survive into this one.
+        context.Owner.ResurrectOfferPending = true;
         try
         {
             Action die = () => context.Owner.DoDie(killer, KillReason.Damage);
@@ -273,6 +275,7 @@ public class CharacterBackpackDropTests
             await Assert.That(context.Drop.Commits).IsEqualTo(cause == "placement failure" ? 0 : 1);
             await Assert.That(context.Owner.CleanupCalls).IsEqualTo(1);
             await Assert.That(deathRelays).IsEqualTo(1);
+            await Assert.That(context.Owner.ResurrectOfferPending).IsFalse();
             if (cause == "environment")
                 await Assert.That(context.Owner.HostileFactionKills).IsEqualTo(0u);
         }

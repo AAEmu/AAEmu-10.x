@@ -1,3 +1,5 @@
+using System.Numerics;
+
 using AAEmu.Commons.Network;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
@@ -8,6 +10,7 @@ using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Models.Game.Units.Static;
+using AAEmu.Game.Models.Game.World.Transform;
 using AAEmu.Game.Models.Game.World.Zones;
 using AAEmu.Game.Models.StaticValues;
 
@@ -22,9 +25,11 @@ public class CSResurrectCharacterPacket() : GamePacket(CSOffsets.CSResurrectChar
 
     public override void Read(PacketStream stream)
     {
-        var inPlace = stream.ReadBoolean();
+        // One byte, not a flag: 0 return point, 1 in place, 2 special revive. Only 1 is in place.
+        var kind = (ResurrectionKind)stream.ReadByte();
+        var inPlace = kind == ResurrectionKind.InPlace;
 
-        Logger.Debug("ResurrectCharacter, InPlace: {0}", inPlace);
+        Logger.Debug("ResurrectCharacter, Kind: {0}", kind);
 
         var portal = new Portal();
 
@@ -88,6 +93,13 @@ public class CSResurrectCharacterPacket() : GamePacket(CSOffsets.CSResurrectChar
         if (defendantCourt != null)
             portal = defendantCourt;
 
+        // Accepting another player's resurrection comes back where the character fell, not at the point found
+        // above. The death window sends the same in-place kind for the free in-place revive and the self grace
+        // revive, with no offer waiting; those are not handled yet and come back at the return point, as before.
+        var whereFallen = character.TakeResurrectOffer(kind, defendantCourt != null);
+        if (whereFallen)
+            portal = null;
+
         var oldHp = character.Hp;
 
         // Resolve spawn point before restoring vitals. Historically we only told the *client*
@@ -95,26 +107,12 @@ public class CSResurrectCharacterPacket() : GamePacket(CSOffsets.CSResurrectChar
         // authority, NPCs still had an active unit at the death scene — the moment we set Hp > 0 they
         // hit again, pinned Hp to 0, and GamePing re-emitted zeros while the player stood at temple
         // (IsDead blocks RegenTick). Same-level res must move the server unit first.
-        float rx, ry, rz, rrot;
-        if (portal != null && (portal.X != 0f || portal.Y != 0f))
-        {
-            rx = portal.X;
-            ry = portal.Y;
-            rz = portal.Z;
-            rrot = portal.ZRot;
-        }
-        else
-        {
-            var p = character.Transform.World.Position;
-            rx = p.X;
-            ry = p.Y;
-            rz = p.Z;
-            rrot = character.Transform.World.Rotation.Z;
-        }
+        var spot = ResurrectionSpot(portal, character.Transform);
+        float rx = spot.World.X, ry = spot.World.Y, rz = spot.World.Z, rrot = spot.WorldYaw;
 
         // Same-instance temple resurrection must update the authoritative transform here.
         character.DisabledSetPosition = false;
-        character.SetPosition(rx, ry, rz, 0f, 0f, rrot);
+        character.SetPosition(spot.Local.X, spot.Local.Y, spot.Local.Z, 0f, 0f, spot.LocalYaw);
         character.Transform.FinalizeTransform();
 
         character.IsInBattle = false;
@@ -180,13 +178,34 @@ public class CSResurrectCharacterPacket() : GamePacket(CSOffsets.CSResurrectChar
             character.PostUpdateCurrentHp(character, oldHp, character.Hp, KillReason.Unknown);
 
         Logger.Info(
-            "ResurrectCharacter {0} inPlace={1} hp={2}/{3} mp={4}/{5} pos=({6:F1},{7:F1},{8:F1})",
-            character.Name, inPlace, character.Hp, character.MaxHp, character.Mp, character.MaxMp,
+            "ResurrectCharacter {0} kind={1} whereFallen={2} hp={3}/{4} mp={5}/{6} pos=({7:F1},{8:F1},{9:F1})",
+            character.Name, kind, whereFallen, character.Hp, character.MaxHp, character.Mp, character.MaxMp,
             rx, ry, rz);
 
         // Defendant resurrections get the courthouse state and the imprison-or-trial offer here,
         // after the vitals are restored.
         JusticeManager.Instance.OnResurrectionFinished(character);
+    }
+
+    /// <summary>
+    /// Where a resurrection puts the character: the world spot the client and the zone are told, and the spot
+    /// <c>SetPosition</c> writes, which is the LOCAL transform. A return point is a world spot (unchanged behaviour).
+    /// Without one - coming back where it fell - the character keeps its own transform: a passenger who died on a
+    /// ship's deck stays parented to the ship, and writing its world coordinates into the local transform would apply
+    /// the ship's offset twice.
+    /// </summary>
+    internal static (Vector3 World, float WorldYaw, Vector3 Local, float LocalYaw) ResurrectionSpot(
+        Portal portal, Transform transform)
+    {
+        if (portal != null && (portal.X != 0f || portal.Y != 0f))
+        {
+            var returnPoint = new Vector3(portal.X, portal.Y, portal.Z);
+            return (returnPoint, portal.ZRot, returnPoint, portal.ZRot);
+        }
+
+        var world = transform.World;
+        var local = transform.Local;
+        return (world.Position, world.Rotation.Z, local.Position, local.Rotation.Z);
     }
 
     /// <summary>
