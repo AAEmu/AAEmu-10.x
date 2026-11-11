@@ -110,6 +110,13 @@ public class CSResurrectCharacterPacket() : GamePacket(CSOffsets.CSResurrectChar
         var spot = ResurrectionSpot(portal, character.Transform);
         float rx = spot.World.X, ry = spot.World.Y, rz = spot.World.Z, rrot = spot.WorldYaw;
 
+        // Coming back at a return point (or the courthouse) is a move the server makes, not movement: the speed
+        // check forgets the spot it last saw, or the check that falls on this landing measures the trip from where
+        // the character died. Only for the dead - this packet is the client's, and a living character must not be
+        // able to clear its own check with it.
+        if (!whereFallen && character.IsDead)
+            SusManager.Instance.ResetAnalyzePlayerDeltaMovement(character.Id);
+
         // Same-instance temple resurrection must update the authoritative transform here.
         character.DisabledSetPosition = false;
         character.SetPosition(spot.Local.X, spot.Local.Y, spot.Local.Z, 0f, 0f, spot.LocalYaw);

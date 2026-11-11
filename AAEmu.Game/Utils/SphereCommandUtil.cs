@@ -7,6 +7,7 @@ using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.GameData;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.Teleport;
 using AAEmu.Game.Models.Json;
 using AAEmu.Game.Utils.Scripts;
 using Newtonsoft.Json;
@@ -289,6 +290,12 @@ public class SphereCommandUtil
                         if (sphere.Id == jsonId)
                         {
                             found = true;
+                            // A GM teleport the client makes: the speed check is told where it lands, so the client's
+                            // first move there is not measured as movement
+                            SusManager.Instance.ExpectPlayerLanding(character.Id, sphere.Position.AsVector3());
+                            // and its CSTeleportEnded confirming the jump is checked against the same spot
+                            character.TeleportLandings.Expect(new ExpectedTeleportLanding(
+                                character.Transform.WorldId, character.Transform.InstanceId, sphere.Position.AsVector3()));
                             character.SendPacket(new SCTeleportUnitPacket(0, 0, sphere.Position.X, sphere.Position.Y, sphere.Position.Z, 0));
                             break;
                         }

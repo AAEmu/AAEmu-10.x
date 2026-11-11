@@ -125,6 +125,15 @@ public class WorldConfig
     public int IgnoreFallDamageAccessLevel { get; set; } = 100;
 
     /// <summary>
+    /// How far, in metres (3D), the spot a client reports when it confirms a teleport landing (<c>CSTeleportEnded</c>)
+    /// may be from the spot the server sent it to. Farther, the character is placed at the sent spot instead and a
+    /// Cheat line is written to the suspicious-activity log. 0 or less turns the check off: every confirmation is
+    /// applied as reported, as before the check existed.
+    /// Configure in <c>AAEmu.Game/Configurations/World.json</c> under <c>World.TeleportLandingToleranceMeters</c>.
+    /// </summary>
+    public float TeleportLandingToleranceMeters { get; set; } = 20f;
+
+    /// <summary>
     /// When enabled, players take no damage at all
     /// </summary>
     public bool GodMode { get; set; }

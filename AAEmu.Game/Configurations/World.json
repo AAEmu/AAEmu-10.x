@@ -17,6 +17,7 @@
         "GrowthRate": 1.0,
         "DaysForTaxPayment": 7,
         "IgnoreFallDamageAccessLevel": 100,
+        "TeleportLandingToleranceMeters": 20.0,
         "GodMode": false,
         "PvEDurabilityLossRate": 1.0,
         "PvPDurabilityLossRate": 1.0,
