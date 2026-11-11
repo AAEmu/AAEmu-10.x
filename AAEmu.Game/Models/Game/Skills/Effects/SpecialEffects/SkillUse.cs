@@ -36,7 +36,7 @@ public class SkillUse : SpecialEffectAction
         }
 
         //target = ((Unit)caster).CurrentTarget;
-        var useSkill = new Skill(SkillManager.Instance.GetSkillTemplate((uint)skillId));
+        var useSkill = new Skill(SkillManager.Instance.GetSkillTemplate((uint)skillId)) { ScriptedCast = true };
         targetObj = new SkillCastUnitTarget(target?.ObjId ?? 0);
         // Buff-tick SkillUse (Romance cadence, etc.) must not wipe remove_on_use_skill performances.
         if (SkillUseRemoveOnRules.ShouldTriggerRemoveOnUseSkill(castObj))

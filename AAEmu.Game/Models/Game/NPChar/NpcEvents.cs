@@ -273,6 +273,7 @@ public partial class Npc
             }
 
             Logger.Trace($"Npc={npc.ObjId}:{npc.TemplateId} using skill={skill.Id}");
+            skill.ScriptedCast = true;
             skill.Use(npc, skillCaster, skillTarget, null, true, out _);
         }
     }
@@ -306,6 +307,7 @@ public partial class Npc
             }
 
             Logger.Trace($"Npc={npc.ObjId}:{npc.TemplateId} using skill={skill.Id}");
+            skill.ScriptedCast = true;
             skill.Use(npc, skillCaster, skillTarget, null, true, out _);
         }
     }
@@ -340,6 +342,7 @@ public partial class Npc
             }
 
             Logger.Trace($"Npc={npc.ObjId}:{npc.TemplateId} using skill={skill.Id}");
+            skill.ScriptedCast = true;
             skill.Use(npc, skillCaster, skillTarget, null, true, out _);
         }
     }

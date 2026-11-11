@@ -1950,6 +1950,7 @@ public partial class Npc : Unit
             // skill_use_param1: delay seconds before OnSpawn graph (Crimson / Lusca stage use 1.0).
             var delaySec = npcSkill.SkillUseParam1;
             skill.SuppressZoneSkillRelay = true;
+            skill.ScriptedCast = true;
             // plot_only / radius-0: plot graph only. Radius > 0 also needs Cast for AoE SkillHit.
             skill.ForcePlotGraphOnly = OnSpawnPlotWorldGate.ShouldForcePlotGraphOnly(
                 skill.Template.PlotOnly,
@@ -2062,6 +2063,7 @@ public partial class Npc : Unit
             // skill_use_param1: delay seconds before the script runs.
             var delaySec = npcSkill.SkillUseParam1;
             skill.SuppressZoneSkillRelay = true;
+            skill.ScriptedCast = true;
             var caster = SkillCaster.GetByType(SkillCasterType.Unit);
             caster.ObjId = ObjId;
             var target = SkillCastTarget.GetByType(SkillCastTargetType.Unit);
@@ -2161,6 +2163,7 @@ public partial class Npc : Unit
 
             var delaySec = npcSkill.SkillUseParam1;
             skill.SuppressZoneSkillRelay = true;
+            skill.ScriptedCast = true;
             var caster = SkillCaster.GetByType(SkillCasterType.Unit);
             caster.ObjId = ObjId;
             var target = SkillCastTarget.GetByType(SkillCastTargetType.Unit);

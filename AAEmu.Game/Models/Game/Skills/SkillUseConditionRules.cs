@@ -113,6 +113,17 @@ public static class SkillUseConditionRules
         return null;
     }
 
+    /// <summary>
+    /// An NPC's kit is run by its script, which may stun or sleep the NPC on purpose. Only life and
+    /// swimming still decide.
+    /// </summary>
+    public static CasterState ForScriptedCaster(in CasterState state)
+        => state with { IsStunned = false, IsAsleep = false, IsSilenced = false };
+
+    /// <summary>Only a non-player's scripted cast is let through its own stun, sleep or silence.</summary>
+    public static CasterState ForCast(in CasterState state, bool playerSide, bool scriptedCast)
+        => !playerSide && scriptedCast ? ForScriptedCaster(state) : state;
+
     /// <summary>Reads the state the bits are evaluated against off a live unit.</summary>
     public static CasterState ReadState(Unit unit)
     {
