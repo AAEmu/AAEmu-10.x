@@ -42,6 +42,18 @@ namespace AAEmu.UnitTests.Commons.Network
         }
 
         [Test]
+        public async Task WriteAndReadSByte_ShouldReturnSameValue()
+        {
+            var stream = new PacketStream();
+            sbyte expected = -42;
+            stream.Write(expected);
+            stream.Rollback();
+
+            var result = stream.ReadSByte();
+            await Assert.That(result).IsEqualTo(expected);
+        }
+
+        [Test]
         public async Task WriteAndReadInt32_ShouldReturnSameValue()
         {
             var stream = new PacketStream();
