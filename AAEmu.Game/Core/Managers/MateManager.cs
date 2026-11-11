@@ -212,6 +212,7 @@ public class MateManager(WorldInstance parentWorldInstance)
         }
 
         character.Buffs.TriggerRemoveOn(BuffRemoveOn.Mount);
+        CharTransformMountRules.Refresh(character);
         Logger.Debug($"MountMate. mountTlId: {mateInfo.TlId}, attachPoint: {attachPoint}, reason: {reason}, seats: {string.Join(", ", mateInfo.Passengers.Values.ToList())}");
     }
 
@@ -262,6 +263,8 @@ public class MateManager(WorldInstance parentWorldInstance)
             // (719 of the 771 buffs carrying a point name 1 Driver), so the seat being left is passed
             // along: a buff that names another seat stays, one that names none is removed as before.
             mateInfo.Buffs.TriggerRemoveOn(BuffRemoveOn.Unmount, (uint)attachPoint);
+            if (attachPoint == AttachPointKind.Driver)
+                CharTransformMountRules.SetBoost(mateInfo, false);
             targetObj.Buffs.TriggerRemoveOn(BuffRemoveOn.Unmount, (uint)attachPoint);
             Logger.Debug($"UnMountMate. mountTlId: {mateInfo.TlId}, targetObjId: {targetObj.ObjId}, attachPoint: {attachPoint}, reason: {reason}");
         }

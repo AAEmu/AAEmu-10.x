@@ -743,6 +743,19 @@ public class Buff
         Caster.Events.OnDeath += _sourceDeathHandler;
     }
 
+    private void ApplyExpiryCooldown()
+    {
+        var (skillId, durationMs) = CharTransformCombatRules.ExpiryCooldown(Template?.BuffId ?? 0);
+        if (skillId == 0 || Owner is not Units.Unit unit || unit.Cooldowns == null)
+            return;
+
+        var skillTemplate = SkillManager.Instance.GetSkillTemplate(skillId);
+        unit.Cooldowns.AddCooldown(skillId, durationMs, skillTemplate?.CooldownTags);
+        if (unit is Char.Character character)
+            character.SendPacket(new SCCooldownsPacket(character.Cooldowns));
+        Logger.Debug("Buff {0} ran out on {1}: skill {2} on cooldown for {3} ms", Template.BuffId, unit.Name, skillId, durationMs);
+    }
+
     private void UnsubscribeSourceDeath()
     {
         if (_sourceDeathSubscriber == null || _sourceDeathHandler == null)
@@ -803,7 +816,10 @@ public class Buff
             // cleanup - is the Dispelled kind. The handler no longer raises OnDispelled by itself, which is
             // what used to make a dispelled trigger fire on expiry as well.
             if (fireTimeout)
+            {
                 Events.OnTimeout(this, new OnTimeoutArgs());
+                ApplyExpiryCooldown();
+            }
             else
                 Events.OnDispelled(this, new OnDispelledArgs());
             Triggers.UnsubscribeEvents();

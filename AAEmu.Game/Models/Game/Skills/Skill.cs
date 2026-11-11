@@ -375,6 +375,21 @@ public class Skill
             }
         }
 
+        // Before unit reqs, so Shoot Arrow gets the Daru message instead of a silent equip_ranged failure.
+        if (unit.IsCharTransformed &&
+            CharTransformCombatRules.BlocksSkill(true, Template.Id, SkillManager.Instance.GetSkillBookCategoryId(Template.Id)))
+        {
+            Logger.Trace("Skill {0} blocked for {1}: no combat skills in a character transform", Template.Id, caster.Name);
+            var now = DateTime.UtcNow;
+            if (character != null && CharTransformCombatRules.ShouldNotifyRefusal(character.LastCharTransformRefusalNoticeUtc, now))
+            {
+                character.LastCharTransformRefusalNoticeUtc = now;
+                character.SendErrorMessage(ErrorMessageType.CanNotDoWhileCharTransform);
+            }
+            Cancelled = true;
+            return SkillResult.SkillReqFail;
+        }
+
         var requirementResult = UnitRequirementsGameData.Instance.CanUseSkill(
             Template,
             caster,
@@ -2354,12 +2369,12 @@ public class Skill
                                 break;
                         }
                         else
-                        if (!Template.FirstReagentOnly)
-                        {
-                            // Not enough reagent items
-                            Cancelled = true;
-                            return;
-                        }
+                            if (!Template.FirstReagentOnly)
+                            {
+                                // Not enough reagent items
+                                Cancelled = true;
+                                return;
+                            }
                     }
 
                     if (!foundValidReagents)
@@ -2674,7 +2689,8 @@ public class Skill
         return Template.ConsumeLaborPower > 0 && laborCost < 1 ? 1 : laborCost;
     }
 
-    public bool TryConsumeLabor(Character character)    {
+    public bool TryConsumeLabor(Character character)
+    {
         if (character == null)
             return false;
 

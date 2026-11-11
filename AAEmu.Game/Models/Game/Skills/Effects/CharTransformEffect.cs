@@ -1,10 +1,13 @@
-using AAEmu.Game.Core.Packets;
+﻿using AAEmu.Game.Core.Packets;
+using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
 
 namespace AAEmu.Game.Models.Game.Skills.Effects;
 
-// char_transform_effects — toggles a visual race/gender transform on the unit (costume/polymorph forms).
+/// <summary>char_transform_effects: shows a character as another race (Daru Transformation) via the visual-race override.</summary>
 public class CharTransformEffect : EffectTemplate
 {
     public int CharRaceId { get; set; }
@@ -17,29 +20,62 @@ public class CharTransformEffect : EffectTemplate
         CastAction castObj, EffectSource source, SkillObject skillObject, DateTime time,
         CompressedGamePackets packetBuilder = null)
     {
-        if (target is not Char.Character character)
+        if (target is not Character character || character.ModelParams == null)
             return;
 
-        if (IsTransform)
-        {
-            // Remember what to come back to the first time a transform is applied, so a second one stacking on
-            // top cannot make the original body unrecoverable.
-            character.PreTransformModelId ??= character.ModelId;
+        character.IsCharTransformed = IsTransform;
+        character.CharTransformRace = IsTransform ? (byte)CharRaceId : (byte)0;
+        character.CharTransformGender = IsTransform ? (byte)CharGenderId : (byte)0;
+        if (!IsTransform)
+            VisualRaceBodyParts.ClearVisualRace(character.ModelParams);
 
+        Logger.Debug($"CharTransformEffect: {character.Name} transform {IsTransform} race {CharRaceId} gender {CharGenderId}");
+
+        if (ShouldAnnounce(character))
+            AnnounceForm(character);
+    }
+
+    // A buff restored at login runs before the client has the player unit; CSNotifyInGame announces it instead.
+    public static bool ShouldAnnounce(Character character) => character.IsOnline;
+
+    public static void AnnounceForm(Character character)
+    {
+        var transformed = character.IsCharTransformed;
+        var parts = VisualRaceBodyParts.None;
+        if (transformed)
+        {
             var form = Core.Managers.UnitManagers.CharacterManager.Instance
-                .GetTemplate((Char.Race)CharRaceId, (Char.Gender)CharGenderId);
-            if (form != null)
-                character.ModelId = form.ModelId;
+                .GetTemplate((Race)character.CharTransformRace, (Gender)character.CharTransformGender);
+            if (form == null)
+            {
+                Logger.Warn($"CharTransformEffect: no characters template for race {character.CharTransformRace} gender {character.CharTransformGender}");
+            }
+            else
+            {
+                VisualRaceBodyParts.ApplyVisualRace(character.ModelParams, character.CharTransformRace, character.CharTransformGender);
+                parts = VisualRaceBodyParts.FromTemplate(form.FaceItemId, form.Items);
+            }
         }
-        else if (character.PreTransformModelId.HasValue)
+        else
         {
-            character.ModelId = character.PreTransformModelId.Value;
-            character.PreTransformModelId = null;
+            VisualRaceBodyParts.ClearVisualRace(character.ModelParams);
+            parts = VisualRaceBodyParts.FromEquipment(slot =>
+                character.Equipment?.GetItemBySlot((int)slot)?.TemplateId ?? 0u);
         }
 
-        Logger.Debug($"CharTransformEffect: {character.Name} transform {IsTransform} race {CharRaceId} gender {CharGenderId} -> model {character.ModelId}");
+        character.BroadcastPacket(
+            new SCCharacterVisualRaceModifiedPacket(character.Id, parts, character.ModelParams), true);
+        character.BroadcastPacket(
+            new SCDisarmamentChangedPacket(character.ObjId, transformed, CharTransformCombatRules.DisarmedSlots), true);
 
-        // SCUnitState carries the model, so re-sending the unit is what makes onlookers see the new body.
-        character.BroadcastPacket(new Core.Packets.G2C.SCUnitStatePacket(character), true);
+        // Same items, but isCharTransform makes the client rebuild the model for the form.
+        var weapons = CharTransformCombatRules.DisarmedSlots
+            .Select(slot => ((byte)slot, character.Equipment?.GetItemBySlot((int)slot)))
+            .ToArray();
+        character.BroadcastPacket(new SCUnitEquipmentsChangedPacket(character.ObjId, weapons, transformed), true);
+
+        if (character.Equipment?.GetItemBySlot((int)EquipmentItemSlot.RaceCosplay) != null)
+            character.UpdateGearBonuses(null, null);
+        CharTransformMountRules.Refresh(character);
     }
 }

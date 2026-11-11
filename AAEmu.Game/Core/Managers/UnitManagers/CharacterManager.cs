@@ -159,6 +159,7 @@ public class CharacterManager(
                         template.Race = (Race)reader.GetByte("char_race_id");
                         template.Gender = (Gender)reader.GetByte("char_gender_id");
                         template.ModelId = reader.GetUInt32("model_id");
+                        template.FaceItemId = reader.GetUInt32("face_item_id", 0);
                         template.FactionId = (FactionsEnum)reader.GetUInt32("faction_id");
                         template.ZoneId = reader.GetUInt32("starting_zone_id");
                         template.ReturnDistrictId = reader.GetUInt32("default_return_district_id");

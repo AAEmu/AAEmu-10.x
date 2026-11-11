@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Data;
 using System.Drawing;
 
@@ -960,13 +960,6 @@ public partial class Character : Unit, ICharacter
     public DateTime LastMobilizationNotRecvTime { get; set; }
 
     /// <summary>
-    /// Body to restore when a CharTransformEffect polymorph ends. Set on the first transform only, so a
-    /// second one applied on top cannot overwrite the original and leave the player stuck in a borrowed model.
-    /// Deliberately not persisted — a transform does not survive a relog.
-    /// </summary>
-    public uint? PreTransformModelId { get; set; }
-
-    /// <summary>
     /// Current crime points (/50)
     /// </summary>
     public short CrimePoint
@@ -984,7 +977,8 @@ public partial class Character : Unit, ICharacter
     /// <summary>
     /// Total infamy
     /// </summary>
-    public int CrimeRecord {
+    public int CrimeRecord
+    {
         get;
         set
         {
@@ -2594,20 +2588,20 @@ public partial class Character : Unit, ICharacter
         var newExperience = Experience + expDelta;
         var newLevel = ExperienceManager.Instance.GetLevelFromExp(newExperience, Level, out var overflow);
         var leveledUp = newLevel > Level;
-        
+
         // Prevent overflow - cap the experience at the amount for the highest level
         if (newLevel >= ExperienceManager.Instance.MaxPlayerLevel)
         {
             newExperience -= overflow;
         }
-        
+
         Experience = newExperience;
         Level = newLevel;
-        
+
         // to the equipped abilities. Mirror that ordering before SCExpChanged reaches the client.
         if (shouldAddAbilityExp)
             Abilities.AddActiveExp(expDelta);
-        
+
         SendPacket(new SCExpChangedPacket(ObjId, expDelta, shouldAddAbilityExp));
 
         if (expDelta > 0)
@@ -2674,15 +2668,15 @@ public partial class Character : Unit, ICharacter
         // Check if player has enough exp to be at a higher level, and grant them the new level
         var newLevel = ExperienceManager.Instance.GetLevelFromExp(Experience, Level, out var overflow);
         var leveledUp = newLevel > Level;
-        
+
         // Prevent overflow - cap the experience at the amount for the highest level
         if (newLevel >= ExperienceManager.Instance.MaxPlayerLevel)
         {
             Experience -= overflow;
         }
-        
+
         Level = newLevel;
-        
+
         if (leveledUp)
             ApplyLevelUpBenefits();
     }
@@ -3769,7 +3763,7 @@ public partial class Character : Unit, ICharacter
         if (AppConfiguration.Instance.DebugInfo && CharacterManager.Instance.GetEffectiveAccessLevel(this) >= AppConfiguration.Instance.DebugInfoLevel)
             SendMessage(ChatType.System, message);
     }
-    
+
     /// <summary>
     /// Sends an error message to the player
     /// </summary>
@@ -4079,7 +4073,10 @@ public partial class Character : Unit, ICharacter
 
                     character = new Character(modelParams)
                     {
-                        AccountId = accountId, Id = reader.GetUInt32("id"), Name = reader.GetString("name"), AccessLevel = reader.GetInt32("access_level"),
+                        AccountId = accountId,
+                        Id = reader.GetUInt32("id"),
+                        Name = reader.GetString("name"),
+                        AccessLevel = reader.GetInt32("access_level"),
                         Race = (Race)reader.GetByte("race"),
                         Gender = (Gender)reader.GetByte("gender"),
                         Level = reader.GetByte("level"),
@@ -4090,6 +4087,7 @@ public partial class Character : Unit, ICharacter
                         Mp = reader.GetInt32("mp")
                     };
                     character.ModelParams.ClearUnusedVisualRaceOverride((byte)character.Race);
+                    VisualRaceBodyParts.ClearTransientVisualRace(character.ModelParams);
                     character._savedHp = character.Hp; // save for later
                     character._savedMp = character.Mp;
                     // character.LaborPower = reader.GetInt16("labor_power");
@@ -4101,7 +4099,7 @@ public partial class Character : Unit, ICharacter
                     character.Ability2 = (AbilityType)reader.GetByte("ability2");
                     character.Ability3 = (AbilityType)reader.GetByte("ability3");
                     character.ServerId = reader.GetUInt32("world_id");
-                    character.Transform = new Transform(character, null, 
+                    character.Transform = new Transform(character, null,
                         reader.GetUInt32("zone_id"), WorldManager.DefaultInstanceId,
                         reader.GetFloat("x"), reader.GetFloat("y"), reader.GetFloat("z"),
                         reader.GetFloat("yaw"), reader.GetFloat("pitch"), reader.GetFloat("roll")
@@ -4224,6 +4222,7 @@ public partial class Character : Unit, ICharacter
                     character.Race = (Race)reader.GetByte("race");
                     character.Gender = (Gender)reader.GetByte("gender");
                     character.ModelParams.ClearUnusedVisualRaceOverride((byte)character.Race);
+                    VisualRaceBodyParts.ClearTransientVisualRace(character.ModelParams);
                     character.Level = reader.GetByte("level");
                     character.Experience = reader.GetInt32("experience");
                     character.RecoverableExp = reader.GetInt32("recoverable_exp");
@@ -4239,7 +4238,7 @@ public partial class Character : Unit, ICharacter
                     character.Ability2 = (AbilityType)reader.GetByte("ability2");
                     character.Ability3 = (AbilityType)reader.GetByte("ability3");
                     character.ServerId = reader.GetUInt32("world_id");
-                    character.Transform = new Transform(character, null, 
+                    character.Transform = new Transform(character, null,
                         reader.GetUInt32("zone_id"), WorldManager.DefaultInstanceId,
                         reader.GetFloat("x"), reader.GetFloat("y"), reader.GetFloat("z"),
                         reader.GetFloat("yaw"), reader.GetFloat("pitch"), reader.GetFloat("roll")
@@ -4834,6 +4833,8 @@ public partial class Character : Unit, ICharacter
         if (this != character) // Never send to self, or the client crashes
         {
             character.SendPacket(new SCUnitStatePacket(this));
+            if (IsCharTransformed)
+                character.SendPacket(new SCDisarmamentChangedPacket(ObjId, true, CharTransformCombatRules.DisarmedSlots));
             // Initialize the faction transition for newly visible remote characters.
             if (Faction != null && Faction.Id != FactionsEnum.Invalid)
                 character.SendPacket(new SCUnitFactionChangedPacket(
@@ -5179,7 +5180,7 @@ public partial class Character : Unit, ICharacter
             }
         }
     }
-    
+
     /// <summary>
     /// Tick called for players, about once per second
     /// </summary>

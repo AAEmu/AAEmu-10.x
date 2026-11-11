@@ -171,6 +171,11 @@ public class SkillManager(IAnimationManager animationManager, IPlotManager plotM
         return _defaultSkills.ContainsKey(id);
     }
 
+    public byte GetSkillBookCategoryId(uint id)
+    {
+        return _defaultSkills.TryGetValue(id, out var skill) ? skill.SkillBookCategoryId : (byte)0;
+    }
+
     public bool IsDefaultSkill(uint id, Race race, Gender gender)
     {
         if (!_defaultSkills.ContainsKey(id))
@@ -860,7 +865,8 @@ public class SkillManager(IAnimationManager animationManager, IPlotManager plotM
                         {
                             Template = defSkillTemplate,
                             Slot = reader.GetByte("slot_index", 0),
-                            AddToSlot = reader.GetBoolean("add_to_slot", true)
+                            AddToSlot = reader.GetBoolean("add_to_slot", true),
+                            SkillBookCategoryId = reader.GetByte("skill_book_category_id", 0)
                         };
                         _defaultSkills[skill.Template.Id] = skill; // 10.0.2.13 default_skills has duplicate skill_ids (e.g. 33984) -> overwrite, don't crash
                     }

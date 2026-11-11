@@ -1225,6 +1225,8 @@ public class ItemManager(ISkillManager skillManager, IItemIdManager itemIdManage
                             ChargeLifetime = reader.GetInt32("charge_lifetime", 0),
                             ChargeCount = reader.GetInt32("charge_count", 0),
                             RechargeRestrictItemId = reader.GetUInt32("recharge_restrict_item_id", 0),
+                            RndAttrUnitModifierLifetime = reader.GetInt32("rnd_attr_unit_modifier_lifetime", 0),
+                            RechargeRndAttrRestrictItemId = reader.GetUInt32("recharge_rnd_attr_unit_modifier_restrict_item_id", 0),
                             ItemLookConvert = GetWearableItemLookConvert(slotTypeId),
                             EquipItemSetId = reader.GetUInt32("eiset_id", 0),
                             RndAttrCategoryId = reader.GetUInt32("item_rnd_attr_category_id", 0)
@@ -1283,6 +1285,8 @@ public class ItemManager(ISkillManager skillManager, IItemIdManager itemIdManage
                             ChargeLifetime = reader.GetInt32("charge_lifetime", 0),
                             ChargeCount = reader.GetInt32("charge_count", 0),
                             RechargeRestrictItemId = reader.GetUInt32("recharge_restrict_item_id", 0),
+                            RndAttrUnitModifierLifetime = reader.GetInt32("rnd_attr_unit_modifier_lifetime", 0),
+                            RechargeRndAttrRestrictItemId = reader.GetUInt32("recharge_rnd_attr_unit_modifier_restrict_item_id", 0),
                             ItemLookConvert = GetHoldableItemLookConvert(holdableId),
                             EquipItemSetId = reader.GetUInt32("eiset_id", 0),
                             RndAttrCategoryId = reader.GetUInt32("item_rnd_attr_category_id", 0)
@@ -1317,6 +1321,8 @@ public class ItemManager(ISkillManager skillManager, IItemIdManager itemIdManage
                             ChargeLifetime = reader.GetInt32("charge_lifetime", 0),
                             ChargeCount = reader.GetInt32("charge_count", 0),
                             RechargeRestrictItemId = reader.GetUInt32("recharge_restrict_item_id", 0),
+                            RndAttrUnitModifierLifetime = reader.GetInt32("rnd_attr_unit_modifier_lifetime", 0),
+                            RechargeRndAttrRestrictItemId = reader.GetUInt32("recharge_rnd_attr_unit_modifier_restrict_item_id", 0),
                             EquipItemSetId = reader.GetUInt32("eiset_id", 0),
                             RndAttrCategoryId = reader.GetUInt32("item_rnd_attr_category_id", 0)
                         };
@@ -2719,7 +2725,9 @@ public class ItemManager(ISkillManager skillManager, IItemIdManager itemIdManage
                     var parentItemId = reader.GetUInt64("parent_item_id");
                     var container = ItemContainer.CreateByTypeName(containerType, containerOwnerId, slotType, false, null);
                     container.ContainerId = containerId;
-                    container.ContainerSize = containerSize;
+                    container.ContainerSize = container is EquipmentContainer
+                        ? EquipmentContainer.ResolveLoadedSize(containerSize)
+                        : containerSize;
                     container.MateId = containerMateId;
 
                     if (container is ItemBagContainer itemBagContainer)
