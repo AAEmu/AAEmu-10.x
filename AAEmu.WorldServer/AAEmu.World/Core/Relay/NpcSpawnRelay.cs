@@ -45,6 +45,8 @@ public class NpcSpawnRelay
 
     private static readonly int ObjectIdHoldMs = ParseObjectIdHoldMs();
 
+    private static readonly CopyObjectIdHold CopyHeldIds = new();
+
     private static readonly int RecentRemovalHoldMs = ParseRecentRemovalHoldMs();
 
     private readonly record struct RecentZoneNpcRemoval(
@@ -178,7 +180,7 @@ public class NpcSpawnRelay
             connection.Units.TryRemove(bcId);
         }
 
-        ScheduleObjectIdRelease(bcId);
+        ScheduleObjectIdRelease(bcId, connection);
     }
 
     /// <summary>Test seam: true while a forced/complete remove is holding this bcId out of the pool.</summary>
@@ -616,7 +618,7 @@ public class NpcSpawnRelay
         NpcStateSent.TryRemove(MarkerKey(connection.ZoneId, connection.InstanceId, bcId), out _);
         WorldIntegration.OnZoneNpcRemove?.Invoke(bcId);
         if (wasZoneAuthoredNpc || hadMirror)
-            ScheduleObjectIdRelease(bcId);
+            ScheduleObjectIdRelease(bcId, connection);
     }
 
     private static void RememberRemoval(
@@ -701,9 +703,19 @@ public class NpcSpawnRelay
     /// ProcessFreeUnits has had time to clear the slot. Immediate reuse was the Crimson portal
     /// SCUnitsRemoved path (reused bc=1053 while dedic still owned the id).
     /// </summary>
-    private static void ScheduleObjectIdRelease(uint bcId)
+    /// <summary>Returns the ids a closed copy's zone was holding to the pool.</summary>
+    public static void ReleaseCopyHeldIds(uint zoneId, uint instanceId)
+    {
+        foreach (var bcId in CopyHeldIds.Release(zoneId, instanceId))
+            ScheduleObjectIdRelease(bcId);
+    }
+
+    private static void ScheduleObjectIdRelease(uint bcId, ZoneConnection? liveConnection = null)
     {
         if (bcId == 0 || !ObjectIdManager.IsZoneUnitId(bcId))
+            return;
+
+        if (liveConnection != null && CopyHeldIds.TryHold(liveConnection.ZoneId, liveConnection.InstanceId, bcId))
             return;
 
         if (ObjectIdHoldMs <= 0)
