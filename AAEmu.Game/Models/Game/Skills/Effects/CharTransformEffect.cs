@@ -1,6 +1,7 @@
 ﻿using AAEmu.Game.Core.Packets;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.Char.Templates;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
@@ -41,27 +42,7 @@ public class CharTransformEffect : EffectTemplate
     public static void AnnounceForm(Character character)
     {
         var transformed = character.IsCharTransformed;
-        var parts = VisualRaceBodyParts.None;
-        if (transformed)
-        {
-            var form = Core.Managers.UnitManagers.CharacterManager.Instance
-                .GetTemplate((Race)character.CharTransformRace, (Gender)character.CharTransformGender);
-            if (form == null)
-            {
-                Logger.Warn($"CharTransformEffect: no characters template for race {character.CharTransformRace} gender {character.CharTransformGender}");
-            }
-            else
-            {
-                VisualRaceBodyParts.ApplyVisualRace(character.ModelParams, character.CharTransformRace, character.CharTransformGender);
-                parts = VisualRaceBodyParts.FromTemplate(form.FaceItemId, form.Items);
-            }
-        }
-        else
-        {
-            VisualRaceBodyParts.ClearVisualRace(character.ModelParams);
-            parts = VisualRaceBodyParts.FromEquipment(slot =>
-                character.Equipment?.GetItemBySlot((int)slot)?.TemplateId ?? 0u);
-        }
+        var parts = FormParts(character, GetForm);
 
         character.BroadcastPacket(
             new SCCharacterVisualRaceModifiedPacket(character.Id, parts, character.ModelParams), true);
@@ -77,5 +58,41 @@ public class CharTransformEffect : EffectTemplate
         if (character.Equipment?.GetItemBySlot((int)EquipmentItemSlot.RaceCosplay) != null)
             character.UpdateGearBonuses(null, null);
         CharTransformMountRules.Refresh(character);
+    }
+
+    /// <summary>A newly arriving observer: the unit state carries the real body parts, so send the form's.</summary>
+    public static void ShowFormTo(Character character, Character observer) => ShowFormTo(character, observer, GetForm);
+
+    internal static void ShowFormTo(Character character, Character observer, Func<Race, Gender, CharacterTemplate> getForm)
+    {
+        if (!character.IsCharTransformed)
+            return;
+
+        observer.SendPacket(new SCCharacterVisualRaceModifiedPacket(
+            character.Id, FormParts(character, getForm), character.ModelParams));
+        observer.SendPacket(new SCDisarmamentChangedPacket(character.ObjId, true, CharTransformCombatRules.DisarmedSlots));
+    }
+
+    private static CharacterTemplate GetForm(Race race, Gender gender) =>
+        Core.Managers.UnitManagers.CharacterManager.Instance.GetTemplate(race, gender);
+
+    private static VisualRaceBodyParts FormParts(Character character, Func<Race, Gender, CharacterTemplate> getForm)
+    {
+        if (!character.IsCharTransformed)
+        {
+            VisualRaceBodyParts.ClearVisualRace(character.ModelParams);
+            return VisualRaceBodyParts.FromEquipment(slot =>
+                character.Equipment?.GetItemBySlot((int)slot)?.TemplateId ?? 0u);
+        }
+
+        var form = getForm((Race)character.CharTransformRace, (Gender)character.CharTransformGender);
+        if (form == null)
+        {
+            Logger.Warn($"CharTransformEffect: no characters template for race {character.CharTransformRace} gender {character.CharTransformGender}");
+            return VisualRaceBodyParts.None;
+        }
+
+        VisualRaceBodyParts.ApplyVisualRace(character.ModelParams, character.CharTransformRace, character.CharTransformGender);
+        return VisualRaceBodyParts.FromTemplate(form.FaceItemId, form.Items);
     }
 }

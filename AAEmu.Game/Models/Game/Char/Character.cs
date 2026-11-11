@@ -27,6 +27,7 @@ using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.StreamAoi;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Buffs;
+using AAEmu.Game.Models.Game.Skills.Effects;
 using AAEmu.Game.Models.Game.Skills.SkillControllers;
 using AAEmu.Game.Models.Game.Slaves;
 using AAEmu.Game.Models.Game.Static;
@@ -4838,8 +4839,7 @@ public partial class Character : Unit, ICharacter
         if (this != character) // Never send to self, or the client crashes
         {
             character.SendPacket(new SCUnitStatePacket(this));
-            if (IsCharTransformed)
-                character.SendPacket(new SCDisarmamentChangedPacket(ObjId, true, CharTransformCombatRules.DisarmedSlots));
+            CharTransformEffect.ShowFormTo(this, character);
             // Initialize the faction transition for newly visible remote characters.
             if (Faction != null && Faction.Id != FactionsEnum.Invalid)
                 character.SendPacket(new SCUnitFactionChangedPacket(
