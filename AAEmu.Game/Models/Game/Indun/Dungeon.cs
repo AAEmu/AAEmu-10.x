@@ -61,6 +61,7 @@ public class Dungeon : IPreparedIndunInstance
     /// cannot burn the copy's budgets.
     /// </summary>
     private DateTime? _copyStartUtc;
+    private readonly IndunCopyEnding _ending = new(AppConfiguration.Instance.Dungeons.CloseWarningSeconds);
     /// <summary>Characters admitted through a match whose client is waiting to be told it has joined this copy.</summary>
     private readonly HashSet<uint> _matchedEntries = [];
     /// <summary>Matched players being walked through the copy's opening, by character id.</summary>
@@ -270,14 +271,14 @@ public class Dungeon : IPreparedIndunInstance
         {
             if (!IndunInstancePhaseRules.TryGetClockOrigin(_copyStartUtc, out var origin))
                 return IndunInstancePhase.None;
-            return IndunInstancePhaseRules.PhaseAt(_indunZone.Option, origin, DateTime.UtcNow);
+            return IndunInstancePhaseRules.PhaseAt(_indunZone.Option, origin, DateTime.UtcNow, _ending.ScriptEndedUtc);
         }
     }
 
     /// <summary>Whole seconds left in the copy's current phase; 0 when it has no clock or has finished.</summary>
     public int PhaseSecondsRemaining =>
         IndunInstancePhaseRules.TryGetClockOrigin(_copyStartUtc, out var origin)
-            ? IndunInstancePhaseRules.SecondsRemaining(_indunZone.Option, origin, DateTime.UtcNow)
+            ? IndunInstancePhaseRules.SecondsRemaining(_indunZone.Option, origin, DateTime.UtcNow, _ending.ScriptEndedUtc)
             : 0;
 
     /// <summary>
@@ -295,17 +296,27 @@ public class Dungeon : IPreparedIndunInstance
             return null;
 
         var now = DateTime.UtcNow;
-        var phase = IndunInstancePhaseRules.PhaseAt(option, copyStart, now);
+        if (World != null && WorldIntegration.ConsumeInstanceTowerDefFinished(World.Id, option.TowerDefId))
+            _ending.MarkScriptEnded(now);
+
+        var step = _ending.Step(option, copyStart, now);
+        var phase = step.Phase;
         if (phase != _lastPhase)
         {
             _lastPhase = phase;
-            Logger.Info(
-                "[{0}] instance phase → {1} ({2}s left of this phase)",
-                World, phase, IndunInstancePhaseRules.SecondsRemaining(option, copyStart, now));
+            Logger.Info("[{0}] instance phase → {1} ({2}s left of this phase)", World, phase, step.SecondsLeft);
         }
 
         if (_zoneKey == 0 || World == null)
             return null;
+
+        if (!IsSystem && step.WarnSeconds is { } warnAt)
+            BroadcastToPlayers(new SCNoticeMessagePacket(3, System.Drawing.Color.Yellow,
+                AppConfiguration.Instance.Dungeons.CloseWarningNoticeMs,
+                IndunCloseWarningRules.Message(warnAt, AppConfiguration.Instance.Dungeons.CloseWarningMessage)));
+
+        if (phase == IndunInstancePhase.Finished && !IsSystem)
+            return step.Close ? CloseFinishedCopy : null;
 
         // Only a host drop (not force_end / deadline) may clear the started flag. Deadline also removes
         // the run from RunningInstances while ShouldStartScript is still true in the End phase.
@@ -354,6 +365,21 @@ public class Dungeon : IPreparedIndunInstance
                 }
             }
         };
+    }
+
+    /// <summary>The copy's time is up: everyone goes back to where they entered from, then the copy goes.</summary>
+    private void CloseFinishedCopy()
+    {
+        var world = World;
+        if (world == null)
+            return;
+
+        Logger.Info($"[{world}] instance finished; returning its players and closing the copy");
+        foreach (var character in world.GetAllCharacters().ToList())
+            character.Events.OnDungeonLeave(world, new OnDungeonLeaveArgs { Player = character });
+
+        if (World != null && !DestroyDungeon())
+            Logger.Warn($"[{world}] failed to close the finished copy");
     }
 
     /// <summary>

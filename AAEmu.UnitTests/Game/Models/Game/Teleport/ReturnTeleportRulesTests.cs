@@ -31,4 +31,19 @@ public class ReturnTeleportRulesTests
         await Assert.That(ReturnTeleportRules.LoadWorldId(1, 0)).IsEqualTo(1u);
         await Assert.That(ReturnTeleportRules.LoadWorldId(0, 1)).IsEqualTo(1u);
     }
+
+    [Test]
+    public async Task ReturnPointInsideTheCurrentCopy_StaysInTheCopy()
+    {
+        // Island of Abundance portal (skill 51192, Return 1206 rp_life_dungeon_pepi) lands in zone 410, which
+        // only exists in the player's copy; sending it to the main world landed the player at the origin.
+        await Assert.That(ReturnTeleportRules.StaysInCurrentCopy(destZoneId: 410, currentZoneId: 410, currentInstanceId: 100)).IsTrue();
+    }
+
+    [Test]
+    public async Task ReturnPointElsewhere_LeavesTheCopy()
+    {
+        await Assert.That(ReturnTeleportRules.StaysInCurrentCopy(destZoneId: 129, currentZoneId: 410, currentInstanceId: 100)).IsFalse();
+        await Assert.That(ReturnTeleportRules.StaysInCurrentCopy(destZoneId: 129, currentZoneId: 129, currentInstanceId: 0)).IsFalse();
+    }
 }

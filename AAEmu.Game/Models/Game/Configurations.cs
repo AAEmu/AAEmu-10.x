@@ -285,6 +285,21 @@ public class DungeonsConfig
     public int AutoTeamDisbandKickTime { get; set; } = 30;
 
     /// <summary>
+    /// Seconds left in a finished copy's end window at which its players get a close warning
+    /// </summary>
+    public int[] CloseWarningSeconds { get; set; } = [60, 10];
+
+    /// <summary>
+    /// How long a close warning stays on screen, in milliseconds
+    /// </summary>
+    public int CloseWarningNoticeMs { get; set; } = 8000;
+
+    /// <summary>
+    /// Close warning text, {0} = seconds left; empty uses the built-in English text
+    /// </summary>
+    public string CloseWarningMessage { get; set; } = "";
+
+    /// <summary>
     /// List of dungeon instances that should be created by default
     /// </summary>
     // ReSharper disable once CollectionNeverUpdated.Global

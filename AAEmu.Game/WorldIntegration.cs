@@ -697,6 +697,9 @@ public static class WorldIntegration
     /// </summary>
     public static Func<string, uint, uint, string> TriggerTowerDef { get; set; }
 
+    /// <summary>GM: (towerDefId, copy world id, step) jumps that copy's run to the step.</summary>
+    public static Func<uint, uint, uint, bool> ForceInstanceTowerDefWave { get; set; }
+
     /// <summary>Schedule overview for the <c>towerdef list</c> action, one line per event.</summary>
     public static Func<IEnumerable<string>> DescribeTowerDefs { get; set; }
 
@@ -769,6 +772,23 @@ public static class WorldIntegration
         instanceId != 0
         && towerDefId != 0
         && InstanceTowerDefHostDropped.TryRemove((instanceId, towerDefId), out _);
+
+    /// <summary>One-shot markers for instance tower runs that played their last step to the end.</summary>
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<(uint InstanceId, uint TowerDefId), byte>
+        InstanceTowerDefFinished = new();
+
+    public static void MarkInstanceTowerDefFinished(uint instanceId, uint towerDefId)
+    {
+        if (instanceId == 0 || towerDefId == 0)
+            return;
+        InstanceTowerDefFinished[(instanceId, towerDefId)] = 0;
+    }
+
+    /// <summary>True once when this copy's tower run has finished; the copy then starts its end window.</summary>
+    public static bool ConsumeInstanceTowerDefFinished(uint instanceId, uint towerDefId) =>
+        instanceId != 0
+        && towerDefId != 0
+        && InstanceTowerDefFinished.TryRemove((instanceId, towerDefId), out _);
 
     /// <summary>
     /// Broadcast a finished SC body (opcode + body only) to in-world clients only.

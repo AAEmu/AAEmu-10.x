@@ -212,6 +212,7 @@ public static class Program
         WorldIntegration.AllowsPlotSelfDamageBypass = unit =>
             unit is Npc npc && TowerDefScheduler.IsActiveKillQuotaTemplate(npc.TemplateId);
         WorldIntegration.OnWorldInstanceRemoved = ZoneNpcSpawnerCatalog.RemoveInstance;
+        WorldIntegration.ForceInstanceTowerDefWave = TowerDefScheduler.ForceInstanceWave;
         WorldIntegration.TriggerTowerDef = (action, towerDefId, step) => action switch
         {
             "start" => TowerDefScheduler.ForceStart(towerDefId)

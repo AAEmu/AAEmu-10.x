@@ -54,10 +54,14 @@ public class Return : SpecialEffectAction
                 return;
             }
 
+            var current = character.Transform;
+            var inCopy = ReturnTeleportRules.StaysInCurrentCopy(trp.ZoneId, current.ZoneId, current.InstanceId);
             ApplyReturn(
                 character,
-                ReturnTeleportRules.LoadWorldId(trp.WorldId, WorldManager.DefaultWorldTemplateId),
-                WorldManager.DefaultInstanceId,
+                inCopy
+                    ? current.WorldId
+                    : ReturnTeleportRules.LoadWorldId(trp.WorldId, WorldManager.DefaultWorldTemplateId),
+                inCopy ? current.InstanceId : WorldManager.DefaultInstanceId,
                 trp.ZoneId,
                 trp.X,
                 trp.Y,

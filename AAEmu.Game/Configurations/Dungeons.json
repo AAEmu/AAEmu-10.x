@@ -2,6 +2,9 @@
     "Dungeons": {
         "AutoCleanupAfterKick": true,
 		"AutoTeamDisbandKickTime": 15,
+        "CloseWarningSeconds": [ 60, 10 ],
+        "CloseWarningNoticeMs": 8000,
+        "CloseWarningMessage": "",
         "AutoCreate": [
             {
                 "Id": 1,
