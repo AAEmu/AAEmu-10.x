@@ -33,6 +33,7 @@ public sealed class ZoneHostSupervisor : IDisposable
     private readonly IZoneHostProcessFactory _factory;
     private readonly Func<string, bool> _fileExists;
     private readonly Action<string> _ensureDirectory;
+    private readonly Action<string, string> _writeFile;
     private readonly ConcurrentDictionary<uint, TrackedHost> _hosts = new();
     private readonly ConcurrentDictionary<int, byte> _portsInUse = new();
     private readonly object _warmLock = new();
@@ -49,12 +50,14 @@ public sealed class ZoneHostSupervisor : IDisposable
         ZoneHostConfig config,
         IZoneHostProcessFactory factory = null,
         Func<string, bool> fileExists = null,
-        Action<string> ensureDirectory = null)
+        Action<string> ensureDirectory = null,
+        Action<string, string> writeFile = null)
     {
         _config = config ?? new ZoneHostConfig();
         _factory = factory ?? new ProcessZoneHostFactory();
         _fileExists = path => (fileExists ?? File.Exists)(path);
         _ensureDirectory = ensureDirectory ?? (path => Directory.CreateDirectory(path));
+        _writeFile = writeFile ?? File.WriteAllText;
     }
 
     /// <summary>
@@ -199,6 +202,15 @@ public sealed class ZoneHostSupervisor : IDisposable
         return false;
     }
 
+    /// <summary>True while this supervisor runs a host for the world: a started copy or a warm-pool slot.</summary>
+    public bool IsHosting(uint worldId)
+    {
+        if (_hosts.ContainsKey(worldId))
+            return true;
+        lock (_warmLock)
+            return _warmByInstanceId.ContainsKey(worldId);
+    }
+
     public bool TryStart(WorldInstance world)
     {
         if (world == null)
@@ -248,6 +260,7 @@ public sealed class ZoneHostSupervisor : IDisposable
                 : _config.RuntimeLogRoot;
             var logDirectory = Path.Combine(logRoot, "Logs", $"{Sanitize(zoneName)}-{world.Id}");
             _ensureDirectory(logDirectory);
+            _writeFile(Path.Combine(logDirectory, ZoneHostCommandLine.SystemCfgFileName), ZoneHostCommandLine.SystemCfg(_config));
             var logName = $"ArcheAge-{Sanitize(zoneName)}-{world.Id}-{DateTime.Now:yyyyMMdd-HHmmss}.log";
             var spec = ZoneHostCommandLine.Build(_config, zoneName, world.Id, svPort, logDirectory, logName);
             var process = _factory.Start(spec);

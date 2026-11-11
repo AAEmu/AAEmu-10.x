@@ -19,6 +19,13 @@ public static class ZoneHostCommandLine
     public const string DllEnvironment = "AAEMU_ZONE_DLL";
     public const string SaveDirectoryEnvironment = "AAEMU_ZONE_SAVE_DIR";
     public const string LogNameEnvironment = "AAEMU_ZONE_LOG_NAME";
+    public const string SystemCfgFileName = "system.cfg";
+
+    /// <summary>
+    /// The save-folder system.cfg. The native host ignores +db_location and reads it from here; without it a
+    /// copy loads the client DB and fails with "failed to load game data".
+    /// </summary>
+    public static string SystemCfg(ZoneHostConfig config) => $"db_location = {config.DbLocation}\n";
 
     public static ZoneHostLaunchSpec Build(
         ZoneHostConfig config,
