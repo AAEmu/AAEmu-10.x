@@ -57,6 +57,13 @@ public static class BuffStackRules
         transformBuffId != 0 && maxStack > 1 && stack >= maxStack;
 
     /// <summary>
+    /// Instance-per-application families count the arriving application too: the family transforms on
+    /// the application that reaches the ceiling.
+    /// </summary>
+    public static bool TransformsOnArrival(int liveInstances, int maxStack, uint transformBuffId) =>
+        ShouldTransform(liveInstances + 1, maxStack, transformBuffId);
+
+    /// <summary>
     /// Flat or linear-level modifier after the instance's stack is applied.
     /// </summary>
     /// <remarks>

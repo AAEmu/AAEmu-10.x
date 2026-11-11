@@ -858,6 +858,15 @@ public class Buffs : IBuffs
                             // Rule 7 is caster-scoped, so the ceiling counts this caster's instances and
                             // an expiry takes one of them.
                             var instances = LiveInstancesOf(buff.Template.BuffId, casterKey);
+                            if (instances.Count > 0 && BuffStackRules.TransformsOnArrival(
+                                    instances.Count, buff.Template.MaxStack, buff.Template.TransformBuffId))
+                            {
+                                transformFrom = instances[0];
+                                transformBuffId = buff.Template.TransformBuffId;
+                                transformFamily = instances;
+                                break;
+                            }
+
                             if (!BuffStackRules.CanAddInstance(instances.Count, buff.Template.MaxStack))
                             {
                                 // The family is full. Nine of its 28 rows name a transform (28644 동상 →
