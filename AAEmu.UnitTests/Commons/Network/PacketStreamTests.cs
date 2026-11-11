@@ -54,6 +54,18 @@ namespace AAEmu.UnitTests.Commons.Network
         }
 
         [Test]
+        public async Task WriteAndReadUInt16_ShouldReturnSameValue()
+        {
+            var stream = new PacketStream();
+            ushort expected = 0xBEEF;
+            stream.Write(expected);
+            stream.Rollback();
+
+            var result = stream.ReadUInt16();
+            await Assert.That(result).IsEqualTo(expected);
+        }
+
+        [Test]
         public async Task WriteAndReadDateTime_ShouldReturnSameUnixSecond()
         {
             var stream = new PacketStream();
