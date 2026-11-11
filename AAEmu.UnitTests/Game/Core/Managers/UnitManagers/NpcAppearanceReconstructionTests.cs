@@ -7,6 +7,7 @@ using AAEmu.Game.Core.Managers.Id;
 using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Packets.G2C;
+using AAEmu.Game.Core.Packets.G2C.UnitState;
 using AAEmu.Game.GameData;
 using AAEmu.Game.Models.Game.Faction;
 using AAEmu.Game.Models.Game.Formulas;
@@ -14,6 +15,10 @@ using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Templates;
 using AAEmu.Game.Models.Game.Models;
 using AAEmu.Game.Models.Game.NPChar;
+using AAEmu.Game.Models.Game.Skills;
+using AAEmu.Game.Models.Game.Skills.Buffs;
+using AAEmu.Game.Models.Game.Skills.Static;
+using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Models.StaticValues;
@@ -155,6 +160,30 @@ public sealed class NpcAppearanceReconstructionTests
         await Assert.That(npc.ModelParams.Face.MovableDecalAssetId).IsEqualTo(1001u);
         await Assert.That(Equipment(npc, EquipmentItemSlot.Hair).TemplateId).IsEqualTo(HairItemId);
         await Assert.That(Equipment(npc, EquipmentItemSlot.Face).TemplateId).IsEqualTo(FaceItemId);
+    }
+
+    [Test]
+    public async Task WorldAuthoredSpawnBody_ReportsTheBuffsItCarries()
+    {
+        // Songsong (22076) reaches the zone with its stun 32711 in the spawn body; removing it later must be relayed.
+        using var formulas = InstallNpcFormulas();
+        using var itemData = InstallEmptyItemGameData();
+        using var skillManager = new SingletonScope<SkillManager>(TestManagers.CreateSkillManager());
+        using var worldManager = TestDungeonWorld.InstallWorldManager();
+        var (manager, _, world) = BuildManager([Custom(101, HairItemId, FaceItemId, 111, 121)]);
+        var npc = manager.Create(world, 1001, TemplateId);
+        var stun = new Buff(npc, npc, new SkillCasterUnit(npc.ObjId),
+            new BuffTemplate { Id = 32711, Kind = BuffKind.Bad, StackRule = BuffStackRule.Multiple }, null, DateTime.UtcNow)
+        {
+            Index = 7, Stack = 1, InUse = true, State = EffectState.Acting
+        };
+        ((List<Buff>)typeof(Buffs).GetField("_effects", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .GetValue(npc.Buffs)!).Add(stun);
+        var written = new List<UnitStateBuffSerializer.SnapshotEntry>();
+
+        WorldIntegration.BuildWorldAuthoredNpcStateBody(npc, written);
+
+        await Assert.That(written.Select(e => e.Index)).IsEquivalentTo(new uint[] { 7 });
     }
 
     [Test]
@@ -444,38 +473,5 @@ public sealed class NpcAppearanceReconstructionTests
         public override int Next(int maxValue) => _index;
     }
 
-    private static byte[] BuildWzNpcStateBody(Npc npc)
-    {
-        var metadataType = typeof(WorldIntegration).GetNestedType("WzNpcSpawnMetadata", BindingFlags.NonPublic)
-            ?? throw new InvalidOperationException("Missing WZ NPC spawn metadata type");
-        var constructor = metadataType.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Single();
-        var metadata = constructor.Invoke(
-        [
-            0u,
-            (byte)0,
-            (byte)0,
-            (ushort)0,
-            NpcSpawnReasonType.Default,
-            null,
-            0f,
-            0u,
-            0u,
-            (byte)0
-        ]);
-        var method = typeof(WorldIntegration)
-            .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
-            .Single(candidate => candidate.Name == "BuildWzNpcStateBody" && candidate.GetParameters().Length == 8);
-
-        return (byte[])method.Invoke(null,
-        [
-            npc,
-            metadata,
-            null,
-            0f,
-            false,
-            false,
-            null,
-            false
-        ])!;
-    }
+    private static byte[] BuildWzNpcStateBody(Npc npc) => WorldIntegration.BuildWorldAuthoredNpcStateBody(npc, null);
 }

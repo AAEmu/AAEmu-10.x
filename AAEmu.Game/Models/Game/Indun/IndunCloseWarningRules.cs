@@ -1,4 +1,4 @@
-namespace AAEmu.Game.Models.Game.Indun;
+﻿namespace AAEmu.Game.Models.Game.Indun;
 
 /// <summary>Which close warning is due while a copy counts down its end window.</summary>
 public static class IndunCloseWarningRules

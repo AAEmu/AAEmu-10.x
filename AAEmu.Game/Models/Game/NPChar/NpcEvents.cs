@@ -64,6 +64,19 @@ public partial class Npc
         }
     }
 
+    /// <summary>
+    /// A zone mirror's death is decided on World, so World runs its on_death skills; the rest stay with the zone.
+    /// </summary>
+    public bool RegisterDeathSkills(IEnumerable<NpcSkill> npSkills)
+    {
+        if (npSkills?.Any(s => s.SkillUseCondition == SkillUseConditionKind.OnDeath) != true)
+            return false;
+
+        Events.OnDeath -= OnDeath;
+        Events.OnDeath += OnDeath;
+        return true;
+    }
+
     public void UnregisterNpcEvents()
     {
         var npSkills = NpcGameData.Instance.GetNpSkills(TemplateId);

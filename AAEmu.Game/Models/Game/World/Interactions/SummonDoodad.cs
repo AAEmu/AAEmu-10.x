@@ -1,5 +1,7 @@
 ﻿using AAEmu.Game.Core.Managers.UnitManagers;
+using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Models.Game.DoodadObj.Templates;
+using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Units;
 
@@ -24,6 +26,13 @@ public class SummonDoodad : IWorldInteraction
         doodad.OwnerPlotId = plotId;
         doodad.OwnerPlotEventId = plotEventId;
         doodad.Transform = target.Transform.CloneDetached(doodad);
+        var position = doodad.Transform.Local.Position;
+        // Plot summons usually target a location taken from their caster, so the caster is the summoner.
+        var summoner = target as Npc ?? caster as Npc;
+        var unliftedZ = SummonedDoodadPlacement.UnliftedZ(position, summoner?.ZoneSpawnPoint);
+        var groundZ = SummonedDoodadPlacement.GroundZ(unliftedZ, WorldManager.Instance.GetHeight(doodad.Transform));
+        if (groundZ != position.Z)
+            doodad.Transform.Local.SetHeight(groundZ);
         doodad.InitDoodad();
         doodad.Spawn();
     }

@@ -647,7 +647,8 @@ public class DamageEffect : EffectTemplate
         var manaStolen = (int)(value * (ManaStealRatio / 100.0f));
 
         // ID=6151 Test Drive, or explicitly authorized plot self-damage, may bypass CanAttack.
-        if (!caster.CanAttack(trg) && !AllowsCanAttackBypass(castObj, caster, trg, source?.Skill))
+        if (!caster.CanAttack(trg) && !AllowsCanAttackBypass(castObj, caster, trg, source?.Skill,
+                source?.AppliedToSource == true))
             return;
 
         // mana_damage (6 rows): the hit drains the victim's mana rather than its health. It still counts as a
@@ -946,10 +947,15 @@ public class DamageEffect : EffectTemplate
     /// <summary>
     /// When <see cref="BaseUnit.CanAttack"/> is false, only these cast contexts may still apply damage.
     /// </summary>
-    internal static bool AllowsCanAttackBypass(CastAction castObj, BaseUnit caster, BaseUnit trg, Skill skill = null)
+    internal static bool AllowsCanAttackBypass(CastAction castObj, BaseUnit caster, BaseUnit trg, Skill skill = null,
+        bool appliedToSource = false)
     {
         if (castObj is CastBuff buff && buff.Buff?.Template?.Id == 6151)
             return true;
+
+        // Self-destructs: the data authors the hit onto a scripted caster itself.
+        if (appliedToSource && caster != null && trg != null && caster.ObjId == trg.ObjId)
+            return caster.GetOwnerCharacter() == null;
 
         // Plot self-hit is not globally trusted. World arms an explicit predicate for the
         // intended flow (e.g. tower-def kill-quota restore devices).

@@ -80,4 +80,18 @@ public class TauntRulesTests
         // No caster to release.
         await Assert.That(TauntRules.ReleaseTarget(0u, 0u, 0u)).IsNull();
     }
+
+    [Test]
+    public async Task TargetOnHit_TauntedNpc_StaysOnItsTaunter()
+    {
+        // Island waves carry 32765 from Songsong (965); a player's hit must not pull them off it.
+        await Assert.That(TauntRules.TargetOnHit(attackerObjId: 888, taunterObjId: 965)).IsEqualTo(965u);
+    }
+
+    [Test]
+    public async Task TargetOnHit_NoTauntOrTheTaunterHits_TurnsToTheAttacker()
+    {
+        await Assert.That(TauntRules.TargetOnHit(attackerObjId: 888, taunterObjId: 0)).IsEqualTo(888u);
+        await Assert.That(TauntRules.TargetOnHit(attackerObjId: 965, taunterObjId: 965)).IsEqualTo(965u);
+    }
 }

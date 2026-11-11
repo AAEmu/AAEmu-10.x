@@ -348,9 +348,10 @@ public class Skill
         // Gate 1: use_condition_bits and the caster's state - dead, stunned, slept, silenced,
         // swimming. The client greys out what it can see, but a forged or stale press still reached
         // Cast() before this gate existed, and silence had no server-side effect at all.
-        var useConditionFailure = SkillUseConditionRules.Evaluate(
-            Template.UseConditionBits,
-            SkillUseConditionRules.ReadState(unit));
+        var casterState = SkillUseConditionRules.ReadState(unit);
+        if (caster is not (Character or Units.Mate))
+            casterState = SkillUseConditionRules.ForScriptedCaster(casterState);
+        var useConditionFailure = SkillUseConditionRules.Evaluate(Template.UseConditionBits, casterState);
         if (useConditionFailure.HasValue)
         {
             Logger.Trace("Skill {0} blocked for {1}: {2}", Template.Id, caster.Name, useConditionFailure.Value);
@@ -1978,7 +1979,7 @@ public class Skill
         }
 
         // Self AoE: caster is gather origin, not a counted neighbour hit (SkillAreaRules).
-        if (SkillAreaRules.ExcludeCasterFromSelfAreaHits(Template.TargetType, areaRadius))
+        if (SkillAreaRules.ExcludeCasterFromSelfAreaHits(Template.TargetType, areaRadius, Template.TargetAreaCount))
             possibleTargets.RemoveAll(t => t != null && t.ObjId == caster.ObjId);
 
         possibleTargets = SkillAreaRules.ApplyTargetAreaCount(
@@ -2404,7 +2405,12 @@ public class Skill
             {
                 var thisTargetCaster = EffectCastTarget(target, targetCaster);
 
-                effect.Template.Apply(caster, casterCaster, target, thisTargetCaster, new CastSkill(Template.Id, TlId), new EffectSource(this), skillObject, DateTime.UtcNow, packets);
+                var effectSource = new EffectSource(this)
+                {
+                    AppliedToSource = effect.ApplicationMethod is SkillEffectApplicationMethod.Source
+                        or SkillEffectApplicationMethod.SourceOnce
+                };
+                effect.Template.Apply(caster, casterCaster, target, thisTargetCaster, new CastSkill(Template.Id, TlId), effectSource, skillObject, DateTime.UtcNow, packets);
 
                 if (player is { SkillCancelled: true }) { Cancelled = true; }
 

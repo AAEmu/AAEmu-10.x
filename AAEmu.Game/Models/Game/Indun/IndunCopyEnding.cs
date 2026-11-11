@@ -1,4 +1,4 @@
-namespace AAEmu.Game.Models.Game.Indun;
+﻿namespace AAEmu.Game.Models.Game.Indun;
 
 /// <summary>What a copy's clock asks for on one tick.</summary>
 public readonly record struct IndunCopyStep(IndunInstancePhase Phase, int SecondsLeft, int? WarnSeconds, bool Close);

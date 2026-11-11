@@ -1073,18 +1073,11 @@ public class Unit : BaseUnit, IUnit
         if (oldHpValue <= 0)
             return;
 
-        if (attackerBase is Unit attackerUnit)
+        // A dungeon kill ends that unit's combat for the copy's events; DoDie raises the death and the kill.
+        if (attackerBase is Unit && Transform.WorldId > 0 &&
+            WorldManager.Instance.GetWorld(Transform.InstanceId) is { DungeonInstance: not null } world)
         {
-            var world = WorldManager.Instance.GetWorld(Transform.InstanceId);
-            if (Transform.WorldId > 0)
-            {
-                if (world.DungeonInstance is not null)
-                {
-                    world.Events.OnUnitKilled(world, new OnUnitKilledArgs { Killer = attackerUnit, Victim = this });
-                    world.Events.OnUnitCombatEnd(world, new OnUnitCombatEndArgs { Npc = this });
-                    Events.OnDeath(this, new OnDeathArgs { Killer = attackerUnit, Victim = this });
-                }
-            }
+            world.Events.OnUnitCombatEnd(world, new OnUnitCombatEndArgs { Npc = this });
         }
 
         // OnKill is raised once, by DoDie, which every death reaches and which names both units. It used
@@ -1131,7 +1124,8 @@ public class Unit : BaseUnit, IUnit
         Buffs.RemoveEffectsOnDeath();
         var lostExp = this is Character dead ? dead.LastDeathLostExp : 0;
         var deathDurabilityLossRatio = this is Character deadChar ? deadChar.LastDeathDurabilityLossRatio : (byte)0;
-        killer.BroadcastPacket(new SCUnitDeathPacket(ObjId, killReason, (Unit)killer, lostExp, deathDurabilityLossRatio), true);
+        // Announced where the death happens: a killer that is already gone (a self-destruct) has no onlookers.
+        BroadcastPacket(new SCUnitDeathPacket(ObjId, killReason, (Unit)killer, lostExp, deathDurabilityLossRatio), true);
         if (killer == this)
         {
             switch (this)

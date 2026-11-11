@@ -587,10 +587,11 @@ public class BuffStackAddBuffTests
     }
 
     /// <summary>
-    /// Rule 7 keeps one instance per application, so the transform is noticed on the application that
-    /// cannot add another member, and every member of the arriving caster's family goes — each one
-    /// ended once. RemoveEffect on a live instance re-entered through StopEffectTask and stripped a
-    /// modifier-cache entry belonging to another live instance of the same family.
+    /// Rule 7 keeps one instance per application, so the transform fires on the application that
+    /// reaches the ceiling (Productivity 32704 → 32705 "upon reaching 2 stacks"), and every member of
+    /// the arriving caster's family goes — each one ended once. RemoveEffect on a live instance
+    /// re-entered through StopEffectTask and stripped a modifier-cache entry belonging to another live
+    /// instance of the same family.
     /// </summary>
     [Test]
     public async Task AddBuff_Rule7FamilyThatTransforms_EndsItsMembersWithoutTakingAnotherCasters()
@@ -598,13 +599,12 @@ public class BuffStackAddBuffTests
         var (owner, casterA, casterB) = CreateUnits();
 
         owner.Buffs.AddBuff(CreateBuff(owner, casterA, Rule7TransformBuffId));
-        owner.Buffs.AddBuff(CreateBuff(owner, casterA, Rule7TransformBuffId));
         owner.Buffs.AddBuff(CreateBuff(owner, casterB, Rule7TransformBuffId));
 
         var before = InstancesOf(owner, Rule7TransformBuffId);
-        await Assert.That(before.Count).IsEqualTo(3);
+        await Assert.That(before.Count).IsEqualTo(2);
 
-        // A's third application fills A's own ceiling of 2, so A's two instances transform.
+        // A's second application reaches A's own ceiling of 2, so A's family transforms.
         owner.Buffs.AddBuff(CreateBuff(owner, casterA, Rule7TransformBuffId));
 
         var left = InstancesOf(owner, Rule7TransformBuffId);

@@ -1,4 +1,4 @@
-using AAEmu.Game.Models.Game.Char;
+﻿using AAEmu.Game.Models.Game.Char;
 
 namespace AAEmu.UnitTests.Game.Models.Game.Char;
 

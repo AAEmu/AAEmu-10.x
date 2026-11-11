@@ -1,4 +1,4 @@
-namespace AAEmu.Game.Models.Game.TowerDefs;
+﻿namespace AAEmu.Game.Models.Game.TowerDefs;
 
 /// <summary>When a tower_defs run has nothing left to open: its last step is open and that step's own time is up.</summary>
 public static class TowerDefRunEndRules

@@ -1,4 +1,4 @@
-using AAEmu.Game.Models.Game.Indun;
+﻿using AAEmu.Game.Models.Game.Indun;
 
 namespace AAEmu.UnitTests.Game.Models.Game.Indun;
 

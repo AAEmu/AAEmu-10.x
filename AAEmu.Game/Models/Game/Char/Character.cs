@@ -286,6 +286,7 @@ public partial class Character : Unit, ICharacter
         foreach (var objId in remove)
         {
             var npc = ParentWorld?.GetNpc(objId);
+            Logger.Debug("Mirror drop {0} → {1}: beyond AOI at {2}", objId, Name, npc?.Transform.World.Position);
             ReleaseMirrorNpcSlot(objId);
             if (npc != null && IsStillInRegionInterest(npc))
                 EnqueuePendingMirrorSpawn(npc);
@@ -631,6 +632,8 @@ public partial class Character : Unit, ICharacter
         if (farthestD2 - nearerD2 < minImproveSq)
             return false;
 
+        Logger.Debug("Mirror drop {0} → {1}: evicted at the stream cap, {2:F0} m away",
+            farthestId, Name, MathF.Sqrt(farthestD2));
         ReleaseMirrorNpcSlot(farthestId);
         if (farthestNpc != null && IsStillInRegionInterest(farthestNpc))
             EnqueuePendingMirrorSpawn(farthestNpc);
@@ -712,6 +715,8 @@ public partial class Character : Unit, ICharacter
         if (farthestId == 0 || farthestId == priorityNpc.ObjId)
             return false;
 
+        Logger.Debug("Mirror drop {0} → {1}: evicted at the stream cap, {2:F0} m away",
+            farthestId, Name, MathF.Sqrt(farthestD2));
         ReleaseMirrorNpcSlot(farthestId);
         if (farthestNpc != null && IsStillInRegionInterest(farthestNpc))
             EnqueuePendingMirrorSpawn(farthestNpc);

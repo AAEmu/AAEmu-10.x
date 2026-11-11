@@ -21,6 +21,7 @@ public class DoodadFuncClout : DoodadPhaseFuncTemplate
     public bool ShowToFriendlyOnly { get; set; }
     public int NextPhase { get; set; }
     public uint AoeShapeId { get; set; }
+    public int TargetMaxCount { get; set; }
     public uint TargetBuffTagId { get; set; }
     public uint TargetNoBuffTagId { get; set; }
     public bool UseOriginSource { get; set; }
@@ -44,6 +45,7 @@ public class DoodadFuncClout : DoodadPhaseFuncTemplate
         areaTrigger.Caster = caster is Character ? caster : owner;
 
         areaTrigger.InsideBuffTemplate = SkillManager.Instance.GetBuffTemplate(BuffId);
+        areaTrigger.TargetMaxCount = TargetMaxCount;
         areaTrigger.TargetRelation = TargetRelation;
         areaTrigger.TargetBuffTagId = TargetBuffTagId;
         areaTrigger.TargetNoBuffTagId = TargetNoBuffTagId;

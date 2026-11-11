@@ -1,4 +1,4 @@
-using AAEmu.Game.Models.Game.TowerDefs;
+﻿using AAEmu.Game.Models.Game.TowerDefs;
 
 namespace AAEmu.UnitTests.Game.Models.Game.TowerDefs;
 

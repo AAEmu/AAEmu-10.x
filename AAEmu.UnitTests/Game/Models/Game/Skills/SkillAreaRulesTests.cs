@@ -120,13 +120,21 @@ public class SkillAreaRulesTests
     {
         // Whalesong-style: Self + radius, count must not be eaten by the gather origin.
         await Assert.That(SkillAreaRules.ExcludeCasterFromSelfAreaHits(
-            SkillTargetType.Self, 100f)).IsTrue();
+            SkillTargetType.Self, 100f, 1)).IsTrue();
         await Assert.That(SkillAreaRules.ExcludeCasterFromSelfAreaHits(
-            SkillTargetType.Self, 0f)).IsFalse();
+            SkillTargetType.Self, 0f, 1)).IsFalse();
         await Assert.That(SkillAreaRules.ExcludeCasterFromSelfAreaHits(
-            SkillTargetType.AnyUnit, 100f)).IsFalse();
+            SkillTargetType.AnyUnit, 100f, 1)).IsFalse();
         await Assert.That(SkillAreaRules.ExcludeCasterFromSelfAreaHits(
-            SkillTargetType.Hostile, 50f)).IsFalse();
+            SkillTargetType.Hostile, 50f, 1)).IsFalse();
+    }
+
+    [Test]
+    public async Task SelfArea_WithoutACount_KeepsTheCaster()
+    {
+        // A self blast with no target_area_count hits its caster too (Island Songsong's escape, 51225).
+        await Assert.That(SkillAreaRules.ExcludeCasterFromSelfAreaHits(
+            SkillTargetType.Self, 100f, 0)).IsFalse();
     }
 
     [Test]
@@ -163,5 +171,31 @@ public class SkillAreaRulesTests
         await Assert.That(withEffects.Contains(mine1)).IsTrue();
         await Assert.That(withEffects.Contains(mine2)).IsTrue();
         await Assert.That(withEffects.Count(t => t is Unit)).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task AreaCountCut_KeepsTheCastTargetOverABystanderAtTheSameSpot()
+    {
+        // Island harvest (count 1): the crop's spawner NPC stands on the crop and is gathered first.
+        var spawner = new BaseUnit { ObjId = 917 };
+        var crop = new BaseUnit { ObjId = 182291 };
+        var gathered = new List<BaseUnit> { spawner, crop };
+
+        var kept = SkillAreaRules.KeepNearest(gathered, crop, 1, _ => 0d);
+
+        await Assert.That(kept).IsEquivalentTo(new[] { crop });
+    }
+
+    [Test]
+    public async Task AreaCountCut_FillsTheRestByDistance()
+    {
+        var target = new BaseUnit { ObjId = 1 };
+        var near = new BaseUnit { ObjId = 2 };
+        var far = new BaseUnit { ObjId = 3 };
+        var distance = new Dictionary<BaseUnit, double> { [target] = 5d, [near] = 1d, [far] = 9d };
+
+        var kept = SkillAreaRules.KeepNearest(new List<BaseUnit> { far, near, target }, target, 2, u => distance[u]);
+
+        await Assert.That(kept).IsEquivalentTo(new[] { target, near });
     }
 }

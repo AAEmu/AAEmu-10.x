@@ -922,7 +922,10 @@ public class Doodad : BaseUnit
                 // We don't need to change phase, we stay in the current phase.
                 // The check is needed for Windstone id=1473. A system doodad (permanent world fixture such
                 // as a faction statue) is never consumed by a repeatable use on its final phase.
-                if (!HasOnlyGroupKindStart() && Template?.SystemDoodad != true)
+                var keptAsChoice = func.FuncType == nameof(DoodadFuncUse)
+                    && DoodadStayOnPhaseRules.KeepsDoodad(func.FuncType, func.NextPhase,
+                        DoodadManager.Instance.GetFuncsForGroup(FuncGroupId).Select(f => f.NextPhase));
+                if (!keptAsChoice && !HasOnlyGroupKindStart() && Template?.SystemDoodad != true)
                 {
                     if (FuncTask != null)
                     {

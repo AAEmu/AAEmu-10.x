@@ -45,6 +45,8 @@ public class PlotTree(uint plotId)
                     lastEvent = 0;
                     continue;
                 }
+                if (PlotCasterDeathRules.StopsPlot(state.CasterAliveAtStart, state.Caster?.IsDead == true))
+                    state.RequestCancellation();
                 if (state.CancellationRequested())
                 {
                     var stoppedChannel = ResumeChannelEnd(state, schedule);

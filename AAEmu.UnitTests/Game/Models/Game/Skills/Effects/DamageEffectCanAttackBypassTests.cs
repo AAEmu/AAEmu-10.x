@@ -1,4 +1,5 @@
 using AAEmu.Game;
+using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Faction;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Effects;
@@ -54,6 +55,34 @@ public class DamageEffectCanAttackBypassTests
         var unit = new BaseUnit { ObjId = 100 };
         var skill = new CastSkill(15298, 1);
         await Assert.That(DamageEffect.AllowsCanAttackBypass(skill, unit, unit)).IsFalse();
+    }
+
+    [Test]
+    public async Task SourceAppliedSelfHit_ScriptedCaster_Bypasses()
+    {
+        // Songsong's escape (51225) and the NPC self-destructs author their damage onto the caster.
+        var npc = new BaseUnit { ObjId = 100 };
+        var cast = new CastSkill(51225, 1);
+
+        await Assert.That(DamageEffect.AllowsCanAttackBypass(cast, npc, npc, appliedToSource: true)).IsTrue();
+    }
+
+    [Test]
+    public async Task SourceAppliedSelfHit_PlayerCaster_DoesNotBypass()
+    {
+        var player = new Character(new UnitCustomModelParams()) { ObjId = 100 };
+        var cast = new CastSkill(10568, 1);
+
+        await Assert.That(DamageEffect.AllowsCanAttackBypass(cast, player, player, appliedToSource: true)).IsFalse();
+    }
+
+    [Test]
+    public async Task SourceAppliedHit_OnAnotherUnit_DoesNotBypass()
+    {
+        var npc = new BaseUnit { ObjId = 1 };
+        var other = new BaseUnit { ObjId = 2 };
+
+        await Assert.That(DamageEffect.AllowsCanAttackBypass(new CastSkill(51225, 1), npc, other, appliedToSource: true)).IsFalse();
     }
 
     [Test]

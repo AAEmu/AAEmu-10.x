@@ -503,11 +503,15 @@ public static class Program
             if (damagedNpc == null)
                 return;
 
-            var abuser = WorldIntegration.FindUnitAcrossWorlds(aggroSourceId);
-            if (abuser != null)
-                damagedNpc.CurrentTarget = abuser;
-            zone.SendPacket(new WZTargetChangedPacket(targetId, aggroSourceId, forceByWorld: true));
-            Logger.Info("WZTargetChanged → zone npc={0} target={1} (damage handoff)", targetId, aggroSourceId);
+            // A taunt holds the NPC on its taunter; a top-aggro taunt also matches every hit's threat.
+            var taunt = damagedNpc.Buffs.GetActiveTaunt();
+            var taunterId = taunt?.Caster?.ObjId ?? 0;
+            var newTargetId = TauntRules.TargetOnHit(aggroSourceId, taunterId);
+            var newTarget = WorldIntegration.FindUnitAcrossWorlds(newTargetId);
+            if (newTarget != null)
+                damagedNpc.CurrentTarget = newTarget;
+            zone.SendPacket(new WZTargetChangedPacket(targetId, newTargetId, forceByWorld: true));
+            Logger.Info("WZTargetChanged → zone npc={0} target={1} (damage handoff)", targetId, newTargetId);
 
             zone.SendPacket(new WZUpdateAggroPacket(
                 targetId,
@@ -517,6 +521,12 @@ public static class Program
                 true,
                 castAction));
             Logger.Info("WZUpdateAggro → zone npc={0} target={1} aggro={2}", targetId, aggroSourceId, aggro);
+            if (newTargetId != aggroSourceId &&
+                TauntRules.GrantsTopAggro(taunt.Template.Taunt, taunt.Template.TauntWithTopAggro))
+            {
+                zone.SendPacket(new WZUpdateAggroPacket(targetId, newTargetId, newTargetId, aggro, true, castAction));
+                Logger.Info("WZUpdateAggro → zone npc={0} target={1} aggro={2} (taunt holds)", targetId, newTargetId, aggro);
+            }
 
             zone.SendPacket(new WZCombatEngagedPacket(targetId));
             Logger.Info("WZCombatEngaged → zone npc={0} (damage handoff)", targetId);
@@ -613,6 +623,10 @@ public static class Program
 
             zone.SendPacket(new WZNpcStatePacket(request.Body));
             zone.Units.RegisterWithId(request.ObjId, request.Body);
+            // Buffs carried in the body exist on the zone now, so their removals must be relayed too.
+            if (request.WrittenBuffs != null)
+                AAEmu.World.Core.Relay.ZoneBuffRegistry.MarkSnapshot(
+                    zone.ZoneId, zone.InstanceId, request.ObjId, request.WrittenBuffs);
             var authored = WorldIntegration.FindUnitAcrossWorlds(request.ObjId) as Npc;
             if (authored != null)
             {

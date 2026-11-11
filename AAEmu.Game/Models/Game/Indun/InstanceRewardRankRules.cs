@@ -1,4 +1,4 @@
-namespace AAEmu.Game.Models.Game.Indun;
+﻿namespace AAEmu.Game.Models.Game.Indun;
 
 /// <summary>
 /// A rank-backed reward's selection value per player: the copy's roster ordered by total gain points

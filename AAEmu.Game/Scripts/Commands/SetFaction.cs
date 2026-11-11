@@ -60,7 +60,8 @@ public class SetFaction : ICommand
             return;
         }
 
-        character.SetFaction(faction);
-        CommandManager.SendNormalText(this, messageOutput, $"Faction set to: {faction} ({(uint)faction})");
+        targetUnit.SetFaction(faction);
+        CommandManager.SendNormalText(this, messageOutput,
+            $"{targetUnit.Name} ({targetUnit.ObjId}) faction set to: {faction} ({(uint)faction})");
     }
 }

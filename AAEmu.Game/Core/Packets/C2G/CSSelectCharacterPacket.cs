@@ -29,7 +29,7 @@ public class CSSelectCharacterPacket() : GamePacket(CSOffsets.CSSelectCharacterP
             character.Transform.InstanceId = WorldManager.DefaultInstanceId;
             // Despawn any old pets this character might have even before loading it
             character.Load();
-            LoginPlacementRules.EnsureHostableZone(character);
+            LoginPlacement.EnsureHostableZone(character);
             character.Connection = Connection;
             var houses = Connection.Houses.Values.Where(x => x.OwnerId == character.Id).ToList();
             // Remove old pets from all world instances
