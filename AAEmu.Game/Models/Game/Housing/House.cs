@@ -291,7 +291,7 @@ public sealed class House : Unit
                 ObjId, Name ?? "", FactionsEnum.Invalid, Faction.Id, false));
 
         // TODO: This should be handled in the base.AddVisibleObject
-        var doodads = AttachedDoodads.ToArray();
+        var doodads = Doodad.CreatedFor(AttachedDoodads, character);
         for (var i = 0; i < doodads.Length; i += SCDoodadsCreatedPacket.MaxCountPerPacket)
         {
             var count = doodads.Length - i;

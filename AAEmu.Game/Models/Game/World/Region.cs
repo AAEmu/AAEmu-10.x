@@ -157,7 +157,7 @@ public class Region(WorldInstance worldInstance, int x, int y, uint zoneKey)
             }
 
             // Handle Doodads separately with sets of SCDoodadsCreatedPacket
-            var doodads = GetList(new List<Doodad>(), obj.ObjId).ToArray();
+            var doodads = Doodad.CreatedFor(GetList(new List<Doodad>(), obj.ObjId), objectAsCharacter);
             for (var i = 0; i < doodads.Length; i += SCDoodadsCreatedPacket.MaxCountPerPacket)
             {
                 var count = doodads.Length - i;

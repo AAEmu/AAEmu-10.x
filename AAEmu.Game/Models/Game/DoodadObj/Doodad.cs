@@ -141,6 +141,7 @@ public class Doodad : BaseUnit
                 if (DoodadQuestReactRules.ShouldInvalidateViewerPhases(_funcGroupId, value))
                     _questReactViewerPhases.Clear();
                 _funcGroupId = value;
+                RestoreConsumedViewers();
                 PhaseTime = DateTime.UtcNow; // Save PhaseTime at start of new phase (group)
                 if (IsPersistent)
                 {
@@ -455,6 +456,18 @@ public class Doodad : BaseUnit
     private readonly ConcurrentDictionary<uint, bool> _useAppliedByCaster = new();
 
     /// <summary>
+    /// Characters whose own copy of this client doodad was consumed by their final use, with the phase
+    /// that use ran in. Keyed by character Id, so the mark outlives leaving range and a relog.
+    /// </summary>
+    private readonly ConcurrentDictionary<uint, uint> _consumedViewers = new();
+
+    /// <summary>
+    /// The func being run handed the consuming of a final use to its own skill
+    /// (<see cref="DeferFinalUseConsume"/>). Only valid inside the Use lock.
+    /// </summary>
+    private bool _finalUseAwaitsSkill;
+
+    /// <summary>
     /// Used for ratio calculations on random triggers
     /// </summary>
     public int PhaseRatio { get; private set; }
@@ -649,9 +662,19 @@ public class Doodad : BaseUnit
         if (player != null)
             ApplyQuestReact(player);
 
+        if (player != null && RefusesConsumedViewer(player))
+        {
+            player.SendErrorMessage(ErrorMessageType.NoInteractionAvailable);
+            return;
+        }
+
         while (true)
         {
             var usePhase = player != null ? GetPhaseFor(player) : FuncGroupId;
+            var overlayViewer = DoodadQuestReactRules.ShouldAdvanceViewerOnly(
+                Template?.ClientDoodad == true, usePhase, FuncGroupId)
+                ? player
+                : null;
             if (player != null)
             {
                 Logger.Warn($"Use: TemplateId {TemplateId}, Using phase {usePhase} with SkillId {skillId}");
@@ -693,7 +716,7 @@ public class Doodad : BaseUnit
                 foreach (var funcWithoutSkill in allFuncsForGroup.Where(f =>
                              DoodadSkillLessUseRules.RunsOnSkillLessUse(f.FuncType)))
                 {
-                    if (DoFunc(caster, startedSkillId, funcWithoutSkill))
+                    if (DoFunc(caster, startedSkillId, funcWithoutSkill, overlayViewer))
                     {
                         ListGroupId.Clear();
                         return;
@@ -713,7 +736,7 @@ public class Doodad : BaseUnit
                 var completesFromClientPacket = funcWithSkill != null &&
                     DoodadManager.Instance.GetFuncTemplate(funcWithSkill.FuncId, funcWithSkill.FuncType)
                         ?.CompletesFromClientPacket == true;
-                if (DoFunc(caster, startedSkillId, funcWithSkill))
+                if (DoFunc(caster, startedSkillId, funcWithSkill, overlayViewer))
                 {
                     // Stay-on-phase funcs (quest offer, next_phase -1) leave ToNextPhase false.
                     // Re-entering the same phase still broadcasts SCDoodadPhaseChanged and
@@ -827,8 +850,10 @@ public class Doodad : BaseUnit
     /// <param name="caster"></param>
     /// <param name="skillId"></param>
     /// <param name="func"></param>
+    /// <param name="overlayViewer">Set when the func ran on that player's own QuestReact overlay of a
+    /// client doodad: its next phase then moves only that player's view.</param>
     /// <returns>If TRUE, then we stop further execution of functions and wait for interaction</returns>
-    public bool DoFunc(BaseUnit caster, uint skillId, DoodadFunc func)
+    public bool DoFunc(BaseUnit caster, uint skillId, DoodadFunc func, Character overlayViewer = null)
     {
         // if there is no function, complete the cycle
         if (func == null)
@@ -846,23 +871,37 @@ public class Doodad : BaseUnit
             return true;
         }
 
+        if (caster is Character viewer && RefusesConsumedViewer(viewer))
+        {
+            LastUseAppliedFunc = false;
+            return true;
+        }
+
         LastUseAppliedFunc = true;
+        _finalUseAwaitsSkill = false;
+        var usedPhase = GetPhaseFor(caster as Character);
         // then perform the function
         func.Use(caster, this, skillId, func.NextPhase);
-        return CompleteFunc(caster, func, skillId);
+        return CompleteFunc(caster, func, skillId, overlayViewer, usedPhase);
     }
 
     /// <summary>
     /// Same apply → complete ordering as <see cref="DoFunc"/>, with an injectable apply step for
     /// unit tests (avoids DoodadManager template lookup).
     /// </summary>
-    internal bool DoFuncWithApply(BaseUnit caster, DoodadFunc func, Action<BaseUnit, Doodad> apply)
+    internal bool DoFuncWithApply(BaseUnit caster, DoodadFunc func, Action<BaseUnit, Doodad> apply,
+        Character overlayViewer = null)
     {
         if (func == null)
             return true;
 
+        if (caster is Character viewer && RefusesConsumedViewer(viewer))
+            return true;
+
+        _finalUseAwaitsSkill = false;
+        var usedPhase = GetPhaseFor(caster as Character);
         apply?.Invoke(caster, this);
-        return CompleteFunc(caster, func, skillId: 0);
+        return CompleteFunc(caster, func, skillId: 0, overlayViewer, usedPhase);
     }
 
     /// <summary>
@@ -896,9 +935,28 @@ public class Doodad : BaseUnit
 
     private bool CompleteFunc(BaseUnit caster, DoodadFunc func, uint skillId)
     {
+        return CompleteFunc(caster, func, skillId, overlayViewer: null, usedPhase: null);
+    }
+
+    /// <param name="overlayViewer">The player whose own view of a client doodad the func ran on, when that
+    /// was not the shared phase.</param>
+    /// <param name="usedPhase">The phase the caster saw when the func ran, when the caller knows it.</param>
+    private bool CompleteFunc(BaseUnit caster, DoodadFunc func, uint skillId, Character overlayViewer,
+        uint? usedPhase)
+    {
         if (func.SoundId > 0)
         {
             BroadcastPacket(new SCDoodadSoundPacket(this, func.SoundId), true);
+        }
+
+        if (ToNextPhase && overlayViewer != null && func.NextPhase > 0)
+        {
+            // A client doodad is each player's own copy: the func moves that player's view only, and
+            // the shared phase stays where every other player still needs it.
+            SetQuestReactViewerPhase(overlayViewer.ObjId, (uint)func.NextPhase);
+            overlayViewer.SendPacket(new SCDoodadPhaseChangedPacket(this, GetPhaseFor(overlayViewer)));
+            ToNextPhase = false;
+            return true;
         }
 
         if (ToNextPhase)
@@ -915,6 +973,19 @@ public class Doodad : BaseUnit
                         TemplateId, ObjId, Data, func.Count);
                     return true;
                 }
+            }
+
+            if (func.NextPhase == -1 &&
+                !DoodadQuestReactRules.ShouldConsumeOnFinalUse(Template?.ClientDoodad == true, caster is Character))
+            {
+                // A player's final use of a client doodad consumes that player's own copy. The shared
+                // doodad stays for everyone else. A func that started a skill of its own leaves the
+                // consuming to that skill's outcome.
+                ToNextPhase = false;
+                if (!_finalUseAwaitsSkill)
+                    ConsumeFor((Character)caster, usedPhase);
+                _finalUseAwaitsSkill = false;
+                return true;
             }
 
             if (func.NextPhase == -1)
@@ -1389,7 +1460,9 @@ public class Doodad : BaseUnit
     public override void AddVisibleObject(Character character)
     {
         ApplyQuestReact(character);
-        character.SendPacket(new SCDoodadCreatedPacket(this, GetPhaseFor(character)));
+        // A copy this player used up is not created for them again.
+        if (!IsConsumedFor(character))
+            character.SendPacket(new SCDoodadCreatedPacket(this, GetPhaseFor(character)));
         base.AddVisibleObject(character);
     }
 
@@ -1481,7 +1554,140 @@ public class Doodad : BaseUnit
         if (character == null)
             return;
         ApplyQuestReact(character);
+        switch (ResolveViewerCopy(character))
+        {
+            case ViewerCopy.Consumed:
+                // Hidden from this viewer until their view moves on.
+                return;
+            case ViewerCopy.Released:
+                // Their view moved on: the copy comes back in its new phase.
+                character.SendPacket(new SCDoodadCreatedPacket(this, GetPhaseFor(character)));
+                return;
+        }
+
         character.SendPacket(new SCDoodadPhaseChangedPacket(this, GetPhaseFor(character)));
+    }
+
+    private enum ViewerCopy
+    {
+        /// <summary>The viewer has not used their copy up.</summary>
+        Present,
+
+        /// <summary>The viewer used their copy up and their view is still in that phase.</summary>
+        Consumed,
+
+        /// <summary>The viewer had used their copy up, and their view has now left that phase.</summary>
+        Released
+    }
+
+    /// <summary>
+    /// Whether this character's own copy of a client doodad is consumed: they made their final use of
+    /// it and their view is still in that phase. Such a copy is not shown to them and refuses their
+    /// use, in or out of range and across a relog. Re-resolves the character's QuestReact phase, and
+    /// drops the mark once that phase is no longer the one of the final use.
+    /// </summary>
+    public bool IsConsumedFor(Character character) => ResolveViewerCopy(character) == ViewerCopy.Consumed;
+
+    /// <summary>
+    /// The doodads of <paramref name="doodads"/> that are created for <paramref name="viewer"/>: all of
+    /// them except the copies that viewer used up. Every batch of doodad creates goes through this.
+    /// </summary>
+    public static Doodad[] CreatedFor(IEnumerable<Doodad> doodads, Character viewer) =>
+        doodads.Where(doodad => doodad != null && !doodad.IsConsumedFor(viewer)).ToArray();
+
+    /// <summary>
+    /// For a func that starts a skill of its own: when this is a player's final use of a client doodad,
+    /// the copy is consumed by that skill succeeding rather than by the func completing, so a skill that
+    /// fails leaves the copy usable. Returns the callback to give the skill's outcome to, or null when
+    /// this use consumes nothing.
+    /// </summary>
+    internal Action<bool> DeferFinalUseConsume(BaseUnit caster, int nextPhase)
+    {
+        if (nextPhase != -1 || caster is not Character viewer ||
+            DoodadQuestReactRules.ShouldConsumeOnFinalUse(Template?.ClientDoodad == true, usedByPlayer: true))
+            return null;
+
+        var usedPhase = GetPhaseFor(viewer);
+        _finalUseAwaitsSkill = true;
+        return succeeded =>
+        {
+            if (!succeeded)
+                return;
+            lock (this)
+                ConsumeFor(viewer, usedPhase);
+        };
+    }
+
+    /// <summary>
+    /// Consumes this viewer's own copy after their final use: it is removed for them only. A viewer
+    /// whose view already left the phase of that use keeps the doodad in the phase they moved to.
+    /// </summary>
+    private void ConsumeFor(Character viewer, uint? usedPhase)
+    {
+        if (viewer == null || viewer.Id == 0)
+            return;
+
+        var viewerPhase = GetPhaseFor(viewer);
+        if (!DoodadQuestReactRules.StaysConsumedForViewer(usedPhase ?? viewerPhase, viewerPhase))
+            return;
+
+        _consumedViewers[viewer.Id] = viewerPhase;
+        viewer.SendPacket(new SCDoodadRemovedPacket(ObjId));
+    }
+
+    /// <summary>
+    /// Where this viewer's own copy stands. A mark whose phase the viewer has left is dropped here,
+    /// which is the only way a mark ends besides the shared phase changing.
+    /// </summary>
+    private ViewerCopy ResolveViewerCopy(Character viewer)
+    {
+        if (viewer == null || !_consumedViewers.TryGetValue(viewer.Id, out var finalUsePhase))
+            return ViewerCopy.Present;
+
+        // Judge the mark against the phase this viewer's quests put them in now, not a phase left
+        // over from before they went out of range or logged out.
+        ApplyQuestReact(viewer);
+        if (DoodadQuestReactRules.StaysConsumedForViewer(finalUsePhase, GetPhaseFor(viewer)))
+            return ViewerCopy.Consumed;
+
+        _consumedViewers.TryRemove(viewer.Id, out _);
+        return ViewerCopy.Released;
+    }
+
+    /// <summary>
+    /// True when this viewer's copy is consumed and their use must be refused. A viewer whose view has
+    /// left the phase of their final use gets the doodad back instead, in its new phase.
+    /// </summary>
+    private bool RefusesConsumedViewer(Character viewer)
+    {
+        switch (ResolveViewerCopy(viewer))
+        {
+            case ViewerCopy.Consumed:
+                return true;
+            case ViewerCopy.Released:
+                viewer.SendPacket(new SCDoodadCreatedPacket(this, GetPhaseFor(viewer)));
+                return false;
+            default:
+                return false;
+        }
+    }
+
+    /// <summary>
+    /// The shared phase moved, which ends every consumed copy. The players in range whose copy was
+    /// hidden see the doodad again; the others get it with their next create.
+    /// </summary>
+    private void RestoreConsumedViewers()
+    {
+        if (_consumedViewers.IsEmpty)
+            return;
+
+        foreach (var viewer in WorldManager.GetAround<Character>(this))
+        {
+            if (_consumedViewers.ContainsKey(viewer.Id))
+                viewer.SendPacket(new SCDoodadCreatedPacket(this, _funcGroupId));
+        }
+
+        _consumedViewers.Clear();
     }
 
     /// <summary>

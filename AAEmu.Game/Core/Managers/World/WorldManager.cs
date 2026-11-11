@@ -1445,10 +1445,11 @@ public class WorldManager(
         if (!VisibleObjectResendRules.ShouldResendDoodadCreates(clientDroppedVisibility))
             return;
 
-        for (var i = 0; i < doodads.Count; i += SCDoodadsCreatedPacket.MaxCountPerPacket)
+        var created = Doodad.CreatedFor(doodads, character);
+        for (var i = 0; i < created.Length; i += SCDoodadsCreatedPacket.MaxCountPerPacket)
         {
-            var count = Math.Min(doodads.Count - i, SCDoodadsCreatedPacket.MaxCountPerPacket);
-            var temp = doodads.GetRange(i, count).ToArray();
+            var count = Math.Min(created.Length - i, SCDoodadsCreatedPacket.MaxCountPerPacket);
+            var temp = created[i..(i + count)];
             character.SendPacket(new SCDoodadsCreatedPacket(temp));
         }
     }

@@ -3,6 +3,7 @@ using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj.Templates;
 using AAEmu.Game.Models.Game.Skills;
+using AAEmu.Game.Models.Game.Skills.Static;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Tasks.Skills;
 
@@ -83,7 +84,11 @@ public class DoodadFuncUse : DoodadFuncTemplate
                 return;
             }
             var useSkill = new Skill(skillTemplate);
-            TaskManager.Instance.Schedule(new UseSkillTask(useSkill, caster, new SkillCasterUnit(caster.ObjId), owner, new SkillCastDoodadTarget { ObjId = owner.ObjId }, null), TimeSpan.FromMilliseconds(0));
+            // A player's final use of a client doodad only consumes their copy once this skill is
+            // accepted: one refused for a missing reagent, mana or range leaves the copy usable.
+            var consume = skillId > 0 ? owner.DeferFinalUseConsume(caster, nextPhase) : null;
+            Action<SkillResult> onResult = consume == null ? null : result => consume(result == SkillResult.Success);
+            TaskManager.Instance.Schedule(new UseSkillTask(useSkill, caster, new SkillCasterUnit(caster.ObjId), owner, new SkillCastDoodadTarget { ObjId = owner.ObjId }, null, onResult), TimeSpan.FromMilliseconds(0));
         }
 
         owner.ToNextPhase = skillId > 0;

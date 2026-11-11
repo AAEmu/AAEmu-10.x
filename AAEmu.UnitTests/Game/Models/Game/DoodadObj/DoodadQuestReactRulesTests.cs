@@ -60,4 +60,13 @@ public class DoodadQuestReactRulesTests
         await Assert.That(DoodadQuestReactRules.ShouldInvalidateViewerPhases(41880, 41882)).IsTrue();
         await Assert.That(DoodadQuestReactRules.ShouldInvalidateViewerPhases(41880, 41880)).IsFalse();
     }
+
+    [Test]
+    [Arguments(41871u, 41871u, true)]
+    [Arguments(41871u, 41872u, false)]
+    public async Task ViewerCopy_StaysConsumedOnlyInThePhaseOfTheFinalUse(
+        uint finalUsePhase, uint viewerPhase, bool expected)
+    {
+        await Assert.That(DoodadQuestReactRules.StaysConsumedForViewer(finalUsePhase, viewerPhase)).IsEqualTo(expected);
+    }
 }
