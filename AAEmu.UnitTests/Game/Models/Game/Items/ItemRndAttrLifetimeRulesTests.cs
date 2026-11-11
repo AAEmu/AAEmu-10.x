@@ -83,4 +83,26 @@ public class ItemRndAttrLifetimeRulesTests
         await Assert.That(ItemRndAttrLifetimeRules.TryRecharge(item, other, Now)).IsFalse();
         await Assert.That(item.ChargeStartTime).IsEqualTo(Now.AddDays(-30));
     }
+
+    [Test]
+    [Arguments(-2, -1, false)] // still running at both ticks
+    [Arguments(-1, 0, true)]   // ran out between the ticks
+    [Arguments(0, 1, false)]   // already out at the previous tick
+    public async Task ExpiredBetween_IsTrueOnlyForTheTickItRunsOut(int previousToEnd, int nowToEnd, bool expected)
+    {
+        var item = Costume(start: Now);
+        var end = Now.AddMinutes(20160);
+
+        var expired = ItemRndAttrLifetimeRules.ExpiredBetween(item, end.AddMinutes(previousToEnd), end.AddMinutes(nowToEnd));
+
+        await Assert.That(expired).IsEqualTo(expected);
+    }
+
+    [Test]
+    public async Task ExpiredBetween_NoLifetime_NeverExpires()
+    {
+        var item = Costume(lifetimeMinutes: 0);
+
+        await Assert.That(ItemRndAttrLifetimeRules.ExpiredBetween(item, DateTime.MinValue, Now)).IsFalse();
+    }
 }

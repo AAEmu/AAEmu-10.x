@@ -3015,7 +3015,7 @@ public class ItemManager(ISkillManager skillManager, IItemIdManager itemIdManage
         } && !template.BindType.HasFlag(ItemBindType.BindOnEquip);
     }
 
-    private static int UpdateItemContainerTimers(TimeSpan delta, ItemContainer itemContainer, Character character)
+    private static int UpdateItemContainerTimers(DateTime now, TimeSpan delta, ItemContainer itemContainer, Character character)
     {
         var res = 0;
         if (itemContainer == null)
@@ -3025,11 +3025,16 @@ public class ItemManager(ISkillManager skillManager, IItemIdManager itemIdManage
         }
 
         var isEquipmentContainer = itemContainer is EquipmentContainer;
+        var synthesisExpired = false;
 
         for (var i = itemContainer.Items.Count - 1; i >= 0; i--)
         {
             var item = itemContainer.Items[i];
             var doExpire = false;
+
+            if (isEquipmentContainer && item is EquipItem worn &&
+                ItemRndAttrLifetimeRules.ExpiredBetween(worn, now - delta, now))
+                synthesisExpired = true;
 
             // Check if buffs need to expire
             if (isEquipmentContainer && item is EquipItem { Template: EquipItemTemplate { RechargeBuffId: > 0 } equipItemTemplate } equipItem)
@@ -3081,15 +3086,20 @@ public class ItemManager(ISkillManager skillManager, IItemIdManager itemIdManage
             }
         }
 
+        // Synthesis effects are only read when gear bonuses are rebuilt; this also resends the slot mask.
+        if (synthesisExpired)
+            character?.UpdateGearBonuses(null, null);
+
         return res;
     }
 
     public void UpdateItemTimers()
     {
         TimeSpan delta;
+        DateTime now;
         lock (ItemTimerLock)
         {
-            var now = DateTime.UtcNow;
+            now = DateTime.UtcNow;
             delta = now - LastTimerCheck;
             LastTimerCheck = now;
         }
@@ -3104,9 +3114,9 @@ public class ItemManager(ISkillManager skillManager, IItemIdManager itemIdManage
         var res = 0;
         foreach (var character in onlinePlayers)
         {
-            res += UpdateItemContainerTimers(delta, character?.Inventory?.Equipment, character);
-            res += UpdateItemContainerTimers(delta, character?.Inventory?.Bag, character);
-            res += UpdateItemContainerTimers(delta, character?.Inventory?.Warehouse, character);
+            res += UpdateItemContainerTimers(now, delta, character?.Inventory?.Equipment, character);
+            res += UpdateItemContainerTimers(now, delta, character?.Inventory?.Bag, character);
+            res += UpdateItemContainerTimers(now, delta, character?.Inventory?.Warehouse, character);
         }
 
         if (res > 0)

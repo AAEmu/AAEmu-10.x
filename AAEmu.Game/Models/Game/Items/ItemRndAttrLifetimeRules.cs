@@ -14,6 +14,11 @@ public static class ItemRndAttrLifetimeRules
         return nowUtc < item.ChargeStartTime.AddMinutes(template.RndAttrUnitModifierLifetime);
     }
 
+    /// <summary>True for the timer tick in which the effects run out, so a worn piece's bonuses are rebuilt once.</summary>
+    public static bool ExpiredBetween(EquipItem item, DateTime previousUtc, DateTime nowUtc) =>
+        item?.Template is EquipItemTemplate { RndAttrUnitModifierLifetime: > 0 } &&
+        IsActive(item, previousUtc) && !IsActive(item, nowUtc);
+
     public static void StartIfNeeded(EquipItem item, DateTime nowUtc)
     {
         if (item?.Template is EquipItemTemplate { RndAttrUnitModifierLifetime: > 0 } &&
