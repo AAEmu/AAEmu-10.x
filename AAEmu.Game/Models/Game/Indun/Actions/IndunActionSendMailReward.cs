@@ -53,7 +53,9 @@ internal class IndunActionSendMailReward : IndunAction
             return;
         }
 
-        var result = IndunRewardDeliveryService.Instance.Deliver(worldInstance, InstanceRewardKindId, verdict.SelectionValue);
+        var result = verdict.Classification == InstanceRewardSelectionClass.RankBacked
+            ? IndunRewardDeliveryService.Instance.DeliverRanked(worldInstance, InstanceRewardKindId)
+            : IndunRewardDeliveryService.Instance.Deliver(worldInstance, InstanceRewardKindId, verdict.SelectionValue);
         switch (result)
         {
             case IndunRewardDeliveryResult.Delivered:
@@ -62,7 +64,12 @@ internal class IndunActionSendMailReward : IndunAction
                     Logger.Debug("IndunActionSendMailReward {0}: durable delivery completed before the in-memory copy marker", Id);
                 break;
             case IndunRewardDeliveryResult.NoRecipients:
-                Logger.Debug("IndunActionSendMailReward {0}: no recipients in world {1}", Id, worldInstance.Id);
+                Logger.Warn("IndunActionSendMailReward {0}: nobody in world {1} could be given a reward", Id, worldInstance.Id);
+                break;
+            case var retry when IndunRankedDeliveryRules.NeedsRetry(retry)
+                                && verdict.Classification == InstanceRewardSelectionClass.RankBacked:
+                Logger.Warn("IndunActionSendMailReward {0}: some players got no reward ({1}); retrying", Id, retry);
+                dungeon.QueueRankedMailRewardRetry(InstanceRewardKindId);
                 break;
             default:
                 Logger.Error("IndunActionSendMailReward {0}: delivery did not complete ({1})", Id, result);

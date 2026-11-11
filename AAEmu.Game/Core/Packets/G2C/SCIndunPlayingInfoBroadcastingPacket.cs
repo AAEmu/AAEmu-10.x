@@ -19,13 +19,18 @@ namespace AAEmu.Game.Core.Packets.G2C;
 /// ZoneInstanceId zi (u32 zone key, u32 instance id)
 /// nested buffer:
 ///   u32  npcInfoCount      { u32 buffId; u32 npcId; u32 broadcastingType; u32 value } x count
-///   u32  gainRuleIdCount   { u32 gainRuleId } x count
-///   u32  gainRuleInfoCount { u64 gainRuleId } x count
+///   u32  count { u32 key;          u16 n; { u32 gainRuleId; u32 point } x n } x count
+///   u32  count { u64 characterId;  u16 n; { u32 gainRuleId; u32 point } x n } x count
 /// </code>
 /// <para>
-/// The two id lists are the same reading in two widths: the client resolves both through one template
-/// lookup and merges them into the single <c>gainRuleInfo</c> readout. An empty list is still written as a
-/// zero count, or the last count is read out of the wrong bytes and the whole packet is discarded.
+/// Each entry carries a u16-counted map the client always reads; a bare key makes it read the next key as the
+/// count, run past the buffer and crash (instanceMiniScoreboard). The client looks the local player's character
+/// id up in the 64-bit list and hands that map to the mini scoreboard
+/// as gainRuleInfo { gainRuleType = gain rule id, point }, matched against instance_mini_scoreboards.
+/// </para>
+/// <para>
+/// The 32-bit list's key is not established and goes out empty; an empty list is still written as a zero
+/// count, or the next count is read out of the wrong bytes and the whole packet is discarded.
 /// </para>
 /// <para>
 /// Row meaning: <c>buffId</c>/<c>npcId</c> come from <c>indun_event_npc_info_broadcastings</c>, and
@@ -39,8 +44,8 @@ namespace AAEmu.Game.Core.Packets.G2C;
 public class SCIndunPlayingInfoBroadcastingPacket(
     ZoneInstanceId zoneInstanceId,
     IReadOnlyList<IndunPlayingInfoNpc> npcInfo,
-    IReadOnlyList<uint> gainRuleIds,
-    IReadOnlyList<ulong> gainRuleInfo)
+    IReadOnlyDictionary<uint, IReadOnlyDictionary<uint, uint>> keyedPoints,
+    IReadOnlyDictionary<ulong, IReadOnlyDictionary<uint, uint>> characterPoints)
     : GamePacket(SCOffsets.SCIndunPlayingInfoBroadcastingPacket, 1)
 {
     public override PacketStream Write(PacketStream stream)
@@ -60,22 +65,34 @@ public class SCIndunPlayingInfoBroadcastingPacket(
             }
         }
 
-        payload.Write((uint)(gainRuleIds?.Count ?? 0));
-        if (gainRuleIds != null)
-        {
-            foreach (var gainRuleId in gainRuleIds)
-                payload.Write(gainRuleId);
-        }
-
-        payload.Write((uint)(gainRuleInfo?.Count ?? 0));
-        if (gainRuleInfo != null)
-        {
-            foreach (var gainRuleId in gainRuleInfo)
-                payload.Write(gainRuleId);
-        }
+        WritePoints(payload, keyedPoints, (blob, key) => blob.Write(key));
+        WritePoints(payload, characterPoints, (blob, key) => blob.Write(key));
 
         NestedBlobWire.Write(stream, payload);
         return stream;
+    }
+
+    private static void WritePoints<TKey>(
+        PacketStream payload,
+        IReadOnlyDictionary<TKey, IReadOnlyDictionary<uint, uint>> points,
+        Action<PacketStream, TKey> writeKey)
+    {
+        payload.Write((uint)(points?.Count ?? 0));
+        if (points == null)
+            return;
+
+        foreach (var (key, byRule) in points.OrderBy(kv => kv.Key))
+        {
+            writeKey(payload, key);
+            payload.Write((ushort)(byRule?.Count ?? 0));
+            if (byRule == null)
+                continue;
+            foreach (var (gainRuleId, point) in byRule.OrderBy(kv => kv.Key))
+            {
+                payload.Write(gainRuleId);
+                payload.Write(point);
+            }
+        }
     }
 }
 

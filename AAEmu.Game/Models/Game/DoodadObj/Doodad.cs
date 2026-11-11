@@ -1145,7 +1145,7 @@ public class Doodad : BaseUnit
 
                 // the phase change packet call must be after the phase functions to have the correct FuncGroupId in the packet
                 BroadcastPacket(new SCDoodadPhaseChangedPacket(this), true); // change the phase to display doodad
-                RaiseDungeonPhaseChanged();
+                RaiseDungeonPhaseChanged(caster);
 
                 return stop; // if true, it did not pass the check for the quest (it must be aborted)
             });
@@ -1162,11 +1162,13 @@ public class Doodad : BaseUnit
     /// here, once, so that every subscriber of one phase change gates on the same value: the first action
     /// chain ends the round, and a subscriber reading the timer live would see it already stopped.
     /// </summary>
-    private void RaiseDungeonPhaseChanged()
+    private void RaiseDungeonPhaseChanged(BaseUnit caster)
     {
         var world = ParentWorld;
         if (world?.DungeonInstance == null)
             return;
+
+        world.DungeonInstance.RecordGainPoints(caster, this);
 
         world.Events.OnDoodadPhaseChanged(world, new OnDoodadPhaseChangedArgs
         {
