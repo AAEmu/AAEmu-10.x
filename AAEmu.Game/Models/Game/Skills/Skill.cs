@@ -1969,7 +1969,7 @@ public class Skill
         }
 
         // Self AoE: caster is gather origin, not a counted neighbour hit (SkillAreaRules).
-        if (SkillAreaRules.ExcludeCasterFromSelfAreaHits(Template.TargetType, areaRadius))
+        if (SkillAreaRules.ExcludeCasterFromSelfAreaHits(Template.TargetType, areaRadius, Template.TargetAreaCount))
             possibleTargets.RemoveAll(t => t != null && t.ObjId == caster.ObjId);
 
         possibleTargets = SkillAreaRules.ApplyTargetAreaCount(
