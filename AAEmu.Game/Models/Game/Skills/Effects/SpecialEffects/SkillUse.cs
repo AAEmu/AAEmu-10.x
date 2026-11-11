@@ -36,7 +36,8 @@ public class SkillUse : SpecialEffectAction
         }
 
         //target = ((Unit)caster).CurrentTarget;
-        var useSkill = new Skill(SkillManager.Instance.GetSkillTemplate((uint)skillId));
+        // Server-started: an item the first cast came through is not used again by this one.
+        var useSkill = new Skill(SkillManager.Instance.GetSkillTemplate((uint)skillId)) { NestedCast = true };
         targetObj = new SkillCastUnitTarget(target?.ObjId ?? 0);
         // Buff-tick SkillUse (Romance cadence, etc.) must not wipe remove_on_use_skill performances.
         if (SkillUseRemoveOnRules.ShouldTriggerRemoveOnUseSkill(castObj))

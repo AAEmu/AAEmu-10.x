@@ -228,6 +228,13 @@ public class Skill
     public byte ClientInputDirection { get; set; }
 
     /// <summary>
+    /// Set by the server on a cast it starts from another skill's effect (SpecialEffect SkillUse), never
+    /// from a client request. Such a cast still carries the item the first skill was cast through, but
+    /// is not another use of it; see <see cref="SkillItemReagentRules.IsItemUse"/>.
+    /// </summary>
+    public bool NestedCast { get; init; }
+
+    /// <summary>
     /// Timeline id captured when the plot graph starts. <see cref="TlId"/> is cleared when the cast
     /// bar ends, while a summoned hazard can still be ticking; floaters keep matching this id.
     /// </summary>
@@ -570,6 +577,14 @@ public class Skill
         {
             Logger.Trace("Skill {0} blocked for {1}: need labor power", Template.Id, character.Name);
             return SkillResult.NeedLaborPower;
+        }
+
+        // An item-to-item opening (skill_products) needs room for what it gives before it starts; see
+        // SkillProductSpaceRules. Checked again at fire, since the bag can fill during the cast.
+        if (character != null && !ProductsFitInBag(character))
+        {
+            Logger.Trace("Skill {0} blocked for {1}: no bag space for its products", Template.Id, character.Name);
+            return SkillResult.BagFull;
         }
 
         // Combat resource band: the caster's pool named by combat_resource_id must be inside
@@ -1395,7 +1410,10 @@ public class Skill
         if (caster is Character player && casterCaster is SkillItem castItem)
         {
             var castItemTemplate = ItemManager.Instance.GetTemplate(castItem.ItemTemplateId);
-            if (castItemTemplate.UseSkillAsReagent)
+            // A nested cast that still carries the item (a potion's heal tick) needs no item left in the
+            // bag. A cast the client asked for always does, whatever skill it names.
+            if (castItemTemplate.UseSkillAsReagent &&
+                SkillItemReagentRules.IsItemUse(castItemTemplate, Template.Id, NestedCast))
             {
                 var useItem = ItemManager.Instance.GetItemByItemId(castItem.ItemId);
                 if (useItem == null)
@@ -2321,7 +2339,8 @@ public class Skill
                 else
                 {
                     var castItemTemplate = ItemManager.Instance.GetTemplate(castItem.ItemTemplateId);
-                    if (castItemTemplate is { UseSkillAsReagent: true } && useItem != null)
+                    if (castItemTemplate is { UseSkillAsReagent: true } && useItem != null &&
+                        SkillItemReagentRules.IsItemUse(castItemTemplate, Template.Id, NestedCast))
                         consumedItems.Add((useItem, Math.Max(1, lastAppliedEffect?.ConsumeItemCount ?? 1)));
                 }
             }
@@ -2372,9 +2391,15 @@ public class Skill
 
                 if (skillProducts.Count > 0)
                 {
-                    foreach (var product in skillProducts)
+                    // All the products or none, before the reagent is taken (it is taken further down,
+                    // and only from a cast that was not cancelled).
+                    if (!TryGrantProducts(player, skillProducts))
                     {
-                        player.Inventory.Bag.AcquireDefaultItem(ItemTaskType.SkillEffectGainItem, product.ItemId, product.Amount);
+                        Logger.Debug("Skill {0}: {1} could not be given its products, nothing taken",
+                            Template.Id, player.Name);
+                        player.SendErrorMessage(ErrorMessageType.BagFull);
+                        Cancelled = true;
+                        return;
                     }
                 }
             }
@@ -2425,7 +2450,9 @@ public class Skill
 
         // TODO Call OnItemUse() moved to the ApplyEffects() method from the effects and add trigger ConditionChance;
         // If the probability of passing the effect is greater than the chance, then run the check on the use of the item for the quest
-        if (casterCaster is SkillItem skillItem && unit.ConditionChance)
+        // Only the cast of the item is a use: its buff ticks re-casting skill 33065 are not 10 more.
+        if (casterCaster is SkillItem skillItem && unit.ConditionChance &&
+            SkillItemReagentRules.IsItemUse(ItemManager.Instance.GetTemplate(skillItem.ItemTemplateId), Template.Id, NestedCast))
         {
             if (player == null)
                 return;
@@ -2698,6 +2725,87 @@ public class Skill
             _laborConsumed = true;
             return true;
         }
+    }
+
+    /// <summary>Whether the character's bag can take every skill_products row of this skill.</summary>
+    private bool ProductsFitInBag(Character character)
+    {
+        var bag = character?.Inventory?.Bag;
+        if (bag == null)
+            return true;
+
+        var products = SkillManager.Instance.GetSkillProductsBySkillId(Template.Id);
+        return products.Count == 0 || ProductsFitInBag(bag, products);
+    }
+
+    /// <summary>
+    /// Whether the bag can take all the products together: stacks already there are topped up first
+    /// and the empty slots are shared out between the products, see <see cref="SkillProductSpaceRules"/>.
+    /// </summary>
+    private static bool ProductsFitInBag(Items.Containers.ItemContainer bag, List<SkillProduct> products) =>
+        SkillProductSpaceRules.Fits(
+            products,
+            itemId => ProductStackRoom(bag, itemId),
+            itemId => ItemManager.Instance.GetTemplate(itemId)?.MaxCount ?? 0,
+            bag.FreeSlotCount);
+
+    /// <summary>
+    /// Hands the player every product of the cast, or none. The room check and the grants run under one
+    /// inventory lease, so nothing (a loot pickup, a mail attachment) can take the last slot between
+    /// them. A product the bag still refuses stops the exchange: the ones already handed over are
+    /// taken back and the caller cancels the cast, which leaves the reagent in the bag.
+    /// </summary>
+    private bool TryGrantProducts(Character player, List<SkillProduct> products)
+    {
+        using var mutation = player.Inventory.AcquireMutation();
+        var bag = player.Inventory.Bag;
+        if (!ProductsFitInBag(bag, products))
+            return false;
+
+        var newStacks = new Dictionary<SkillProduct, List<Item>>();
+        return SkillProductSpaceRules.GrantAllOrNone(
+            products,
+            product =>
+            {
+                var granted = bag.AcquireDefaultItemEx(ItemTaskType.SkillEffectGainItem, product.ItemId,
+                    product.Amount, -1, out var created, out _, 0);
+                newStacks[product] = created;
+                if (!granted)
+                    Logger.Warn("Skill {0}: {1}'s bag refused product {2} x{3}, exchange stopped",
+                        Template.Id, player.Name, product.ItemId, product.Amount);
+                return granted;
+            },
+            product =>
+            {
+                // The stacks this grant opened go first, so the bag gets its slots back.
+                var left = product.Amount;
+                foreach (var stack in newStacks[product])
+                    left -= bag.ConsumeItem(ItemTaskType.SkillReagents, product.ItemId, Math.Min(left, stack.Count), stack);
+                if (left > 0)
+                    left -= bag.ConsumeItem(ItemTaskType.SkillReagents, product.ItemId, left, null);
+                if (left > 0)
+                    Logger.Warn("Skill {0}: {1} keeps {2} of product {3} after a stopped exchange",
+                        Template.Id, player.Name, left, product.ItemId);
+            });
+    }
+
+    /// <summary>
+    /// Units of an item that still fit on its stacks already in the bag, the ones AcquireDefaultItem
+    /// tops up before it opens a new stack. An item credited to the wallet instead takes no bag room.
+    /// </summary>
+    private static int ProductStackRoom(Items.Containers.ItemContainer bag, uint itemId)
+    {
+        if (ItemWalletRules.CreditOnAcquire(itemId, bag.ContainerType))
+            return int.MaxValue;
+
+        var template = ItemManager.Instance.GetTemplate(itemId);
+        if (template == null || template.MaxCount <= 0)
+            return 0;
+
+        bag.GetAllItemsByTemplate(itemId, -1, out var stacks, out _);
+        stacks = stacks.Where(item => item.HasDefaultDetail && item.MadeUnitId == 0).ToList();
+        var room = (long)stacks.Count * template.MaxCount - stacks.Sum(item => (long)item.Count);
+        return (int)Math.Clamp(room, 0, int.MaxValue);
     }
 
     /// <summary>
