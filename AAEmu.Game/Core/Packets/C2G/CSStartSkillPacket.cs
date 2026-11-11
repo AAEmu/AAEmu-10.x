@@ -277,7 +277,8 @@ public class CSStartSkillPacket() : GamePacket(CSOffsets.CSStartSkillPacket, 1)
             if (mate != null || slave != null)
             {
                 // check if it's a mate or slave skill and return its rider/operator related skill
-                mountAttachedSkill = MateGameData.Instance.GetMountAttachedSkills(skillId, Connection.ActiveChar?.AttachedPoint ?? AttachPointKind.None);
+                mountAttachedSkill = MateGameData.Instance.GetMountAttachedSkills(skillId,
+                    Connection.ActiveChar?.AttachedPoint ?? AttachPointKind.None, caster, scm.MountSkillTemplateId);
             }
 
             // Use the main skill on the mate/slave
@@ -301,7 +302,8 @@ public class CSStartSkillPacket() : GamePacket(CSOffsets.CSStartSkillPacket, 1)
             {
                 // Rider helper must target the mount (sail Interaction Use), not the player.
                 skillResult = Connection.ActiveChar.UseSkill(mountAttachedSkill,
-                    (caster as Unit) ?? Connection.ActiveChar);
+                    (caster as Unit) ?? Connection.ActiveChar,
+                    RiderSeatRelease(Connection.ActiveChar, caster, mountAttachedSkill));
             }
         }
         else if (Connection.ActiveChar.IsAutoAttack && skillId == Connection.ActiveChar.AutoAttackTask?.Skill?.Template?.Id)
@@ -544,7 +546,7 @@ public class CSStartSkillPacket() : GamePacket(CSOffsets.CSStartSkillPacket, 1)
             {
                 casterUnit = mount;
                 mountAttachedSkill = MateGameData.Instance.GetMountAttachedSkills(
-                    skillId, character.AttachedPoint);
+                    skillId, character.AttachedPoint, mount, (skillCaster as SkillCasterMount).MountSkillTemplateId);
             }
             else
             {
@@ -635,7 +637,8 @@ public class CSStartSkillPacket() : GamePacket(CSOffsets.CSStartSkillPacket, 1)
         {
             // Sail Interaction helpers (e.g. 28228) must run against the mount/hull, not the rider.
             var mountUnit = casterUnit as Unit;
-            character.UseSkill(mountAttachedSkill, mountUnit ?? character);
+            character.UseSkill(mountAttachedSkill, mountUnit ?? character,
+                RiderSeatRelease(character, casterUnit, mountAttachedSkill));
         }
 
         // Basic attacks: start server-paced auto-attack (weapon delay). Fresh Skill instance for the
@@ -648,6 +651,35 @@ public class CSStartSkillPacket() : GamePacket(CSOffsets.CSStartSkillPacket, 1)
         Logger.Info("ZoneAuthority Use+WZ skillId={0} tl={1} plotOnly={2} hasPlot={3} castMs={4} auto={5} caster={6}",
             skillId, skill.TlId, template.PlotOnly, template.Plot != null, template.CastingTime, character.IsAutoAttack,
             casterUnit.ObjId);
+    }
+
+    /// <summary>
+    /// A rider helper that leaves the seat (the human-cannon jumps, the jump out of the cannon) runs on a
+    /// rider who is no longer parented to the vehicle, so its float and leap controllers are allowed and
+    /// the client is told it is out of the seat before the plot moves it.
+    /// </summary>
+    /// <returns>
+    /// What takes the rider out of the seat, for <see cref="Skill.CastAccepted"/>: the helper is cast by
+    /// the rider, who can be refused it (stunned, silenced, a failed requirement) after the vehicle's own
+    /// skill went through, and a refused rider has to keep the seat. Null when there is no seat to leave.
+    /// </returns>
+    private static Action RiderSeatRelease(Character character, BaseUnit carrier, uint riderSkillId)
+    {
+        if (character == null || carrier is not Slave slave)
+            return null;
+
+        var riderSkill = SkillManager.Instance.GetSkillTemplate(riderSkillId);
+        if (riderSkill is not { Unmount: true })
+            return null;
+
+        return () =>
+        {
+            if (!Models.Game.Mate.MountSkillRowRules.RiderHelperLeavesSeat(riderSkill, character.IsRidingSlave(slave)))
+                return;
+
+            Logger.Debug("Rider helper {0} takes {1} out of {2} ({3})", riderSkillId, character.Name, slave.Name, slave.ObjId);
+            character.ParentWorld.SlaveManager.UnbindSlave(character, slave.TlId, AttachUnitReason.None);
+        };
     }
 
     private static Mate FindActiveMateForSkill(Character character, uint skillId)

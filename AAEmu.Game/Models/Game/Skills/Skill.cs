@@ -196,6 +196,19 @@ public class Skill
     public Action Callback { get; set; }
 
     /// <summary>
+    /// Runs once in <see cref="Use(BaseUnit, SkillCaster, SkillCastTarget, SkillObject, bool, out ushort, out uint)"/>,
+    /// after every check that can refuse the cast before it starts has passed and right before the plot
+    /// or the cast is started. A refused cast never runs it.
+    /// </summary>
+    /// <remarks>
+    /// For what has to change on the caster only when the cast really goes ahead, and before the plot's
+    /// first step reads the caster: the rider helper of a vehicle skill leaves its seat here, so a rider
+    /// who is stunned, silenced or fails another check keeps the seat instead of losing it to a cast
+    /// that never ran.
+    /// </remarks>
+    public Action CastAccepted { get; set; }
+
+    /// <summary>
     /// When true, skip WZSkillStarted/Fired/Ended relay. Used for World-authored OnSpawn plots
     /// under ZoneAuthority so the zone process does not dual-run the same skill graph.
     /// </summary>
@@ -690,6 +703,10 @@ public class Skill
             Logger.Info($"{rangeFailure} targetDist={targetDist}, band={band.Min}..{(band.MaxUnbounded ? "unbounded" : band.Max)}, SkillTlId {TlId} for Skill {Template.Id}, Caster {caster.Name} ({caster.TemplateId}:{caster.ObjId}) with target {target.Name} ({target.TemplateId}:{target.ObjId})");
             return rangeFailure.Value;
         }
+
+        // Nothing above refused the cast and nothing has started yet. The plot below runs on its own
+        // thread, so what the caller has to do to the caster first is done here, on this one.
+        CastAccepted?.Invoke();
 
         // If skill uses Plots, then start the plot
         if (Template.Plot != null)

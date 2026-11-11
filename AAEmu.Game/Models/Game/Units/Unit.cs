@@ -1738,9 +1738,18 @@ public class Unit : BaseUnit, IUnit
         }
     }
 
-    public virtual SkillResult UseSkill(uint skillId, IUnit target)
+    public virtual SkillResult UseSkill(uint skillId, IUnit target) => UseSkill(skillId, target, null);
+
+    /// <summary>
+    /// Casts <paramref name="skillId"/> as this unit at <paramref name="target"/>, outside the global cooldown.
+    /// </summary>
+    /// <param name="castAccepted">
+    /// Runs once the cast has passed its checks and before it starts (<see cref="Skill.CastAccepted"/>);
+    /// never for a refused cast.
+    /// </param>
+    public SkillResult UseSkill(uint skillId, IUnit target, Action castAccepted)
     {
-        var skill = new Skill(SkillManager.Instance.GetSkillTemplate(skillId));
+        var skill = new Skill(SkillManager.Instance.GetSkillTemplate(skillId)) { CastAccepted = castAccepted };
 
         var caster = SkillCaster.GetByType(SkillCasterType.Unit);
         caster.ObjId = ObjId;

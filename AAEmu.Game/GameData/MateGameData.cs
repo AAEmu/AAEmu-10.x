@@ -3,9 +3,12 @@ using AAEmu.Game.GameData.Framework;
 using AAEmu.Game.Models.Game.DoodadObj.Static;
 using AAEmu.Game.Models.Game.Items.Templates;
 using AAEmu.Game.Models.Game.Mate;
+using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Utils.DB;
 
 using Microsoft.Data.Sqlite;
+
+using GameMate = AAEmu.Game.Models.Game.Units.Mate;
 
 namespace AAEmu.Game.GameData;
 
@@ -15,6 +18,9 @@ public class MateGameData : Singleton<MateGameData>, IGameDataLoader
     private Dictionary<uint, NpcMountSkills> _npcMountSkills = [];
     private Dictionary<uint, MountSkills> _mountSkills = [];
     private Dictionary<uint, MountAttachedSkills> _mountAttachedSkills = [];
+
+    /// <summary>slave_mount_skills keyed by slave template: the mount_skills rows its bar carries.</summary>
+    private Dictionary<uint, List<uint>> _slaveMountSkills = [];
     private Dictionary<uint, MateEquipSlotPack> _mateEquipSlotPacks = [];
     private readonly MateSeatCatalog _seatCatalog = new();
     private Dictionary<uint, MateRecoveryState> _mateRecoveryByNpc = [];
@@ -140,30 +146,49 @@ public class MateGameData : Singleton<MateGameData>, IGameDataLoader
     /// <param name="mateSkill">The skill the mate used</param>
     /// <param name="attachPoint">The attachPoint the player is currently on</param>
     /// <returns></returns>
-    public uint GetMountAttachedSkills(uint mateSkill, AttachPointKind attachPoint)
+    public uint GetMountAttachedSkills(uint mateSkill, AttachPointKind attachPoint) =>
+        GetMountAttachedSkills(mateSkill, attachPoint, null, 0);
+
+    /// <summary>
+    /// Get the rider skill for a mount skill used by <paramref name="carrier"/>. Rows that share the
+    /// carrier's skill are told apart by the carrier's own mount skills (see <see cref="MountSkillRowRules.PickRow"/>).
+    /// </summary>
+    /// <param name="mateSkill">The skill the mate or slave used</param>
+    /// <param name="attachPoint">The attachPoint the player is currently on</param>
+    /// <param name="carrier">The mate or slave that used it, or null</param>
+    /// <param name="clientMountSkillId">The mount_skills row the client named, or 0</param>
+    public uint GetMountAttachedSkills(uint mateSkill, AttachPointKind attachPoint, BaseUnit carrier,
+        uint clientMountSkillId)
     {
-        var id = 0u;
-        var skill = 0u;
-
-        // Find the mountSkillId for this mate's skill
-        foreach (var ms in _mountSkills)
-        {
-            if (ms.Value.SkillId != mateSkill)
-                continue;
-            id = ms.Key;
-            break;
-        }
-
+        var id = MountSkillRowRules.PickRow(mateSkill, clientMountSkillId, _mountSkills.Values,
+            GetCarrierMountSkills(carrier));
         if (id == 0)
             return 0;
 
-        skill = FindAttachedSkill(id, attachPoint);
+        var skill = FindAttachedSkill(id, attachPoint);
         // mount_attached_skills only defines Driver (and passenger) rows for sail fold/unfold.
         // Mast/Sail seats still show those skills on the client — fall back to Driver mapping.
         if (skill == 0 && IsMastOrSailAttachPoint(attachPoint))
             skill = FindAttachedSkill(id, AttachPointKind.Driver);
 
         return skill;
+    }
+
+    /// <summary>
+    /// The mount_skills rows a carrier has: <c>slave_mount_skills</c> for a slave, <c>npc_mount_skills</c>
+    /// for a mate. Empty for anything else or a carrier the tables do not list.
+    /// </summary>
+    private IReadOnlyCollection<uint> GetCarrierMountSkills(BaseUnit carrier)
+    {
+        switch (carrier)
+        {
+            case Slave slave:
+                return _slaveMountSkills.TryGetValue(slave.TemplateId, out var slaveRows) ? slaveRows : [];
+            case GameMate mate:
+                return GetMateSkills(mate.TemplateId);
+            default:
+                return [];
+        }
     }
 
     private uint FindAttachedSkill(uint mountSkillId, AttachPointKind attachPoint)
@@ -207,6 +232,7 @@ public class MateGameData : Singleton<MateGameData>, IGameDataLoader
         _npcMountSkills = [];
         _mountSkills = [];
         _mountAttachedSkills = [];
+        _slaveMountSkills = [];
         _mateEquipSlotPacks = [];
         _mateRecoveryByNpc = [];
 
@@ -269,6 +295,27 @@ public class MateGameData : Singleton<MateGameData>, IGameDataLoader
                         SkillId = reader.GetUInt32("skill_id")
                     };
                     _mountAttachedSkills.Add(template.Id, template);
+                }
+            }
+        }
+
+        // Slave mount skills — which of the rows that share a skill a vehicle's bar actually carries
+        using (var command = connection.CreateCommand())
+        {
+            command.CommandText = "SELECT slave_id, mount_skill_id FROM slave_mount_skills";
+            command.Prepare();
+            using (var reader = new SQLiteWrapperReader(command.ExecuteReader()))
+            {
+                while (reader.Read())
+                {
+                    var slaveId = reader.GetUInt32("slave_id");
+                    if (!_slaveMountSkills.TryGetValue(slaveId, out var rows))
+                    {
+                        rows = [];
+                        _slaveMountSkills[slaveId] = rows;
+                    }
+
+                    rows.Add(reader.GetUInt32("mount_skill_id"));
                 }
             }
         }

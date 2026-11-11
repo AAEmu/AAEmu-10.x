@@ -3,6 +3,7 @@ using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.UnitManagers;
 using AAEmu.Game.GameData;
 using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.DoodadObj.Static;
 using AAEmu.Game.Models.Game.Items.Templates;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Units;
@@ -73,6 +74,43 @@ public class MateGameDataTests
     }
 
     [Test]
+    [Arguments(68u, 0u, 15626u)]  // Blueglass: row 69, 1300 m
+    [Arguments(66u, 0u, 15623u)]  // Grenwolf: row 74, 1080 m
+    [Arguments(71u, 0u, 15757u)]  // Golden Fable: row 72, 1000 m
+    [Arguments(99u, 0u, 20075u)]  // Amed's cannon: row 179, Loka
+    [Arguments(66u, 179u, 15623u)] // Grenwolf asking for the Loka row keeps its own
+    public async Task GetMountAttachedSkills_EachHumanCannonLaunchesWithItsOwnJump(uint slaveId, uint clientRow,
+        uint expectedRiderSkill)
+    {
+        using var connection = CreateConnection(includeRecoveryColumns: true);
+        using (var seed = connection.CreateCommand())
+        {
+            // the shipped cannon rows: four mount_skills share skill 16650, mount_attached_skills gives each
+            // its own Driver (1) helper, slave_mount_skills says which cannon carries which
+            seed.CommandText = """
+                INSERT INTO mount_skills(id, name, skill_id) VALUES
+                    (69, '1300m', 16650), (72, 'golden fable', 16650), (74, '1080m', 16650), (81, 'exit', 16813),
+                    (179, 'loka', 16650);
+                INSERT INTO mount_attached_skills(id, mount_skill_id, attach_point_id, skill_id) VALUES
+                    (234, 69, 1, 15626), (235, 72, 1, 15757), (236, 74, 1, 15623), (241, 81, 1, 16826),
+                    (289, 179, 1, 20075);
+                INSERT INTO slave_mount_skills(id, slave_id, mount_skill_id) VALUES
+                    (189, 68, 69), (190, 68, 81), (193, 66, 74), (194, 66, 81), (187, 71, 72), (188, 71, 81),
+                    (172, 99, 179), (173, 99, 81);
+                """;
+            seed.ExecuteNonQuery();
+        }
+
+        var data = new MateGameData();
+        data.Load(connection);
+        var cannon = new Slave { TemplateId = slaveId };
+
+        await Assert.That(data.GetMountAttachedSkills(16650, AttachPointKind.Driver, cannon, clientRow))
+            .IsEqualTo(expectedRiderSkill);
+        await Assert.That(data.GetMountAttachedSkills(16813, AttachPointKind.Driver, cannon, 81)).IsEqualTo(16826u);
+    }
+
+    [Test]
     public async Task Load_MissingRecoveryColumns_FailsLoudly()
     {
         using var connection = CreateConnection(includeRecoveryColumns: false);
@@ -92,6 +130,7 @@ public class MateGameDataTests
               CREATE TABLE npc_mount_skills (id INTEGER PRIMARY KEY, npc_id INTEGER NOT NULL, mount_skill_id INTEGER NOT NULL);
               CREATE TABLE mount_skills (id INTEGER PRIMARY KEY, name TEXT NOT NULL, skill_id INTEGER NOT NULL);
               CREATE TABLE mount_attached_skills (id INTEGER PRIMARY KEY, mount_skill_id INTEGER NOT NULL, attach_point_id INTEGER NOT NULL, skill_id INTEGER NOT NULL);
+              CREATE TABLE slave_mount_skills (id INTEGER PRIMARY KEY, slave_id INTEGER NOT NULL, mount_skill_id INTEGER NOT NULL);
               CREATE TABLE mate_equip_slot_packs (id INTEGER PRIMARY KEY, mate_type_id INTEGER NOT NULL, head INTEGER NOT NULL, chest INTEGER NOT NULL, waist INTEGER NOT NULL, feet INTEGER NOT NULL);
               CREATE TABLE mate_equip_pack_groups (id INTEGER PRIMARY KEY, npc_id INTEGER NOT NULL, mate_equip_pack_id INTEGER NOT NULL);
               CREATE TABLE mate_equip_pack_items (id INTEGER PRIMARY KEY, mate_equip_pack_id INTEGER NOT NULL, item_id INTEGER NOT NULL);
@@ -111,6 +150,7 @@ public class MateGameDataTests
               CREATE TABLE npc_mount_skills (id INTEGER PRIMARY KEY, npc_id INTEGER NOT NULL, mount_skill_id INTEGER NOT NULL);
               CREATE TABLE mount_skills (id INTEGER PRIMARY KEY, name TEXT NOT NULL, skill_id INTEGER NOT NULL);
               CREATE TABLE mount_attached_skills (id INTEGER PRIMARY KEY, mount_skill_id INTEGER NOT NULL, attach_point_id INTEGER NOT NULL, skill_id INTEGER NOT NULL);
+              CREATE TABLE slave_mount_skills (id INTEGER PRIMARY KEY, slave_id INTEGER NOT NULL, mount_skill_id INTEGER NOT NULL);
               CREATE TABLE mate_equip_slot_packs (id INTEGER PRIMARY KEY, mate_type_id INTEGER NOT NULL, head INTEGER NOT NULL, chest INTEGER NOT NULL, waist INTEGER NOT NULL, feet INTEGER NOT NULL);
               CREATE TABLE mate_equip_pack_groups (id INTEGER PRIMARY KEY, npc_id INTEGER NOT NULL, mate_equip_pack_id INTEGER NOT NULL);
               CREATE TABLE mate_equip_pack_items (id INTEGER PRIMARY KEY, mate_equip_pack_id INTEGER NOT NULL, item_id INTEGER NOT NULL);
