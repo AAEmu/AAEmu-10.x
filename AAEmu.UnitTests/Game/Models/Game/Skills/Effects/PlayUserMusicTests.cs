@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 
 using AAEmu.Commons.Network;
 using AAEmu.Commons.Network.Core;
@@ -370,6 +370,7 @@ public class PlayUserMusicTests : IDisposable
         public int CountLiveInstancesForCaster(uint buffId, uint casterKey) => 0;
         public List<Buff> GetLiveInstancesForCaster(uint buffId, uint casterKey) => [];
         public IEnumerable<Buff> GetBuffsRequiring(uint buffId) => [];
+        public List<Buff> GetCrowdSources() => [];
         public Buff GetEffectByIndex(uint index) => null;
         public Buff GetEffectByTemplate(BuffTemplate template) => null;
         public Buff GetEffectFromBuffId(uint id) => null;

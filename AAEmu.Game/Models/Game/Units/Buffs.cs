@@ -395,6 +395,14 @@ public class Buffs : IBuffs
         return null;
     }
 
+    public List<Buff> GetCrowdSources()
+    {
+        lock (_lock)
+        {
+            return _effects.Where(b => b?.Template is { CrowdBuffId: > 0 }).ToList();
+        }
+    }
+
     public IEnumerable<Buff> GetBuffsRequiring(uint buffId)
     {
         // Create a copy of the list of effects to avoid changing the list while iterating

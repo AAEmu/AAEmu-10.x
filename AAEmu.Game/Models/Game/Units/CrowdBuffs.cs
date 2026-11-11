@@ -13,15 +13,26 @@ public static class CrowdBuffs
             return;
 
         var checkBuffId = CrowdBuffRules.CheckBuffId(applied.Id, applied.CrowdCheckBuffId);
-        var holders = WorldManager.GetAround<Unit>(owner, applied.CrowdRadius)
-            .Where(unit => unit.Buffs.CheckBuff(checkBuffId))
-            .Append(owner)
-            .Distinct()
-            .ToList();
-        if (!CrowdBuffRules.CrowdReached(holders.Count, applied.CrowdNumber))
-            return;
+        var holders = CrowdBuffRules.Recipients(owner, WorldManager.GetAround<Unit>(owner, applied.CrowdRadius),
+            unit => unit.Buffs.CheckBuff(checkBuffId), applied.CrowdNumber);
 
         foreach (var holder in holders.Where(unit => !unit.Buffs.CheckBuff(applied.CrowdBuffId)))
             holder.Buffs.AddBuff(applied.CrowdBuffId, owner);
+    }
+
+    /// <summary>The check above only runs when a buff lands; holders who gather later are caught here.</summary>
+    public static void Recheck(IEnumerable<Unit> units)
+    {
+        foreach (var unit in units)
+        {
+            if (unit?.Buffs == null)
+                continue;
+
+            foreach (var source in unit.Buffs.GetCrowdSources())
+            {
+                if (CrowdBuffRules.NeedsRecheck(source.Template.CrowdBuffId, unit.Buffs.CheckBuff(source.Template.CrowdBuffId)))
+                    OnBuffApplied(unit, source.Template);
+            }
+        }
     }
 }
