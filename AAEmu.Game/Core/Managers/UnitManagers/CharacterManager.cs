@@ -1584,6 +1584,12 @@ public class CharacterManager(
     }
 
     /// <summary>
+    /// The level a player's new character is made at. <c>CSCreateCharacterPacket</c> carries a level too, which
+    /// a normal client always sends as 1; it is not trusted.
+    /// </summary>
+    public const byte PlayerCreationLevel = 1;
+
+    /// <summary>
     /// Starts the tracker for online time
     /// </summary>
     public void StartOnlineTracking()
