@@ -2083,6 +2083,7 @@ public partial class SpecialtyManagerTests
         public Zone GetZoneByKey(uint zoneKey) => null;
         public ZoneGroup GetZoneGroupById(uint zoneId) => _groups.GetValueOrDefault(zoneId);
         public List<uint> GetZoneKeysInZoneGroupById(uint zoneGroupId) => [];
+        public uint GetVisitRowZoneKey(uint zoneGroupId) => 0;
         public uint GetTargetIdByZoneId(uint zoneId) => 0;
         public System.Numerics.Vector2 GetZoneOriginCell(uint zoneId) => default;
         public System.Numerics.Vector3 ConvertToWorldCoordinates(uint zoneId, System.Numerics.Vector3 point) => point;

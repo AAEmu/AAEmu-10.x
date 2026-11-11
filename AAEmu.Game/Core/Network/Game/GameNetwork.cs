@@ -242,6 +242,7 @@ public class GameNetwork : Singleton<GameNetwork>
         RegisterPacket(CSOffsets.CSCancelInstantGamePacket, 1, typeof(CSCancelInstantGamePacket));
         RegisterPacket(CSOffsets.CSInvitationAnswerPacket, 1, typeof(CSInvitationAnswerPacket));
         RegisterPacket(CSOffsets.CSLeaveInstantGamePacket, 1, typeof(CSLeaveInstantGamePacket));
+        RegisterPacket(CSOffsets.CSAddInstanceVisitCountPacket, 1, typeof(CSAddInstanceVisitCountPacket));
         RegisterPacket(CSOffsets.CSReentryReponsePacket, 1, typeof(CSReentryReponsePacket));
         RegisterPacket(CSOffsets.CSPickBuffInstantGamePacket, 1, typeof(CSPickBuffInstantGamePacket));
         RegisterPacket(CSOffsets.CSCreateDoodadPacket, 1, typeof(CSCreateDoodadPacket));

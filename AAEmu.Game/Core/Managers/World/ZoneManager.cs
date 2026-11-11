@@ -4,6 +4,7 @@ using AAEmu.Commons.Utils;
 using AAEmu.Game.GameData;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.DoodadObj;
+using AAEmu.Game.Models.Game.Indun;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.World.Transform;
 using AAEmu.Game.Models.Game.World.Zones;
@@ -141,6 +142,10 @@ public class ZoneManager(
     /// <summary>Every buff a zone group grants to whoever stands in it (<c>zone_groups.buff_id</c>).</summary>
     public IReadOnlySet<uint> GetZoneGroupBuffIds() =>
         _groups?.Values.Where(g => g.BuffId != 0).Select(g => g.BuffId).ToHashSet() ?? [];
+
+    /// <summary>The zone_key the client keys a dungeon's visit-count row by (first zone of the group).</summary>
+    public uint GetVisitRowZoneKey(uint zoneGroupId) =>
+        _zones == null ? 0 : IndunEntryRules.VisitRowZoneKey(zoneGroupId, _zones.Values.Select(z => (z.Id, z.ZoneKey, z.GroupId)));
 
     public List<uint> GetZoneKeysInZoneGroupById(uint zoneGroupId)
     {

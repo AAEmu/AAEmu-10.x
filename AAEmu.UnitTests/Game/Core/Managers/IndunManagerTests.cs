@@ -43,6 +43,81 @@ public class IndunManagerTests
     }
 
     [Test]
+    public async Task VisitRow_CountsAnEntryAsSoonAsItIsCharged()
+    {
+        // The island entry was charged but the client only learned of it at the next character select.
+        var manager = new IndunManager(
+            Mock.Of<ITickManager>().Object,
+            Mock.Of<IWorldManager>().Object,
+            Mock.Of<IZoneManager>().Object,
+            Mock.Of<ITeamManager>().Object);
+        var island = new IndunZone { ZoneGroupId = 158, EnterCount = 2 };
+
+        manager.CheckEntryAttemptCount(1001, 158, island, true);
+
+        await Assert.That(manager.GetVisitRow(1001, island).UsedCount).IsEqualTo(1);
+    }
+
+    private sealed class MemoryPermitStore : IIndunPermitStore
+    {
+        public readonly List<(uint CharacterId, uint ZoneGroupId, DateTime At)> Rows = [];
+
+        public IReadOnlyList<(uint ZoneGroupId, DateTime At)> Load(uint characterId, DateTime sinceUtc) =>
+            Rows.Where(r => r.CharacterId == characterId && r.At >= sinceUtc).Select(r => (r.ZoneGroupId, r.At)).ToList();
+
+        // DATETIME(3): the store keeps whole milliseconds.
+        public void Add(uint characterId, uint zoneGroupId, DateTime atUtc) =>
+            Rows.Add((characterId, zoneGroupId, atUtc.AddTicks(-(atUtc.Ticks % TimeSpan.TicksPerMillisecond))));
+
+        public void Clear(uint characterId, uint zoneGroupId) =>
+            Rows.RemoveAll(r => r.CharacterId == characterId && (zoneGroupId == 0 || r.ZoneGroupId == zoneGroupId));
+    }
+
+    private static IndunManager ManagerWith(IIndunPermitStore store) =>
+        new(Mock.Of<ITickManager>().Object, Mock.Of<IWorldManager>().Object, Mock.Of<IZoneManager>().Object,
+            Mock.Of<ITeamManager>().Object) { PermitStore = store };
+
+    [Test]
+    public async Task APaidPass_ComesBackAfterAWorldRestart()
+    {
+        // The pass item is used up when it is registered; a restart before entering must not lose it.
+        var store = new MemoryPermitStore();
+        var island = new IndunZone { ZoneGroupId = 158, EnterCount = 2, UseUtcEntranceTimes = true };
+        ManagerWith(store).RecordPermit(1001, 158, DateTime.UtcNow);
+
+        var afterRestart = ManagerWith(store);
+        afterRestart.LoadPermitRegistrations(1001);
+        afterRestart.LoadPermitRegistrations(1001);
+
+        await Assert.That(afterRestart.GetVisitRow(1001, island).PermittedCount).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task ARelog_DoesNotCountAPassTwice()
+    {
+        var store = new MemoryPermitStore();
+        var island = new IndunZone { ZoneGroupId = 158, EnterCount = 2, UseUtcEntranceTimes = true };
+        var manager = ManagerWith(store);
+        manager.RecordPermit(1001, 158, DateTime.UtcNow.AddTicks(1234));
+
+        manager.LoadPermitRegistrations(1001);
+
+        await Assert.That(manager.GetVisitRow(1001, island).PermittedCount).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task ClearingEntryHistory_AlsoForgetsStoredPasses()
+    {
+        var store = new MemoryPermitStore();
+        var manager = ManagerWith(store);
+        manager.RecordPermit(1001, 158, DateTime.UtcNow);
+
+        manager.ClearEntryHistory(1001, 158);
+
+        await Assert.That(store.Rows).IsEmpty();
+    }
+
+    [Test]
     public void Initialize_SubscribesToTickManager()
     {
         var mockTick = Mock.Of<ITickManager>();
