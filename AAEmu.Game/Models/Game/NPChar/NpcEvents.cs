@@ -64,6 +64,20 @@ public partial class Npc
         }
     }
 
+    /// <summary>
+    /// A zone mirror's death is decided on World, so World runs its on_death skills where the zone does not
+    /// (<see cref="OnSpawnPlotWorldGate.ShouldRunDeathSkills"/>); the rest stay with the zone.
+    /// </summary>
+    public bool RegisterDeathSkills(IEnumerable<NpcSkill> npSkills)
+    {
+        if (npSkills?.Any(s => s.SkillUseCondition == SkillUseConditionKind.OnDeath) != true)
+            return false;
+
+        Events.OnDeath -= OnDeath;
+        Events.OnDeath += OnDeath;
+        return true;
+    }
+
     public void UnregisterNpcEvents()
     {
         var npSkills = NpcGameData.Instance.GetNpSkills(TemplateId);
@@ -214,6 +228,9 @@ public partial class Npc
 
         var skills = NpcGameData.Instance.GetNpSkills(npc.TemplateId, SkillUseConditionKind.OnDeath);
         if (skills == null) { return; }
+        if (!OnSpawnPlotWorldGate.ShouldRunDeathSkills(npc.IsZoneMirror, npc.IsWorldAuthored,
+                npc.ParentWorld?.DungeonInstance is { IsSystem: false }))
+            return;
 
         Logger.Trace($"Npc objId={npc.ObjId}, templateId={npc.TemplateId} has died.");
 
@@ -240,6 +257,7 @@ public partial class Npc
             }
 
             Logger.Trace($"Npc={npc.ObjId}:{npc.TemplateId} using skill={skill.Id}");
+            skill.ScriptedCast = true;
             skill.Use(npc, skillCaster, skillTarget, null, true, out _);
         }
     }
@@ -342,7 +360,6 @@ public partial class Npc
             }
 
             Logger.Trace($"Npc={npc.ObjId}:{npc.TemplateId} using skill={skill.Id}");
-            skill.ScriptedCast = true;
             skill.Use(npc, skillCaster, skillTarget, null, true, out _);
         }
     }

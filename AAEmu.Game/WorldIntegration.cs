@@ -1601,6 +1601,7 @@ public static class WorldIntegration
             // 0/0/0 buff counts, so the storm cannot ride UnitState. Apply buffs *after* Spawn so
             // region viewers receive SCBuffCreated; pre-Spawn Apply OnSpawn left FX silent.
             npc.Spawn();
+            npc.RegisterDeathSkills(NpcGameData.Instance.GetNpSkills(templateId));
             // Paint before FX so SCBuffCreated lands after the unit exists for late AOI/MAX cases.
             if (npc.IsMirrorStreamPriority)
                 PaintPriorityMirrorToNearby(npc);
