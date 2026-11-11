@@ -22,6 +22,10 @@ public static class TauntRules
     /// <summary>Whether this buff makes its owner attack the unit that applied it.</summary>
     public static bool ForcesTarget(bool taunt, bool tauntWithTopAggro) => taunt || tauntWithTopAggro;
 
+    /// <summary>Who a hit NPC turns to: its taunter while a taunt holds it (0 when none), else the attacker.</summary>
+    public static uint TargetOnHit(uint attackerObjId, uint taunterObjId) =>
+        taunterObjId != 0 ? taunterObjId : attackerObjId;
+
     /// <summary>Whether this buff also hands the caster the top threat value.</summary>
     public static bool GrantsTopAggro(bool taunt, bool tauntWithTopAggro) => taunt && tauntWithTopAggro;
 

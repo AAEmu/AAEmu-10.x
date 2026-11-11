@@ -1546,6 +1546,13 @@ public class Buffs : IBuffs
         return effects.Where(e => e.Template != null && e.Template.ManaShieldRatio > 0);
     }
 
+    /// <summary>The live taunt holding this unit on another unit, or null.</summary>
+    public Buff GetActiveTaunt() =>
+        GetEffectsMatchingCondition(b =>
+                TauntRules.ForcesTarget(b.Template.Taunt, b.Template.TauntWithTopAggro)
+                && b.Caster is Unit { Hp: > 0 } caster && caster.ObjId != b.Owner?.ObjId)
+            .FirstOrDefault();
+
     public bool HasEffectsMatchingCondition(Func<Buff, bool> predicate)
     {
         return GetEffectsMatchingCondition(predicate).Any();
