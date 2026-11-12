@@ -11,15 +11,20 @@ namespace AAEmu.Game.Models.Game.Units;
 /// <summary>Grants and takes back crowd buffs per holder (<see cref="CrowdBuffRules"/>).</summary>
 public static class CrowdBuffs
 {
+    private sealed class HolderState
+    {
+        public readonly object Gate = new();
+        public readonly ConcurrentDictionary<uint, byte> Granted = new();
+    }
+
     /// <summary>Units holding a crowd source, with the crowd buffs granted to them here.</summary>
-    private static readonly ConcurrentDictionary<Unit, ConcurrentDictionary<uint, byte>> Holders = new();
+    private static readonly ConcurrentDictionary<Unit, HolderState> Holders = new();
 
     public static void OnBuffApplied(Unit owner, BuffTemplate applied)
     {
         if (owner?.Buffs == null || applied == null || applied.CrowdBuffId == 0)
             return;
 
-        Holders.TryAdd(owner, new ConcurrentDictionary<uint, byte>());
         Evaluate(owner);
 
         foreach (var neighbour in WorldManager.GetAround<Unit>(owner, applied.CrowdRadius))
@@ -34,13 +39,41 @@ public static class CrowdBuffs
     {
         foreach (var holder in Holders.Keys)
         {
-            if (holder.Buffs == null || holder.Region == null || !Evaluate(holder))
-                Holders.TryRemove(holder, out _);
+            if (holder.Buffs == null || holder.Region == null)
+                WithHolder(holder, _ => false);
+            else
+                Evaluate(holder);
         }
     }
 
+    internal static bool IsTracked(Unit holder) => Holders.ContainsKey(holder);
+
+    /// <summary>
+    /// Runs <paramref name="check"/> as the only check of this holder, so a grant, its cleanup and the
+    /// holder's removal cannot interleave with another pass. A false result stops tracking the holder.
+    /// </summary>
+    internal static void WithHolder(Unit holder, Func<ConcurrentDictionary<uint, byte>, bool> check)
+    {
+        while (true)
+        {
+            var state = Holders.GetOrAdd(holder, _ => new HolderState());
+            lock (state.Gate)
+            {
+                // A pass dropped this state while we waited: take the holder's fresh one.
+                if (!Holders.TryGetValue(holder, out var current) || !ReferenceEquals(current, state))
+                    continue;
+
+                if (!check(state.Granted))
+                    Holders.TryRemove(new KeyValuePair<Unit, HolderState>(holder, state));
+                return;
+            }
+        }
+    }
+
+    private static void Evaluate(Unit holder) => WithHolder(holder, granted => EvaluateLocked(holder, granted));
+
     /// <returns>False when the holder has no crowd source and no granted crowd buff left to track.</returns>
-    private static bool Evaluate(Unit holder)
+    private static bool EvaluateLocked(Unit holder, ConcurrentDictionary<uint, byte> granted)
     {
         var reached = new Dictionary<uint, bool>();
         foreach (var source in holder.Buffs.GetCrowdSources())
@@ -50,7 +83,6 @@ public static class CrowdBuffs
             reached[template.CrowdBuffId] = already || Reached(holder, template);
         }
 
-        var granted = Holders.GetOrAdd(holder, _ => new ConcurrentDictionary<uint, byte>());
         foreach (var (crowdBuffId, isReached) in reached)
         {
             if (isReached && !holder.Buffs.CheckBuff(crowdBuffId))

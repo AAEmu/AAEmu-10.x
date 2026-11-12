@@ -32,4 +32,39 @@ public class CrowdBuffsTests
 
         await Assert.That(CrowdBuffs.ResolveOwner(character, _ => character)).IsNull();
     }
+
+    [Test]
+    public async Task OneHolder_IsNeverCheckedByTwoThreadsAtOnce()
+    {
+        var holder = new Unit();
+        var inside = 0;
+        var overlapped = false;
+
+        Parallel.For(0, 64, _ => CrowdBuffs.WithHolder(holder, _ =>
+        {
+            if (Interlocked.Increment(ref inside) > 1)
+                overlapped = true;
+            Thread.SpinWait(2000);
+            Interlocked.Decrement(ref inside);
+            return true;
+        }));
+        CrowdBuffs.WithHolder(holder, _ => false);
+
+        await Assert.That(overlapped).IsFalse();
+    }
+
+    [Test]
+    public async Task AHolderWithNothingLeft_IsDroppedAndTrackedAgainOnNextUse()
+    {
+        var holder = new Unit();
+
+        CrowdBuffs.WithHolder(holder, _ => false);
+        var dropped = !CrowdBuffs.IsTracked(holder);
+        CrowdBuffs.WithHolder(holder, _ => true);
+        var tracked = CrowdBuffs.IsTracked(holder);
+        CrowdBuffs.WithHolder(holder, _ => false);
+
+        await Assert.That(dropped).IsTrue();
+        await Assert.That(tracked).IsTrue();
+    }
 }
