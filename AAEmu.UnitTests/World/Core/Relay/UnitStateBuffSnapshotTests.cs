@@ -52,6 +52,7 @@ public class UnitStateBuffSnapshotTests
     }
 
     [Test]
+    [NotInParallel]
     public async Task SnapshotRetirementOnlyRelaysEndedEligibleWorldBuffs()
     {
         const uint zone = 310144;
@@ -85,6 +86,7 @@ public class UnitStateBuffSnapshotTests
     }
 
     [Test]
+    [NotInParallel]
     public async Task SnapshotThatAlreadyEndedABuffRelaysItsRemovalAfterMarking()
     {
         const uint zone = 310145;
@@ -110,6 +112,7 @@ public class UnitStateBuffSnapshotTests
     }
 
     [Test]
+    [NotInParallel]
     [Arguments(1698u, false)]
     [Arguments(0u, true)]
     public async Task SnapshotRetirementRejectsUnrelayedOrInvalidOwner(uint ownerId, bool relayed)

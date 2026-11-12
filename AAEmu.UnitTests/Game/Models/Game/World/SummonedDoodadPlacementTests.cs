@@ -1,4 +1,6 @@
 using System.Numerics;
+using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.World.Interactions;
 
 namespace AAEmu.UnitTests.Game.Models.Game.World;
@@ -77,5 +79,22 @@ public class SummonedDoodadPlacementTests
     {
         await Assert.That(SummonedDoodadPlacement.PlacedZ(new Vector3(10f, 20f, 101.4f), null, 100.2f, summonerIsNpc: true))
             .IsEqualTo(100.2f);
+    }
+
+    [Test]
+    public async Task PlayerCasterAtAnNpcTarget_HasNoNpcSummoner()
+    {
+        var player = new Character(new AAEmu.Game.Models.Game.Units.UnitCustomModelParams());
+        var npc = new Npc();
+
+        await Assert.That(SummonedDoodadPlacement.SummonerNpc(player, npc)).IsNull();
+    }
+
+    [Test]
+    public async Task NpcCaster_IsTheSummoner()
+    {
+        var spawner = new Npc();
+
+        await Assert.That(SummonedDoodadPlacement.SummonerNpc(spawner, spawner)).IsSameReferenceAs(spawner);
     }
 }

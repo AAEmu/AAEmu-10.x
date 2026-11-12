@@ -1,4 +1,7 @@
 using System.Numerics;
+using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.NPChar;
+using AAEmu.Game.Models.Game.Units;
 
 namespace AAEmu.Game.Models.Game.World.Interactions;
 
@@ -22,6 +25,10 @@ public static class SummonedDoodadPlacement
     /// </summary>
     public static float PlacedZ(Vector3 summon, Vector3? zoneSpawn, float terrainZ, bool summonerIsNpc)
         => summonerIsNpc ? GroundZ(UnliftedZ(summon, zoneSpawn), terrainZ) : summon.Z;
+
+    /// <summary>The NPC whose spawn lift a summon may need corrected; a player caster never qualifies.</summary>
+    public static Npc SummonerNpc(BaseUnit caster, BaseUnit target)
+        => caster is Character ? null : target as Npc ?? caster as Npc;
 
     /// <summary>Farther than this from its spawn point, the summoner has moved and its spawn says nothing.</summary>
     public const float SameSpotMetres = 1f;
