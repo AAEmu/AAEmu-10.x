@@ -28,6 +28,16 @@ public sealed class CopyObjectIdHold(Func<uint, bool> isSupervisedCopy)
         }
     }
 
+    /// <summary>Stops holding an id that is live again, so closing the copy does not release it.</summary>
+    public void Unhold(uint zoneId, uint instanceId, uint objId)
+    {
+        lock (_lock)
+        {
+            if (_held.TryGetValue((zoneId, instanceId), out var ids))
+                ids.Remove(objId);
+        }
+    }
+
     /// <summary>Closes the copy to new holds and returns what it held.</summary>
     public IReadOnlyCollection<uint> Release(uint zoneId, uint instanceId)
     {

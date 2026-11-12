@@ -695,6 +695,9 @@ public class NpcSpawnRelay
             return false;
         }
 
+        // Live again: the mirror teardown releases it, so the copy's hold must not release it a second time.
+        CopyHeldIds.Unhold(connection.ZoneId, connection.InstanceId, bcId);
+
         Logger.Info(
             "Rematerialized orphan zone caster bc={0} tpl={1} zoneId={2} for ZWStartSkill",
             bcId, spawn.TemplateId, connection.ZoneId);

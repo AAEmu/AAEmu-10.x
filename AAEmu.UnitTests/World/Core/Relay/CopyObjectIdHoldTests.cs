@@ -32,6 +32,19 @@ public class CopyObjectIdHoldTests
     }
 
     [Test]
+    public async Task AnIdThatIsLiveAgain_IsNoLongerHeld()
+    {
+        // A removed caster that is rematerialized owns its id again; the copy closing must not free it twice.
+        var hold = new CopyObjectIdHold(_ => true);
+        hold.TryHold(410, 100, 899);
+        hold.TryHold(410, 100, 901);
+
+        hold.Unhold(410, 100, 899);
+
+        await Assert.That(hold.Release(410, 100)).IsEquivalentTo(new uint[] { 901 });
+    }
+
+    [Test]
     public async Task OpenWorldIds_AreNotHeld()
     {
         var hold = new CopyObjectIdHold(_ => true);
