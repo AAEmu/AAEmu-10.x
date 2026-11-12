@@ -471,6 +471,7 @@ public class Dungeon : IPreparedIndunInstance
 
         IndunEntryVerdict verdict;
         var enterNow = false;
+        byte? picked = null;
         lock (_lock)
         {
             // The closing check and the charge share the lock the closing step runs under.
@@ -481,7 +482,7 @@ public class Dungeon : IPreparedIndunInstance
                 enterNow = FinishedLoading;
                 if (enterNow)
                 {
-                    ApplyPickedDifficulty(character);
+                    picked = TakePickedDifficulty(character);
                     AdmitToWorldUnderLock(character);
                 }
                 else
@@ -500,7 +501,10 @@ public class Dungeon : IPreparedIndunInstance
         }
 
         if (enterNow)
+        {
+            ApplyDifficulty(picked);
             CompleteEntry(character);
+        }
         else
             character.SendPacket(new SCProcessingInstancePacket((int)_zoneInstanceId.ZoneId));
         return true;
@@ -550,12 +554,13 @@ public class Dungeon : IPreparedIndunInstance
 
         // The pick is taken only once the entry is admitted, so a refusal keeps it.
         bool admitted;
+        byte? picked = null;
         lock (_lock)
         {
             admitted = !_ending.IsClosing;
             if (admitted)
             {
-                ApplyPickedDifficulty(character);
+                picked = TakePickedDifficulty(character);
                 AdmitToWorldUnderLock(character);
             }
         }
@@ -563,15 +568,24 @@ public class Dungeon : IPreparedIndunInstance
         if (!admitted)
             return RefuseEntry(character);
 
+        ApplyDifficulty(picked);
         CompleteEntry(character);
         return true;
     }
 
     /// <summary>A pick made in the H-window before entering lands on the first copy this character enters.</summary>
-    private void ApplyPickedDifficulty(Character character)
+    private byte? TakePickedDifficulty(Character character)
     {
         if (Difficult is null && IndunManager.Instance.TryTakeSelectedDifficult(character.Id, out var pickedDifficult))
-            SetDifficult(pickedDifficult);
+            return pickedDifficult;
+        return null;
+    }
+
+    // Outside _lock: SetDifficult raises the difficulty event, which runs an indun action chain.
+    private void ApplyDifficulty(byte? picked)
+    {
+        if (picked is { } difficult)
+            SetDifficult(difficult);
     }
 
     private void AdmitToWorldUnderLock(Character character)
