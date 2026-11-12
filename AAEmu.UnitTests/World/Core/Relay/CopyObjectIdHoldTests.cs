@@ -20,6 +20,18 @@ public class CopyObjectIdHoldTests
     }
 
     [Test]
+    public async Task ALateRemoval_AfterTheCopyClosed_IsNotHeld()
+    {
+        // A delayed remove can land after the disconnect drained the copy; nothing would drain a new hold.
+        var hold = new CopyObjectIdHold(_ => true);
+        hold.TryHold(410, 100, 899);
+        hold.Release(410, 100);
+
+        await Assert.That(hold.TryHold(410, 100, 901)).IsFalse();
+        await Assert.That(hold.Release(410, 100)).IsEmpty();
+    }
+
+    [Test]
     public async Task OpenWorldIds_AreNotHeld()
     {
         var hold = new CopyObjectIdHold(_ => true);

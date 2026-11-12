@@ -1,6 +1,4 @@
-﻿using System.Collections.Concurrent;
-
-namespace AAEmu.World.Core.Relay;
+﻿namespace AAEmu.World.Core.Relay;
 
 /// <summary>
 /// A dungeon copy's zone keeps the ids of units it removed for as long as the copy lives, so World must not
@@ -9,16 +7,37 @@ namespace AAEmu.World.Core.Relay;
 /// </summary>
 public sealed class CopyObjectIdHold(Func<uint, bool> isSupervisedCopy)
 {
-    private readonly ConcurrentDictionary<(uint ZoneId, uint InstanceId), ConcurrentDictionary<uint, byte>> _held = new();
+    private readonly object _lock = new();
+    private readonly Dictionary<(uint ZoneId, uint InstanceId), HashSet<uint>> _held = [];
+    private readonly HashSet<(uint ZoneId, uint InstanceId)> _closed = [];
 
+    /// <summary>False when the id is not held; a copy already drained takes no new holds.</summary>
     public bool TryHold(uint zoneId, uint instanceId, uint objId)
     {
         if (instanceId == 0 || objId == 0 || !isSupervisedCopy(instanceId))
             return false;
-        _held.GetOrAdd((zoneId, instanceId), _ => new ConcurrentDictionary<uint, byte>())[objId] = 0;
-        return true;
+
+        lock (_lock)
+        {
+            if (_closed.Contains((zoneId, instanceId)))
+                return false;
+            if (!_held.TryGetValue((zoneId, instanceId), out var ids))
+                _held[(zoneId, instanceId)] = ids = [];
+            ids.Add(objId);
+            return true;
+        }
     }
 
-    public IReadOnlyCollection<uint> Release(uint zoneId, uint instanceId) =>
-        _held.TryRemove((zoneId, instanceId), out var ids) ? ids.Keys.ToArray() : [];
+    /// <summary>Closes the copy to new holds and returns what it held.</summary>
+    public IReadOnlyCollection<uint> Release(uint zoneId, uint instanceId)
+    {
+        if (instanceId == 0 || !isSupervisedCopy(instanceId))
+            return [];
+
+        lock (_lock)
+        {
+            _closed.Add((zoneId, instanceId));
+            return _held.Remove((zoneId, instanceId), out var ids) ? [.. ids] : [];
+        }
+    }
 }
