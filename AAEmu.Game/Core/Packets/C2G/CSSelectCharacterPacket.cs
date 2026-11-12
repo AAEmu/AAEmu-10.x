@@ -29,6 +29,13 @@ public class CSSelectCharacterPacket() : GamePacket(CSOffsets.CSSelectCharacterP
             character.Transform.InstanceId = WorldManager.DefaultInstanceId;
             // Despawn any old pets this character might have even before loading it
             character.Load();
+            if (!CharacterSkillCooldowns.Load(character))
+            {
+                // Entering without the saved timers would let a running cooldown be skipped.
+                Connection.Shutdown();
+                return;
+            }
+
             character.Connection = Connection;
             var houses = Connection.Houses.Values.Where(x => x.OwnerId == character.Id).ToList();
             // Remove old pets from all world instances
@@ -201,7 +208,6 @@ public class CSSelectCharacterPacket() : GamePacket(CSOffsets.CSSelectCharacterP
 
             // Load persistent buffs from database
             character.Buffs.LoadActiveBuffs(character);
-            CharacterSkillCooldowns.Load(character);
             character.CheckWantedThreshold();
             
             character.UpdateGearBonuses(null, null);
