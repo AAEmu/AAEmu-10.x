@@ -1345,7 +1345,14 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
                 character.SendErrorMessage(ErrorMessageType.InstanceVisitLimit);
                 return false;
             },
-            store: () => TryStorePermit(character.Id, zone.ZoneGroupId, ServerCalendar.UtcNow, out passAt),
+            store: () =>
+            {
+                if (TryStorePermit(character.Id, zone.ZoneGroupId, ServerCalendar.UtcNow, out passAt))
+                    return true;
+
+                character.SendErrorMessage(ErrorMessageType.InternalError);
+                return false;
+            },
             pay: () => Pay(character, zone.PermitEnterCountItemId, 1),
             unstore: () => DiscardPermit(character.Id, zone.ZoneGroupId, passAt),
             register: () =>
