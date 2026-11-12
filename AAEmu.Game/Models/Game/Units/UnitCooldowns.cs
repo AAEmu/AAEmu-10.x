@@ -66,21 +66,27 @@ public class UnitCooldowns
         return token;
     }
 
-    /// <summary>Re-arms a saved cooldown with its original duration and the time it had left.</summary>
-    public void Restore(uint skillId, uint duration, uint remaining, IReadOnlyList<int> tagIds)
+    /// <summary>Re-arms a saved skill cooldown with its original duration and the time it had left.</summary>
+    public void Restore(uint skillId, uint duration, uint remaining)
     {
         if (remaining == 0)
             return;
 
-        var state = new CooldownState(DateTime.UtcNow + TimeSpan.FromMilliseconds(remaining), duration,
-            Interlocked.Increment(ref _nextOwnerToken));
-        _cooldowns[skillId] = state;
-        foreach (var tagId in tagIds ?? [])
-        {
-            if (tagId > 0)
-                _tagCooldowns[(uint)tagId] = state;
-        }
+        _cooldowns[skillId] = NewRestored(duration, remaining);
     }
+
+    /// <summary>Re-arms a saved cooldown tag; a tag keeps its own end time, which can outlast the skill's.</summary>
+    public void RestoreTag(uint tagId, uint duration, uint remaining)
+    {
+        if (remaining == 0)
+            return;
+
+        _tagCooldowns[tagId] = NewRestored(duration, remaining);
+    }
+
+    private CooldownState NewRestored(uint duration, uint remaining)
+        => new(DateTime.UtcNow + TimeSpan.FromMilliseconds(remaining), duration,
+            Interlocked.Increment(ref _nextOwnerToken));
 
     /// <summary>
     /// Clears the skill id and its tags only while <paramref name="ownerToken"/> is still the arm
@@ -250,12 +256,19 @@ public class UnitCooldowns
     /// duration, all represented as 32-bit wire values.
     /// </summary>
     public IReadOnlyList<CooldownSnapshot> GetActiveSnapshots(int maximumCount)
+        => Snapshot(_cooldowns, maximumCount);
+
+    /// <summary>Like <see cref="GetActiveSnapshots"/> for the cooldown tags; <c>SkillId</c> holds the tag id.</summary>
+    public IReadOnlyList<CooldownSnapshot> GetActiveTagSnapshots(int maximumCount)
+        => Snapshot(_tagCooldowns, maximumCount);
+
+    private static List<CooldownSnapshot> Snapshot(ConcurrentDictionary<uint, CooldownState> store, int maximumCount)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(maximumCount);
 
         var now = DateTime.UtcNow;
-        var snapshots = new List<CooldownSnapshot>(Math.Min(_cooldowns.Count, maximumCount));
-        foreach (var (skillId, state) in _cooldowns.OrderBy(entry => entry.Key))
+        var snapshots = new List<CooldownSnapshot>(Math.Min(store.Count, maximumCount));
+        foreach (var (skillId, state) in store.OrderBy(entry => entry.Key))
         {
             if (snapshots.Count >= maximumCount)
                 break;
@@ -263,7 +276,7 @@ public class UnitCooldowns
             var remaining = state.EndTime - now;
             if (remaining <= TimeSpan.Zero)
             {
-                _cooldowns.TryRemove(skillId, out _);
+                store.TryRemove(skillId, out _);
                 continue;
             }
 
