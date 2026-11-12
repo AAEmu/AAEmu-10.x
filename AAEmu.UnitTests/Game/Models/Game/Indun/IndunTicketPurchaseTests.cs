@@ -56,6 +56,18 @@ public class IndunTicketPurchaseTests
     }
 
     [Test]
+    public async Task APaymentThatThrows_RemovesTheStoredPass()
+    {
+        var purchase = new IndunTicketPurchase();
+        var stored = false;
+
+        Assert.Throws<InvalidOperationException>(() => purchase.Run(
+            7, () => true, () => stored = true, () => throw new InvalidOperationException("boom"), () => stored = false, () => { }));
+
+        await Assert.That(stored).IsFalse();
+    }
+
+    [Test]
     public async Task AFailedStore_TakesNoPayment()
     {
         var purchase = new IndunTicketPurchase();

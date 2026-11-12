@@ -21,7 +21,18 @@ public sealed class IndunTicketPurchase
             if (!canBuy() || !store())
                 return false;
 
-            if (!pay())
+            bool paid;
+            try
+            {
+                paid = pay();
+            }
+            catch
+            {
+                unstore();
+                throw;
+            }
+
+            if (!paid)
             {
                 unstore();
                 return false;
