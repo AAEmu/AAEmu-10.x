@@ -14,6 +14,9 @@ public sealed class IndunCopyEnding(IReadOnlyList<int> warningSeconds)
 
     public DateTime? ScriptEndedUtc { get; private set; }
 
+    /// <summary>Set by the step that closes the copy; from then on nobody may enter it.</summary>
+    public bool IsClosing => _closing;
+
     public void MarkScriptEnded(DateTime now) => ScriptEndedUtc ??= now;
 
     public IndunCopyStep Step(IndunZoneOption option, DateTime copyStartUtc, DateTime now)

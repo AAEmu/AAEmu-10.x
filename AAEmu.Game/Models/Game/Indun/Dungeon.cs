@@ -367,6 +367,12 @@ public class Dungeon : IPreparedIndunInstance
         };
     }
 
+    private bool IsClosing()
+    {
+        lock (_lock)
+            return _ending.IsClosing;
+    }
+
     /// <summary>The copy's time is up: everyone goes back to where they entered from, then the copy goes.</summary>
     private void CloseFinishedCopy()
     {
@@ -375,7 +381,11 @@ public class Dungeon : IPreparedIndunInstance
             return;
 
         Logger.Info($"[{world}] instance finished; returning its players and closing the copy");
-        foreach (var character in world.GetAllCharacters().ToList())
+        // Entries stopped when the closing step ran; the lock waits out an AddPlayer already inside it.
+        List<Character> present;
+        lock (_lock)
+            present = world.GetAllCharacters().ToList();
+        foreach (var character in present)
             character.Events.OnDungeonLeave(world, new OnDungeonLeaveArgs { Player = character });
 
         if (World != null && !DestroyDungeon())
@@ -440,6 +450,12 @@ public class Dungeon : IPreparedIndunInstance
     /// <param name="character"></param>
     public bool QueuePlayer(Character character)
     {
+        if (IsClosing())
+        {
+            Logger.Info($"[{World}] Player {character?.Name} arrived after the copy began closing.");
+            return false;
+        }
+
         if (!CanQueuePlayer(character))
         {
             if (character != null)
@@ -510,6 +526,9 @@ public class Dungeon : IPreparedIndunInstance
 
         lock (_lock)
         {
+            if (_ending.IsClosing)
+                return;
+
             if (!World.HasCharacter(character.Id))
             {
                 World.AddObject(character);

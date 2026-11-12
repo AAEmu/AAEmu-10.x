@@ -41,4 +41,19 @@ public class IndunCopyEndingTests
 
         await Assert.That(ending.Step(Island, T0, T0.AddSeconds(500)).Phase).IsEqualTo(IndunInstancePhase.Play);
     }
+
+    [Test]
+    public async Task ClosingStep_StopsAdmittingEntries()
+    {
+        var ending = new IndunCopyEnding([180]);
+        var scriptEnded = T0.AddSeconds(426);
+        ending.MarkScriptEnded(scriptEnded);
+        await Assert.That(ending.IsClosing).IsFalse();
+        ending.Step(Island, T0, scriptEnded.AddSeconds(100));
+        await Assert.That(ending.IsClosing).IsFalse();
+
+        ending.Step(Island, T0, scriptEnded.AddSeconds(180));
+
+        await Assert.That(ending.IsClosing).IsTrue();
+    }
 }
