@@ -759,7 +759,7 @@ public static class WorldIntegration
     /// <summary>Record that this copy's tower run ended because its dedicate disconnected.</summary>
     public static void MarkInstanceTowerDefHostDropped(uint instanceId, uint towerDefId)
     {
-        if (instanceId == 0 || towerDefId == 0)
+        if (instanceId == 0 || towerDefId == 0 || !InstanceWorldExists(instanceId))
             return;
         InstanceTowerDefHostDropped[(instanceId, towerDefId)] = 0;
     }
