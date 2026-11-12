@@ -60,14 +60,22 @@ public class IndunManagerTests
 
     private sealed class MemoryPermitStore : IIndunPermitStore
     {
-        public readonly List<(uint CharacterId, uint ZoneGroupId, DateTime At)> Rows = [];
+        public readonly List<(uint CharacterId, uint ZoneGroupId, DateTime At, DateTime? SpentAt)> Rows = [];
 
-        public IReadOnlyList<(uint ZoneGroupId, DateTime At)> Load(uint characterId, DateTime sinceUtc) =>
-            Rows.Where(r => r.CharacterId == characterId && r.At >= sinceUtc).Select(r => (r.ZoneGroupId, r.At)).ToList();
+        public IReadOnlyList<(uint ZoneGroupId, DateTime At, DateTime? SpentAt)> Load(uint characterId, DateTime sinceUtc) =>
+            Rows.Where(r => r.CharacterId == characterId && r.At >= sinceUtc)
+                .Select(r => (r.ZoneGroupId, r.At, r.SpentAt)).ToList();
 
         // DATETIME(3): the store keeps whole milliseconds.
         public void Add(uint characterId, uint zoneGroupId, DateTime atUtc) =>
-            Rows.Add((characterId, zoneGroupId, atUtc.AddTicks(-(atUtc.Ticks % TimeSpan.TicksPerMillisecond))));
+            Rows.Add((characterId, zoneGroupId, atUtc.AddTicks(-(atUtc.Ticks % TimeSpan.TicksPerMillisecond)), null));
+
+        public void MarkSpent(uint characterId, uint zoneGroupId, DateTime spentAtUtc)
+        {
+            var i = Rows.FindIndex(r => r.CharacterId == characterId && r.ZoneGroupId == zoneGroupId && r.SpentAt == null);
+            if (i >= 0)
+                Rows[i] = Rows[i] with { SpentAt = spentAtUtc.AddTicks(-(spentAtUtc.Ticks % TimeSpan.TicksPerMillisecond)) };
+        }
 
         public void Clear(uint characterId, uint zoneGroupId) =>
             Rows.RemoveAll(r => r.CharacterId == characterId && (zoneGroupId == 0 || r.ZoneGroupId == zoneGroupId));
@@ -125,8 +133,11 @@ public class IndunManagerTests
         public readonly MemoryPermitStore Inner = new();
         private int _failuresLeft = failures;
 
-        public IReadOnlyList<(uint ZoneGroupId, DateTime At)> Load(uint characterId, DateTime sinceUtc) =>
+        public IReadOnlyList<(uint ZoneGroupId, DateTime At, DateTime? SpentAt)> Load(uint characterId, DateTime sinceUtc) =>
             Inner.Load(characterId, sinceUtc);
+
+        public void MarkSpent(uint characterId, uint zoneGroupId, DateTime spentAtUtc) =>
+            Inner.MarkSpent(characterId, zoneGroupId, spentAtUtc);
 
         public void Add(uint characterId, uint zoneGroupId, DateTime atUtc)
         {
@@ -161,6 +172,50 @@ public class IndunManagerTests
         manager.LoadPermitRegistrations(1001);
 
         await Assert.That(store.Inner.Rows.Count).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task APassUsedToEnter_StaysSpentAfterAWorldRestart()
+    {
+        var store = new MemoryPermitStore();
+        var dungeon = new IndunZone { ZoneGroupId = 158, EnterCount = 1, PermitEnterCountItemId = 9, UseUtcEntranceTimes = true };
+        var before = ManagerWith(store);
+        before.RecordPermit(1001, 158, DateTime.UtcNow);
+        before.CheckEntryAttemptCount(1001, 158, dungeon, true);
+
+        var afterRestart = ManagerWith(store);
+        afterRestart.LoadPermitRegistrations(1001);
+        var allowed = afterRestart.CheckEntryAttemptCount(1001, 158, dungeon, false);
+
+        await Assert.That(allowed).IsFalse();
+    }
+
+    [Test]
+    public async Task AnUnusedPass_StillAllowsOneEntryAfterAWorldRestart()
+    {
+        var store = new MemoryPermitStore();
+        var dungeon = new IndunZone { ZoneGroupId = 158, EnterCount = 1, PermitEnterCountItemId = 9, UseUtcEntranceTimes = true };
+        ManagerWith(store).RecordPermit(1001, 158, DateTime.UtcNow);
+
+        var afterRestart = ManagerWith(store);
+        afterRestart.LoadPermitRegistrations(1001);
+
+        await Assert.That(afterRestart.CheckEntryAttemptCount(1001, 158, dungeon, false)).IsTrue();
+    }
+
+    [Test]
+    public async Task ARelog_DoesNotCountASpentPassAsASecondEntry()
+    {
+        var store = new MemoryPermitStore();
+        var dungeon = new IndunZone { ZoneGroupId = 158, EnterCount = 2, PermitEnterCountItemId = 9, UseUtcEntranceTimes = true };
+        var manager = ManagerWith(store);
+        manager.RecordPermit(1001, 158, DateTime.UtcNow);
+        manager.RecordPermit(1001, 158, DateTime.UtcNow);
+        manager.CheckEntryAttemptCount(1001, 158, dungeon, true);
+
+        manager.LoadPermitRegistrations(1001);
+
+        await Assert.That(manager.GetVisitRow(1001, dungeon).UsedCount).IsEqualTo(1);
     }
 
     [Test]

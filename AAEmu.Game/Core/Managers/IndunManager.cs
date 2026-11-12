@@ -1074,6 +1074,7 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
 
     public bool CheckEntryAttemptCount(uint characterId, uint zoneGroupId, IndunZone indunZone, bool addAsNewEnty)
     {
+        DateTime? spentAt = null;
         lock (_lock)
         {
             if (!EntryHistory.ContainsKey(characterId))
@@ -1085,7 +1086,9 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
                 zoneAndEntries.Add(zoneGroupId, []);
 
             var entriesList = zoneAndEntries.GetValueOrDefault(zoneGroupId);
+            // Whole milliseconds, as stored, so a reload recognises the same entry.
             var now = ServerCalendar.UtcNow;
+            now = now.AddTicks(-(now.Ticks % TimeSpan.TicksPerMillisecond));
             var usedToday = IndunEntryRules.CountEntriesInDailyWindow(entriesList, now, DailyZoneOf(zoneGroupId));
             var permitsUsed = GetPermitsUsedUnlocked(characterId, zoneGroupId, now);
             var needsPermit = indunZone.PermitEnterCountItemId != 0;
@@ -1102,10 +1105,23 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
             {
                 entriesList.Add(now);
                 Logger.Warn($"Added entry for player {characterId} in zone {zoneGroupId}, Count is now {entriesList.Count}");
+                spentAt = needsPermit ? now : null;
             }
-
-            return true;
         }
+
+        if (spentAt is { } spent)
+        {
+            try
+            {
+                PermitStore.MarkSpent(characterId, zoneGroupId, spent);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Could not store the spent dungeon pass of character {0} for zone group {1}", characterId, zoneGroupId);
+            }
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -1409,7 +1425,7 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
     public void LoadPermitRegistrations(uint characterId)
     {
         FlushUnsavedPermits();
-        IReadOnlyList<(uint ZoneGroupId, DateTime At)> rows;
+        IReadOnlyList<(uint ZoneGroupId, DateTime At, DateTime? SpentAt)> rows;
         try
         {
             rows = PermitStore.Load(characterId, ServerCalendar.UtcNow.AddDays(-2));
@@ -1422,9 +1438,23 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
 
         lock (_lock)
         {
-            foreach (var (zoneGroupId, at) in rows)
+            foreach (var (zoneGroupId, at, spentAt) in rows)
+            {
                 AddPermitUnlocked(characterId, zoneGroupId, at);
+                if (spentAt is { } spent)
+                    AddEntryUnlocked(characterId, zoneGroupId, spent);
+            }
         }
+    }
+
+    private void AddEntryUnlocked(uint characterId, uint zoneGroupId, DateTime atUtc)
+    {
+        if (!EntryHistory.TryGetValue(characterId, out var byZone))
+            EntryHistory[characterId] = byZone = [];
+        if (!byZone.TryGetValue(zoneGroupId, out var entries))
+            byZone[zoneGroupId] = entries = [];
+        if (!entries.Contains(atUtc))
+            entries.Add(atUtc);
     }
 
     private void AddPermitUnlocked(uint characterId, uint zoneGroupId, DateTime atUtc)
