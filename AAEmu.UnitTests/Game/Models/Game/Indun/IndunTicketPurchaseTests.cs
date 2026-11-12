@@ -15,12 +15,14 @@ public class IndunTicketPurchaseTests
 
         bool Buy() => purchase.Run(characterId: 7,
             canBuy: () => Volatile.Read(ref registered) < 1,
+            store: () => true,
             pay: () =>
             {
                 bothChecked.SignalAndWait(TimeSpan.FromMilliseconds(200));
                 Interlocked.Increment(ref paid);
                 return true;
             },
+            unstore: () => { },
             register: () => Interlocked.Increment(ref registered));
 
         var results = await Task.WhenAll(Task.Run(Buy), Task.Run(Buy));
@@ -36,9 +38,32 @@ public class IndunTicketPurchaseTests
         var purchase = new IndunTicketPurchase();
         var registered = false;
 
-        var ok = purchase.Run(7, () => true, () => false, () => registered = true);
+        var ok = purchase.Run(7, () => true, () => true, () => false, () => { }, () => registered = true);
 
         await Assert.That(ok).IsFalse();
         await Assert.That(registered).IsFalse();
+    }
+
+    [Test]
+    public async Task AFailedPayment_RemovesTheStoredPass()
+    {
+        var purchase = new IndunTicketPurchase();
+        var stored = false;
+
+        purchase.Run(7, () => true, () => stored = true, () => false, () => stored = false, () => { });
+
+        await Assert.That(stored).IsFalse();
+    }
+
+    [Test]
+    public async Task AFailedStore_TakesNoPayment()
+    {
+        var purchase = new IndunTicketPurchase();
+        var paid = false;
+
+        var ok = purchase.Run(7, () => true, () => false, () => paid = true, () => { }, () => { });
+
+        await Assert.That(ok).IsFalse();
+        await Assert.That(paid).IsFalse();
     }
 }

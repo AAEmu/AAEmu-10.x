@@ -1325,6 +1325,7 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
         }
 
         InstanceVisitCountRecord row = default;
+        var passAt = default(DateTime);
         var bought = _ticketPurchase.Run(character.Id,
             canBuy: () =>
             {
@@ -1338,12 +1339,16 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
                 character.SendErrorMessage(ErrorMessageType.InstanceVisitLimit);
                 return false;
             },
+            store: () => TryStorePermit(character.Id, zone.ZoneGroupId, ServerCalendar.UtcNow, out passAt),
             pay: () => Pay(character, zone.PermitEnterCountItemId, 1),
+            unstore: () => DiscardPermit(character.Id, zone.ZoneGroupId, passAt),
             register: () =>
             {
-                RecordPermit(character.Id, zone.ZoneGroupId, ServerCalendar.UtcNow);
                 lock (_lock)
+                {
+                    AddPermitUnlocked(character.Id, zone.ZoneGroupId, passAt);
                     row = BuildVisitRowUnlocked(character.Id, zone, ServerCalendar.UtcNow);
+                }
             });
         if (!bought)
             return false;
@@ -1357,34 +1362,32 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
 
     internal IIndunPermitStore PermitStore { get; init; } = new MySqlIndunPermitStore();
 
-    /// <summary>Registers a paid pass in memory and in the store.</summary>
-    internal void RecordPermit(uint characterId, uint zoneGroupId, DateTime atUtc)
+    /// <summary>Stores a pass and registers it in memory; false when it could not be stored.</summary>
+    internal bool RecordPermit(uint characterId, uint zoneGroupId, DateTime atUtc)
+    {
+        if (!TryStorePermit(characterId, zoneGroupId, atUtc, out var stored))
+            return false;
+        lock (_lock)
+            AddPermitUnlocked(characterId, zoneGroupId, stored);
+        return true;
+    }
+
+    /// <summary>
+    /// Writes the pass row, taking the next free millisecond when the slot is taken. Done before the ticket is
+    /// paid, so nothing paid for lives only in memory.
+    /// </summary>
+    private bool TryStorePermit(uint characterId, uint zoneGroupId, DateTime atUtc, out DateTime stored)
     {
         // Whole milliseconds, as stored, so a reload at the next login recognises the same pass.
         atUtc = atUtc.AddTicks(-(atUtc.Ticks % TimeSpan.TicksPerMillisecond));
         lock (_lock)
         {
-            // Each pass is keyed by its time, so a purchase in the same millisecond moves on to the next free one.
             while (PermitRegistrations.TryGetValue(characterId, out var byZone) &&
                    byZone.TryGetValue(zoneGroupId, out var taken) && taken.Contains(atUtc))
                 atUtc = atUtc.AddMilliseconds(1);
         }
 
-        FlushUnsavedPermits();
-        // The store is the arbiter of a free slot, so memory takes the time it ended up with.
-        var stored = TryStorePermit(characterId, zoneGroupId, ref atUtc);
-        lock (_lock)
-        {
-            AddPermitUnlocked(characterId, zoneGroupId, atUtc);
-            if (!stored)
-                UnsavedPermits.Add((characterId, zoneGroupId, atUtc));
-        }
-    }
-
-    private List<(uint CharacterId, uint ZoneGroupId, DateTime At)> UnsavedPermits { get; } = [];
-
-    private bool TryStorePermit(uint characterId, uint zoneGroupId, ref DateTime atUtc)
-    {
+        stored = atUtc;
         for (var attempt = 1; attempt <= 3; attempt++)
         {
             try
@@ -1392,8 +1395,10 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
                 // False means the slot is already a row (primary key); take the next millisecond.
                 for (var shifts = 0; shifts < 100; shifts++, atUtc = atUtc.AddMilliseconds(1))
                 {
-                    if (PermitStore.Add(characterId, zoneGroupId, atUtc))
-                        return true;
+                    if (!PermitStore.Add(characterId, zoneGroupId, atUtc))
+                        continue;
+                    stored = atUtc;
+                    return true;
                 }
 
                 Logger.Error("No free slot to store the dungeon pass of character {0} for zone group {1}", characterId, zoneGroupId);
@@ -1409,32 +1414,33 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
         return false;
     }
 
-    /// <summary>Writes passes whose store write failed earlier; they stay queued until a write succeeds.</summary>
-    private void FlushUnsavedPermits()
+    /// <summary>Takes back a stored pass whose ticket could not be paid.</summary>
+    private void DiscardPermit(uint characterId, uint zoneGroupId, DateTime atUtc)
     {
-        List<(uint CharacterId, uint ZoneGroupId, DateTime At)> pending;
         lock (_lock)
         {
-            if (UnsavedPermits.Count == 0)
-                return;
-            pending = [.. UnsavedPermits];
-            UnsavedPermits.Clear();
+            if (PermitRegistrations.TryGetValue(characterId, out var byZone) && byZone.TryGetValue(zoneGroupId, out var list))
+                list.Remove(atUtc);
         }
 
-        foreach (var p in pending)
+        for (var attempt = 1; attempt <= 3; attempt++)
         {
-            var at = p.At;
-            if (TryStorePermit(p.CharacterId, p.ZoneGroupId, ref at))
-                continue;
-            lock (_lock)
-                UnsavedPermits.Add(p);
+            try
+            {
+                PermitStore.Remove(characterId, zoneGroupId, atUtc);
+                return;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Could not remove the unpaid dungeon pass of character {0} for zone group {1} (try {2})",
+                    characterId, zoneGroupId, attempt);
+            }
         }
     }
 
     /// <summary>Brings back the passes a character paid for (the daily window spans at most two calendar days).</summary>
     public void LoadPermitRegistrations(uint characterId)
     {
-        FlushUnsavedPermits();
         IReadOnlyList<(uint ZoneGroupId, DateTime At, DateTime? SpentAt)> rows;
         try
         {
@@ -1539,7 +1545,6 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
         {
             entries = IndunEntryRules.ClearDaily(EntryHistory, characterId, zoneGroupId);
             var passes = IndunEntryRules.ClearDaily(PermitRegistrations, characterId, zoneGroupId);
-            UnsavedPermits.RemoveAll(p => p.CharacterId == characterId && (zoneGroupId == 0 || p.ZoneGroupId == zoneGroupId));
             Logger.Info("ClearEntryHistory character={0} zoneGroup={1} entries={2} passes={3}",
                 characterId, zoneGroupId, entries, passes);
         }

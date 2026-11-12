@@ -11,6 +11,9 @@ public interface IIndunPermitStore
     /// <returns>False when a pass already exists at that exact time, so nothing was written.</returns>
     bool Add(uint characterId, uint zoneGroupId, DateTime atUtc);
 
+    /// <summary>Removes one stored pass, e.g. when its payment failed.</summary>
+    void Remove(uint characterId, uint zoneGroupId, DateTime atUtc);
+
     /// <summary>Marks the character's oldest unspent pass for that zone group as used.</summary>
     void MarkSpent(uint characterId, uint zoneGroupId, DateTime spentAtUtc);
 
@@ -57,6 +60,19 @@ public sealed class MySqlIndunPermitStore : IIndunPermitStore
         command.Parameters.AddWithValue("@zoneGroupId", zoneGroupId);
         command.Parameters.AddWithValue("@at", atUtc);
         return command.ExecuteNonQuery() > 0;
+    }
+
+    public void Remove(uint characterId, uint zoneGroupId, DateTime atUtc)
+    {
+        using var connection = MySQL.CreateConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText =
+            "DELETE FROM `character_indun_permits` " +
+            "WHERE `character_id` = @characterId AND `zone_group_id` = @zoneGroupId AND `registered_at` = @at";
+        command.Parameters.AddWithValue("@characterId", characterId);
+        command.Parameters.AddWithValue("@zoneGroupId", zoneGroupId);
+        command.Parameters.AddWithValue("@at", atUtc);
+        command.ExecuteNonQuery();
     }
 
     public void MarkSpent(uint characterId, uint zoneGroupId, DateTime spentAtUtc)

@@ -77,6 +77,9 @@ public class IndunManagerTests
             return true;
         }
 
+        public void Remove(uint characterId, uint zoneGroupId, DateTime atUtc) =>
+            Rows.RemoveAll(r => r.CharacterId == characterId && r.ZoneGroupId == zoneGroupId && r.At == atUtc);
+
         public void MarkSpent(uint characterId, uint zoneGroupId, DateTime spentAtUtc)
         {
             var i = Rows.FindIndex(r => r.CharacterId == characterId && r.ZoneGroupId == zoneGroupId && r.SpentAt == null);
@@ -146,6 +149,9 @@ public class IndunManagerTests
         public void MarkSpent(uint characterId, uint zoneGroupId, DateTime spentAtUtc) =>
             Inner.MarkSpent(characterId, zoneGroupId, spentAtUtc);
 
+        public void Remove(uint characterId, uint zoneGroupId, DateTime atUtc) =>
+            Inner.Remove(characterId, zoneGroupId, atUtc);
+
         public bool Add(uint characterId, uint zoneGroupId, DateTime atUtc)
         {
             if (_failuresLeft-- > 0)
@@ -169,16 +175,16 @@ public class IndunManagerTests
     }
 
     [Test]
-    public async Task APassWhoseWritesKeepFailing_IsStoredAtTheNextLogin()
+    public async Task APassThatCannotBeStored_IsRefusedAndNeverLivesOnlyInMemory()
     {
         var store = new FlakyPermitStore(100);
+        var island = new IndunZone { ZoneGroupId = 158, EnterCount = 2, UseUtcEntranceTimes = true };
         var manager = ManagerWith(store);
-        manager.RecordPermit(1001, 158, DateTime.UtcNow);
-        store.Heal();
 
-        manager.LoadPermitRegistrations(1001);
+        var stored = manager.RecordPermit(1001, 158, DateTime.UtcNow);
 
-        await Assert.That(store.Inner.Rows.Count).IsEqualTo(1);
+        await Assert.That(stored).IsFalse();
+        await Assert.That(manager.GetVisitRow(1001, island).PermittedCount).IsEqualTo(0);
     }
 
     [Test]
