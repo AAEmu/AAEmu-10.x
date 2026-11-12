@@ -106,6 +106,21 @@ public class IndunManagerTests
     }
 
     [Test]
+    public async Task TwoPurchasesInTheSameMillisecond_AreTwoPasses()
+    {
+        var store = new MemoryPermitStore();
+        var island = new IndunZone { ZoneGroupId = 158, EnterCount = 2, UseUtcEntranceTimes = true };
+        var manager = ManagerWith(store);
+        var at = DateTime.UtcNow;
+
+        manager.RecordPermit(1001, 158, at);
+        manager.RecordPermit(1001, 158, at);
+
+        await Assert.That(manager.GetVisitRow(1001, island).PermittedCount).IsEqualTo(2);
+        await Assert.That(store.Rows.Count).IsEqualTo(2);
+    }
+
+    [Test]
     public async Task ClearingEntryHistory_AlsoForgetsStoredPasses()
     {
         var store = new MemoryPermitStore();

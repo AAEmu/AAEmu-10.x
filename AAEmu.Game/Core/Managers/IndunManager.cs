@@ -1347,7 +1347,13 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
         // Whole milliseconds, as stored, so a reload at the next login recognises the same pass.
         atUtc = atUtc.AddTicks(-(atUtc.Ticks % TimeSpan.TicksPerMillisecond));
         lock (_lock)
+        {
+            // Each pass is keyed by its time, so a purchase in the same millisecond moves on to the next free one.
+            while (PermitRegistrations.TryGetValue(characterId, out var byZone) &&
+                   byZone.TryGetValue(zoneGroupId, out var taken) && taken.Contains(atUtc))
+                atUtc = atUtc.AddMilliseconds(1);
             AddPermitUnlocked(characterId, zoneGroupId, atUtc);
+        }
 
         try
         {
