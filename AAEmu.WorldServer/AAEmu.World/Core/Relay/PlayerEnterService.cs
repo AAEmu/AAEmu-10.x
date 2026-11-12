@@ -145,9 +145,15 @@ public class PlayerEnterService
 
         zone.SendPacket(new WZUnitStatePacket(unitStateBody));
         zone.Units.RegisterWithId(bcId, unitStateBody);
-        ZoneBuffRegistry.MarkSnapshot(zone.ZoneId, zone.InstanceId, bcId, writtenBuffs);
+        MarkSnapshotAndRetireEnded(zone.ZoneId, zone.InstanceId, bcId, writtenBuffs);
+    }
 
-        RetireEndedSnapshotBuffs(bcId, writtenBuffs);
+    /// <summary>Records the buffs a body carried, then relays the removal of any that ended meanwhile.</summary>
+    internal static void MarkSnapshotAndRetireEnded(uint zoneId, uint instanceId, uint ownerObjId,
+        IReadOnlyList<UnitStateBuffSerializer.SnapshotEntry> writtenBuffs)
+    {
+        ZoneBuffRegistry.MarkSnapshot(zoneId, instanceId, ownerObjId, writtenBuffs);
+        RetireEndedSnapshotBuffs(ownerObjId, writtenBuffs);
     }
 
     internal static void RetireEndedSnapshotBuffs(uint bcId,
