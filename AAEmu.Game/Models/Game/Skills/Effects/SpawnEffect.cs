@@ -296,7 +296,7 @@ public class SpawnEffect : EffectTemplate
         }
 
         if (DespawnOnCreatorDeath && caster is Npc creator)
-            CreatorBoundSpawns.Bind(creator, npc, spawn =>
+            npc.Deleted += CreatorBoundSpawns.Bind(creator, npc, spawn =>
             {
                 if (spawn is Npc { IsDead: false } child)
                     WorldIntegration.DeleteNpcMirror(child, true);

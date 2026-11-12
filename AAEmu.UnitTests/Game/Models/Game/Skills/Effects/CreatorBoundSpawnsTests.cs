@@ -32,4 +32,33 @@ public class CreatorBoundSpawnsTests
 
         await Assert.That(despawned).IsEmpty();
     }
+
+    [Test]
+    public async Task ChildDeath_ReleasesTheCreatorsHandler()
+    {
+        var songsong = new Unit { ObjId = 899 };
+        var bug = new Unit { ObjId = 912 };
+        var before = songsong.Events.OnDeath.GetInvocationList().Length;
+
+        CreatorBoundSpawns.Bind(songsong, bug, _ => { });
+        bug.Events.OnDeath(bug, new OnDeathArgs { Victim = bug });
+
+        await Assert.That(songsong.Events.OnDeath.GetInvocationList().Length).IsEqualTo(before);
+    }
+
+    [Test]
+    public async Task ReturnedUnbind_ReleasesTheCreatorsHandler()
+    {
+        var songsong = new Unit { ObjId = 899 };
+        var bug = new Unit { ObjId = 912 };
+        var despawned = new List<Unit>();
+        var before = songsong.Events.OnDeath.GetInvocationList().Length;
+
+        var unbind = CreatorBoundSpawns.Bind(songsong, bug, despawned.Add);
+        unbind();
+        songsong.Events.OnDeath(songsong, new OnDeathArgs { Victim = songsong });
+
+        await Assert.That(songsong.Events.OnDeath.GetInvocationList().Length).IsEqualTo(before);
+        await Assert.That(despawned).IsEmpty();
+    }
 }

@@ -2267,8 +2267,13 @@ public partial class Npc : Unit
         base.Spawn();
     }
 
+    /// <summary>Raised once when the NPC is deleted, before it leaves its world.</summary>
+    public event Action Deleted;
+
     public override void Delete()
     {
+        Deleted?.Invoke();
+        Deleted = null;
         base.Delete();
     }
 
