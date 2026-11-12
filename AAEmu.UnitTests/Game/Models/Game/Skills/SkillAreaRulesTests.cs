@@ -198,4 +198,15 @@ public class SkillAreaRulesTests
 
         await Assert.That(kept).IsEquivalentTo(new[] { target, near });
     }
+
+    [Test]
+    public async Task ApplyTargetAreaCount_KeepsTheCastTargetOverANeighbourOnTopOfIt()
+    {
+        var neighbour = new Unit { ObjId = 2 };
+        var target = new Unit { ObjId = 3 };
+
+        var kept = SkillAreaRules.ApplyTargetAreaCount([neighbour, target], target, 1, 0);
+
+        await Assert.That(kept).IsEquivalentTo(new[] { target });
+    }
 }

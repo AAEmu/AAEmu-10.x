@@ -187,7 +187,7 @@ public static class SkillAreaRules
         }
 
         if (sortOrigin != null)
-            units = units.OrderBy(t => t.GetDistanceTo(sortOrigin)).Take(targetAreaCount).ToList();
+            units = KeepNearest(units, sortOrigin, targetAreaCount, t => t.GetDistanceTo(sortOrigin));
         else
             units = units.Take(targetAreaCount).ToList();
 
