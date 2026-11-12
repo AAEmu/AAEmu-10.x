@@ -1513,6 +1513,8 @@ public class Dungeon : IPreparedIndunInstance
     /// <summary>Rank rewards some players did not get yet, by kind, with the next attempt and the attempts so far.</summary>
     private readonly Dictionary<uint, (DateTime Next, int Attempts)> _rankedMailRewardRetries = [];
 
+    internal IndunRankedRewardPlans RankedRewardPlans { get; } = new();
+
     internal void QueueRankedMailRewardRetry(uint instanceRewardKindId)
     {
         lock (_lock)

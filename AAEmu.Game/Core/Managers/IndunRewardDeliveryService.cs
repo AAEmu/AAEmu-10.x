@@ -127,14 +127,14 @@ public sealed class IndunRewardDeliveryService : Singleton<IndunRewardDeliverySe
             return IndunRewardDeliveryResult.SelectionUnavailable;
         }
 
-        var recipients = ResolveRecipients(world.GetAllCharacters());
-        var ranks = InstanceRewardRankRules.Rank(recipients.Select(r => r.Id), dungeon.GainPointsSnapshot());
+        // Fixed on the first attempt: a retry pays the same players their same ranks; paid ones are skipped by the claim.
+        var plan = dungeon.RankedRewardPlans.GetOrCreate(instanceRewardKindId, () =>
+            IndunRankedRewardPlan.Build(ResolveRecipients(world.GetAllCharacters()), dungeon.GainPointsSnapshot()));
         var delivered = 0;
         var claimed = 0;
         var failed = 0;
-        foreach (var recipient in recipients)
+        foreach (var (recipient, rank) in plan.Entries)
         {
-            var rank = ranks[recipient.Id];
             IReadOnlyList<InstanceReward> rewards;
             IReadOnlyList<InstanceRewardBonusCount> bonusCounts;
             InstanceRewardMailText mailText;
