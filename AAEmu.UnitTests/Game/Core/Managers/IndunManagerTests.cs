@@ -120,6 +120,49 @@ public class IndunManagerTests
         await Assert.That(store.Rows.Count).IsEqualTo(2);
     }
 
+    private sealed class FlakyPermitStore(int failures) : IIndunPermitStore
+    {
+        public readonly MemoryPermitStore Inner = new();
+        private int _failuresLeft = failures;
+
+        public IReadOnlyList<(uint ZoneGroupId, DateTime At)> Load(uint characterId, DateTime sinceUtc) =>
+            Inner.Load(characterId, sinceUtc);
+
+        public void Add(uint characterId, uint zoneGroupId, DateTime atUtc)
+        {
+            if (_failuresLeft-- > 0)
+                throw new InvalidOperationException("db down");
+            Inner.Add(characterId, zoneGroupId, atUtc);
+        }
+
+        public void Clear(uint characterId, uint zoneGroupId) => Inner.Clear(characterId, zoneGroupId);
+
+        public void Heal() => _failuresLeft = 0;
+    }
+
+    [Test]
+    public async Task APassWhoseWriteFailsOnce_IsStoredOnRetry()
+    {
+        var store = new FlakyPermitStore(1);
+
+        ManagerWith(store).RecordPermit(1001, 158, DateTime.UtcNow);
+
+        await Assert.That(store.Inner.Rows.Count).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task APassWhoseWritesKeepFailing_IsStoredAtTheNextLogin()
+    {
+        var store = new FlakyPermitStore(100);
+        var manager = ManagerWith(store);
+        manager.RecordPermit(1001, 158, DateTime.UtcNow);
+        store.Heal();
+
+        manager.LoadPermitRegistrations(1001);
+
+        await Assert.That(store.Inner.Rows.Count).IsEqualTo(1);
+    }
+
     [Test]
     public async Task ClearingEntryHistory_AlsoForgetsStoredPasses()
     {

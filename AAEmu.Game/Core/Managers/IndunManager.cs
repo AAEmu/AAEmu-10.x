@@ -1355,19 +1355,60 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
             AddPermitUnlocked(characterId, zoneGroupId, atUtc);
         }
 
-        try
+        FlushUnsavedPermits();
+        if (!TryStorePermit(characterId, zoneGroupId, atUtc))
         {
-            PermitStore.Add(characterId, zoneGroupId, atUtc);
+            lock (_lock)
+                UnsavedPermits.Add((characterId, zoneGroupId, atUtc));
         }
-        catch (Exception ex)
+    }
+
+    private List<(uint CharacterId, uint ZoneGroupId, DateTime At)> UnsavedPermits { get; } = [];
+
+    private bool TryStorePermit(uint characterId, uint zoneGroupId, DateTime atUtc)
+    {
+        for (var attempt = 1; attempt <= 3; attempt++)
         {
-            Logger.Error(ex, "Could not store the dungeon pass of character {0} for zone group {1}", characterId, zoneGroupId);
+            try
+            {
+                PermitStore.Add(characterId, zoneGroupId, atUtc);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Could not store the dungeon pass of character {0} for zone group {1} (try {2})",
+                    characterId, zoneGroupId, attempt);
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Writes passes whose store write failed earlier; they stay queued until a write succeeds.</summary>
+    private void FlushUnsavedPermits()
+    {
+        List<(uint CharacterId, uint ZoneGroupId, DateTime At)> pending;
+        lock (_lock)
+        {
+            if (UnsavedPermits.Count == 0)
+                return;
+            pending = [.. UnsavedPermits];
+            UnsavedPermits.Clear();
+        }
+
+        foreach (var p in pending)
+        {
+            if (TryStorePermit(p.CharacterId, p.ZoneGroupId, p.At))
+                continue;
+            lock (_lock)
+                UnsavedPermits.Add(p);
         }
     }
 
     /// <summary>Brings back the passes a character paid for (the daily window spans at most two calendar days).</summary>
     public void LoadPermitRegistrations(uint characterId)
     {
+        FlushUnsavedPermits();
         IReadOnlyList<(uint ZoneGroupId, DateTime At)> rows;
         try
         {
@@ -1458,6 +1499,7 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
         {
             entries = IndunEntryRules.ClearDaily(EntryHistory, characterId, zoneGroupId);
             var passes = IndunEntryRules.ClearDaily(PermitRegistrations, characterId, zoneGroupId);
+            UnsavedPermits.RemoveAll(p => p.CharacterId == characterId && (zoneGroupId == 0 || p.ZoneGroupId == zoneGroupId));
             Logger.Info("ClearEntryHistory character={0} zoneGroup={1} entries={2} passes={3}",
                 characterId, zoneGroupId, entries, passes);
         }
