@@ -895,6 +895,13 @@ public class Doodad : BaseUnit
             Use(caster, 0);
     }
 
+    internal virtual bool KeepsAsChoice(DoodadFunc func) =>
+        func.FuncType == nameof(DoodadFuncUse)
+        && DoodadStayOnPhaseRules.KeepsDoodad(func.FuncType, func.NextPhase,
+            DoodadManager.Instance.GetFuncsForGroup(FuncGroupId).Select(f => (f.FuncType, f.NextPhase)),
+            SkillItemGrantRules.GrantsItems(SkillManager.Instance.GetSkillTemplate(func.SkillId),
+                SkillManager.Instance.GetSkillTemplate));
+
     private bool CompleteFunc(BaseUnit caster, DoodadFunc func, uint skillId)
     {
         if (func.SoundId > 0)
@@ -923,12 +930,12 @@ public class Doodad : BaseUnit
                 // We don't need to change phase, we stay in the current phase.
                 // The check is needed for Windstone id=1473. A system doodad (permanent world fixture such
                 // as a faction statue) is never consumed by a repeatable use on its final phase.
-                var keptAsChoice = func.FuncType == nameof(DoodadFuncUse)
-                    && DoodadStayOnPhaseRules.KeepsDoodad(func.FuncType, func.NextPhase,
-                        DoodadManager.Instance.GetFuncsForGroup(FuncGroupId).Select(f => (f.FuncType, f.NextPhase)),
-                        SkillItemGrantRules.GrantsItems(SkillManager.Instance.GetSkillTemplate(func.SkillId),
-                            SkillManager.Instance.GetSkillTemplate));
-                if (!keptAsChoice && !HasOnlyGroupKindStart() && Template?.SystemDoodad != true)
+                if (KeepsAsChoice(func))
+                {
+                    // Stays in this phase: no phase change, so its timer is not restarted.
+                    ToNextPhase = false;
+                }
+                else if (!HasOnlyGroupKindStart() && Template?.SystemDoodad != true)
                 {
                     if (FuncTask != null)
                     {
