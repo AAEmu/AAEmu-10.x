@@ -535,8 +535,7 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
                 return possibleTargetInstance.QueuePlayer(character);
             if (possibleTargetInstance.World.HasCharacter(character.Id))
             {
-                possibleTargetInstance.AddPlayer(character);
-                return true;
+                return possibleTargetInstance.AddPlayer(character);
             }
             if (possibleTargetInstance.HasChargedEntry(character.Id))
             {

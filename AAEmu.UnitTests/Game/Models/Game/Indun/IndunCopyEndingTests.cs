@@ -56,4 +56,28 @@ public class IndunCopyEndingTests
 
         await Assert.That(ending.IsClosing).IsTrue();
     }
+
+    [Test]
+    public async Task ClosingCopy_RefusesBeforeChargingTheEntry()
+    {
+        var ending = new IndunCopyEnding([180]);
+        var scriptEnded = T0.AddSeconds(426);
+        ending.MarkScriptEnded(scriptEnded);
+        ending.Step(Island, T0, scriptEnded.AddSeconds(180));
+        var charged = false;
+
+        var verdict = ending.TryAdmit(() => charged = true);
+
+        await Assert.That(verdict).IsEqualTo(IndunEntryVerdict.CopyClosing);
+        await Assert.That(charged).IsFalse();
+    }
+
+    [Test]
+    public async Task OpenCopy_AdmitsOnlyWhenTheChargeSucceeds()
+    {
+        var ending = new IndunCopyEnding([180]);
+
+        await Assert.That(ending.TryAdmit(() => true)).IsEqualTo(IndunEntryVerdict.Admitted);
+        await Assert.That(ending.TryAdmit(() => false)).IsEqualTo(IndunEntryVerdict.OverLimit);
+    }
 }

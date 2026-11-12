@@ -450,12 +450,6 @@ public class Dungeon : IPreparedIndunInstance
     /// <param name="character"></param>
     public bool QueuePlayer(Character character)
     {
-        if (IsClosing())
-        {
-            Logger.Info($"[{World}] Player {character?.Name} arrived after the copy began closing.");
-            return false;
-        }
-
         if (!CanQueuePlayer(character))
         {
             if (character != null)
@@ -472,29 +466,63 @@ public class Dungeon : IPreparedIndunInstance
             return true;
         }
         
-        if (ShouldChargeDailyEntry(_chargedEntryIds.Contains(character.Id)))
+        if (IsClosing())
+            return RefuseEntry(character);
+
+        if (FinishedLoading)
+            ApplyPickedDifficulty(character);
+
+        IndunEntryVerdict verdict;
+        var enterNow = false;
+        lock (_lock)
         {
-            if (!IndunManager.Instance.CheckEntryAttemptCount(character.Id, GetZoneGroupId, _indunZone, true))
+            // The closing check and the charge share the lock the closing step runs under.
+            verdict = _ending.TryAdmit(() => ChargeEntry(character));
+            if (verdict == IndunEntryVerdict.Admitted)
             {
+                PlayersWithAccess.Add(character.Id);
+                enterNow = FinishedLoading;
+                if (enterNow)
+                    AdmitToWorldUnderLock(character);
+                else
+                    EnterRequests.Add(character);
+            }
+        }
+
+        switch (verdict)
+        {
+            case IndunEntryVerdict.CopyClosing:
+                return RefuseEntry(character);
+            case IndunEntryVerdict.OverLimit:
                 Logger.Info($"[{World}] Player {character.Name} did too many dungeon attempts.");
                 character.SendErrorMessage(ErrorMessageType.InstanceVisitLimit);
                 return false;
-            }
-
-            _chargedEntryIds.Add(character.Id);
         }
 
-        PlayersWithAccess.Add(character.Id);
-        if (FinishedLoading)
-        {
-            AddPlayer(character);
-        }
+        if (enterNow)
+            CompleteEntry(character);
         else
-        {
             character.SendPacket(new SCProcessingInstancePacket((int)_zoneInstanceId.ZoneId));
-            EnterRequests.Add(character);
-        }
         return true;
+    }
+
+    private bool ChargeEntry(Character character)
+    {
+        if (!ShouldChargeDailyEntry(_chargedEntryIds.Contains(character.Id)))
+            return true;
+        if (!IndunManager.Instance.CheckEntryAttemptCount(character.Id, GetZoneGroupId, _indunZone, true))
+            return false;
+
+        _chargedEntryIds.Add(character.Id);
+        return true;
+    }
+
+    /// <summary>Tells a player the copy is closing; it takes no entry and costs none.</summary>
+    private bool RefuseEntry(Character character)
+    {
+        Logger.Info($"[{World}] Player {character?.Name} arrived after the copy began closing.");
+        character?.SendErrorMessage(ErrorMessageType.NoServerInstanceResource);
+        return false;
     }
 
     /// <summary>
@@ -516,29 +544,52 @@ public class Dungeon : IPreparedIndunInstance
     /// Add player to Dungeon
     /// </summary>
     /// <param name="character"></param>
-    public void AddPlayer(Character character)
+    public bool AddPlayer(Character character)
     {
         Logger.Info($"[Dungeon] Adding player {character.Name} to dungeon {_zoneInstanceId.InstanceId}, {_zoneInstanceId.ZoneId}");
 
-        // A pick made in the H-window before entering lands on the first copy this character enters.
-        if (Difficult is null && IndunManager.Instance.TryTakeSelectedDifficult(character.Id, out var pickedDifficult))
-            SetDifficult(pickedDifficult);
+        // Refused before anything is consumed, so a closing copy keeps the player's difficulty pick.
+        if (IsClosing())
+            return RefuseEntry(character);
 
+        ApplyPickedDifficulty(character);
+
+        bool admitted;
         lock (_lock)
         {
-            if (_ending.IsClosing)
-                return;
-
-            if (!World.HasCharacter(character.Id))
-            {
-                World.AddObject(character);
-            }
-            else
-            {
-                Logger.Info($"[Dungeon] Player {character.Name} already exists in dungeon {_zoneInstanceId.InstanceId}, {_zoneInstanceId.ZoneId}. Most likely an error in logic?");
-            }
+            admitted = !_ending.IsClosing;
+            if (admitted)
+                AdmitToWorldUnderLock(character);
         }
 
+        if (!admitted)
+            return RefuseEntry(character);
+
+        CompleteEntry(character);
+        return true;
+    }
+
+    /// <summary>A pick made in the H-window before entering lands on the first copy this character enters.</summary>
+    private void ApplyPickedDifficulty(Character character)
+    {
+        if (Difficult is null && IndunManager.Instance.TryTakeSelectedDifficult(character.Id, out var pickedDifficult))
+            SetDifficult(pickedDifficult);
+    }
+
+    private void AdmitToWorldUnderLock(Character character)
+    {
+        if (!World.HasCharacter(character.Id))
+        {
+            World.AddObject(character);
+        }
+        else
+        {
+            Logger.Info($"[Dungeon] Player {character.Name} already exists in dungeon {_zoneInstanceId.InstanceId}, {_zoneInstanceId.ZoneId}. Most likely an error in logic?");
+        }
+    }
+
+    private void CompleteEntry(Character character)
+    {
         // Force despawn all mates of the player in the old world
         character.ParentWorld?.MateManager?.RemoveAndDespawnAllActiveOwnedMates(character);
 
