@@ -696,7 +696,7 @@ public class NpcSpawnRelay
         }
 
         // Live again: the mirror teardown releases it, so the copy's hold must not release it a second time.
-        CopyHeldIds.Unhold(connection.ZoneId, connection.InstanceId, bcId);
+        CopyHeldIds.Unhold(connection, bcId);
 
         Logger.Info(
             "Rematerialized orphan zone caster bc={0} tpl={1} zoneId={2} for ZWStartSkill",
@@ -704,27 +704,24 @@ public class NpcSpawnRelay
         return true;
     }
 
+    /// <summary>Returns the ids a closed copy's zone connection was holding to the pool.</summary>
+    public static void ReleaseCopyHeldIds(ZoneConnection connection)
+    {
+        foreach (var bcId in CopyHeldIds.Release(connection, connection.InstanceId))
+            ScheduleObjectIdRelease(bcId);
+    }
+
     /// <summary>
     /// Return a zone-mirror (or world-authored NPC) bc to the ObjectId pool only after dedicate
     /// ProcessFreeUnits has had time to clear the slot. Immediate reuse was the Crimson portal
     /// SCUnitsRemoved path (reused bc=1053 while dedic still owned the id).
     /// </summary>
-    /// <summary>A copy host started under this instance id; its removed ids are held again.</summary>
-    public static void ReopenCopy(uint instanceId) => CopyHeldIds.Reopen(instanceId);
-
-    /// <summary>Returns the ids a closed copy's zone was holding to the pool.</summary>
-    public static void ReleaseCopyHeldIds(uint zoneId, uint instanceId)
-    {
-        foreach (var bcId in CopyHeldIds.Release(zoneId, instanceId))
-            ScheduleObjectIdRelease(bcId);
-    }
-
     private static void ScheduleObjectIdRelease(uint bcId, ZoneConnection? liveConnection = null)
     {
         if (bcId == 0 || !ObjectIdManager.IsZoneUnitId(bcId))
             return;
 
-        if (liveConnection != null && CopyHeldIds.TryHold(liveConnection.ZoneId, liveConnection.InstanceId, bcId))
+        if (liveConnection != null && CopyHeldIds.TryHold(liveConnection, liveConnection.InstanceId, bcId))
             return;
 
         if (ObjectIdHoldMs <= 0)
