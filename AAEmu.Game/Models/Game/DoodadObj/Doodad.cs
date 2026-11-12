@@ -15,6 +15,7 @@ using AAEmu.Game.Models.Game.CommonFarm.Static;
 using AAEmu.Game.Models.Game.DoodadObj.Funcs;
 using AAEmu.Game.Models.Game.DoodadObj.Static;
 using AAEmu.Game.Models.Game.DoodadObj.Templates;
+using AAEmu.Game.Models.Game.Indun;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.Quests.Static;
@@ -1156,6 +1157,8 @@ public class Doodad : BaseUnit
         }
     }
 
+    private readonly DoodadPhaseEntries _dungeonPhaseEntries = new();
+
     /// <summary>
     /// Indun copies subscribe <see cref="WorldEvents.OnDoodadPhaseChanged"/> (indun_event_doodad_phase_changeds,
     /// 14 rows). The open world has no subscriber, so only a dungeon world is raised. The round timer is read
@@ -1168,7 +1171,9 @@ public class Doodad : BaseUnit
         if (world?.DungeonInstance == null)
             return;
 
-        world.DungeonInstance.RecordGainPoints(caster, this);
+        // A repeat walk of the phase the doodad already sits in is not another harvest.
+        if (_dungeonPhaseEntries.IsNewEntry(FuncGroupId))
+            world.DungeonInstance.RecordGainPoints(caster, this);
 
         world.Events.OnDoodadPhaseChanged(world, new OnDoodadPhaseChangedArgs
         {
