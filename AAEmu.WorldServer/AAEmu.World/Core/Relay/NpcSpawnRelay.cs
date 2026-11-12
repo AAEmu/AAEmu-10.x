@@ -709,6 +709,9 @@ public class NpcSpawnRelay
     /// ProcessFreeUnits has had time to clear the slot. Immediate reuse was the Crimson portal
     /// SCUnitsRemoved path (reused bc=1053 while dedic still owned the id).
     /// </summary>
+    /// <summary>A copy host started under this instance id; its removed ids are held again.</summary>
+    public static void ReopenCopy(uint instanceId) => CopyHeldIds.Reopen(instanceId);
+
     /// <summary>Returns the ids a closed copy's zone was holding to the pool.</summary>
     public static void ReleaseCopyHeldIds(uint zoneId, uint instanceId)
     {

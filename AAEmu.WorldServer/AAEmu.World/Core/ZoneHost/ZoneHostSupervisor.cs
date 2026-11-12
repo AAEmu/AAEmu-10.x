@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 
 using AAEmu.Game.Models.Game.World;
+using AAEmu.World.Core.Relay;
 using AAEmu.World.Models;
 
 using NLog;
@@ -251,6 +252,8 @@ public sealed class ZoneHostSupervisor : IDisposable
             Logger.Warn("ZoneHost already tracked for world {0}", world.Id);
             return true;
         }
+
+        NpcSpawnRelay.ReopenCopy(world.Id);
 
         try
         {

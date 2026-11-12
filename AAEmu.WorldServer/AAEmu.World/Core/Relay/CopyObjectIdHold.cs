@@ -38,10 +38,17 @@ public sealed class CopyObjectIdHold(Func<uint, bool> isSupervisedCopy)
         }
     }
 
+    /// <summary>A copy started under this id (ids are recycled): it takes holds again.</summary>
+    public void Reopen(uint instanceId)
+    {
+        lock (_lock)
+            _closed.RemoveWhere(k => k.InstanceId == instanceId);
+    }
+
     /// <summary>Closes the copy to new holds and returns what it held.</summary>
     public IReadOnlyCollection<uint> Release(uint zoneId, uint instanceId)
     {
-        if (instanceId == 0 || !isSupervisedCopy(instanceId))
+        if (instanceId == 0)
             return [];
 
         lock (_lock)

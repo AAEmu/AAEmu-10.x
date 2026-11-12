@@ -45,6 +45,31 @@ public class CopyObjectIdHoldTests
     }
 
     [Test]
+    public async Task ACopyNoLongerSupervised_StillReleasesItsIds()
+    {
+        // The supervisor forgets a copy before its zone TCP disconnect arrives, so Release runs when it is unsupervised.
+        var supervised = true;
+        var hold = new CopyObjectIdHold(_ => supervised);
+        hold.TryHold(410, 100, 899);
+        supervised = false;
+
+        await Assert.That(hold.Release(410, 100)).IsEquivalentTo(new uint[] { 899 });
+    }
+
+    [Test]
+    public async Task ACopyThatStartsAgainUnderTheSameId_HoldsAgain()
+    {
+        // World ids are recycled, so a closed copy id can belong to a new copy.
+        var hold = new CopyObjectIdHold(_ => true);
+        hold.TryHold(410, 100, 899);
+        hold.Release(410, 100);
+
+        hold.Reopen(100);
+
+        await Assert.That(hold.TryHold(410, 100, 901)).IsTrue();
+    }
+
+    [Test]
     public async Task OpenWorldIds_AreNotHeld()
     {
         var hold = new CopyObjectIdHold(_ => true);
