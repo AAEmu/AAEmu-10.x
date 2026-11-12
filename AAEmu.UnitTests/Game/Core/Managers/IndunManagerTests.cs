@@ -138,16 +138,21 @@ public class IndunManagerTests
         await Assert.That(store.Rows.Count).IsEqualTo(2);
     }
 
-    private sealed class FlakyPermitStore(int failures) : IIndunPermitStore
+    private sealed class FlakyPermitStore(int failures, int markFailures = 0) : IIndunPermitStore
     {
         public readonly MemoryPermitStore Inner = new();
         private int _failuresLeft = failures;
+        private int _markFailuresLeft = markFailures;
 
         public IReadOnlyList<(uint ZoneGroupId, DateTime At, DateTime? SpentAt)> Load(uint characterId, DateTime sinceUtc) =>
             Inner.Load(characterId, sinceUtc);
 
-        public void MarkSpent(uint characterId, uint zoneGroupId, DateTime spentAtUtc) =>
+        public void MarkSpent(uint characterId, uint zoneGroupId, DateTime spentAtUtc)
+        {
+            if (_markFailuresLeft-- > 0)
+                throw new InvalidOperationException("db down");
             Inner.MarkSpent(characterId, zoneGroupId, spentAtUtc);
+        }
 
         public void Remove(uint characterId, uint zoneGroupId, DateTime atUtc) =>
             Inner.Remove(characterId, zoneGroupId, atUtc);
@@ -214,6 +219,19 @@ public class IndunManagerTests
         var allowed = afterRestart.CheckEntryAttemptCount(1001, 158, dungeon, false);
 
         await Assert.That(allowed).IsFalse();
+    }
+
+    [Test]
+    public async Task ASpentMarkWhoseWriteFailsOnce_IsStoredOnRetry()
+    {
+        var store = new FlakyPermitStore(0, markFailures: 1);
+        var dungeon = new IndunZone { ZoneGroupId = 158, EnterCount = 1, PermitEnterCountItemId = 9, UseUtcEntranceTimes = true };
+        var manager = ManagerWith(store);
+        manager.RecordPermit(1001, 158, DateTime.UtcNow);
+
+        manager.CheckEntryAttemptCount(1001, 158, dungeon, true);
+
+        await Assert.That(store.Inner.Rows.Single().SpentAt).IsNotNull();
     }
 
     [Test]

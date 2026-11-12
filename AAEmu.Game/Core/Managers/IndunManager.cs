@@ -1111,13 +1111,19 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
 
         if (spentAt is { } spent)
         {
-            try
+            for (var attempt = 1; attempt <= 3; attempt++)
             {
-                PermitStore.MarkSpent(characterId, zoneGroupId, spent);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Could not store the spent dungeon pass of character {0} for zone group {1}", characterId, zoneGroupId);
+                try
+                {
+                    PermitStore.MarkSpent(characterId, zoneGroupId, spent);
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex,
+                        "Could not store the spent dungeon pass of character {0} for zone group {1} (try {2}); it will count as unspent after a restart",
+                        characterId, zoneGroupId, attempt);
+                }
             }
         }
 
