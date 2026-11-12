@@ -7,7 +7,9 @@ public interface IIndunPermitStore
 {
     /// <summary>Each pass with the time it was spent entering, or null while unspent.</summary>
     IReadOnlyList<(uint ZoneGroupId, DateTime At, DateTime? SpentAt)> Load(uint characterId, DateTime sinceUtc);
-    void Add(uint characterId, uint zoneGroupId, DateTime atUtc);
+
+    /// <returns>False when a pass already exists at that exact time, so nothing was written.</returns>
+    bool Add(uint characterId, uint zoneGroupId, DateTime atUtc);
 
     /// <summary>Marks the character's oldest unspent pass for that zone group as used.</summary>
     void MarkSpent(uint characterId, uint zoneGroupId, DateTime spentAtUtc);
@@ -44,7 +46,7 @@ public sealed class MySqlIndunPermitStore : IIndunPermitStore
         return rows;
     }
 
-    public void Add(uint characterId, uint zoneGroupId, DateTime atUtc)
+    public bool Add(uint characterId, uint zoneGroupId, DateTime atUtc)
     {
         using var connection = MySQL.CreateConnection();
         using var command = connection.CreateCommand();
@@ -54,7 +56,7 @@ public sealed class MySqlIndunPermitStore : IIndunPermitStore
         command.Parameters.AddWithValue("@characterId", characterId);
         command.Parameters.AddWithValue("@zoneGroupId", zoneGroupId);
         command.Parameters.AddWithValue("@at", atUtc);
-        command.ExecuteNonQuery();
+        return command.ExecuteNonQuery() > 0;
     }
 
     public void MarkSpent(uint characterId, uint zoneGroupId, DateTime spentAtUtc)

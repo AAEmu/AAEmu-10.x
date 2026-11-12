@@ -1368,27 +1368,36 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
             while (PermitRegistrations.TryGetValue(characterId, out var byZone) &&
                    byZone.TryGetValue(zoneGroupId, out var taken) && taken.Contains(atUtc))
                 atUtc = atUtc.AddMilliseconds(1);
-            AddPermitUnlocked(characterId, zoneGroupId, atUtc);
         }
 
         FlushUnsavedPermits();
-        if (!TryStorePermit(characterId, zoneGroupId, atUtc))
+        // The store is the arbiter of a free slot, so memory takes the time it ended up with.
+        var stored = TryStorePermit(characterId, zoneGroupId, ref atUtc);
+        lock (_lock)
         {
-            lock (_lock)
+            AddPermitUnlocked(characterId, zoneGroupId, atUtc);
+            if (!stored)
                 UnsavedPermits.Add((characterId, zoneGroupId, atUtc));
         }
     }
 
     private List<(uint CharacterId, uint ZoneGroupId, DateTime At)> UnsavedPermits { get; } = [];
 
-    private bool TryStorePermit(uint characterId, uint zoneGroupId, DateTime atUtc)
+    private bool TryStorePermit(uint characterId, uint zoneGroupId, ref DateTime atUtc)
     {
         for (var attempt = 1; attempt <= 3; attempt++)
         {
             try
             {
-                PermitStore.Add(characterId, zoneGroupId, atUtc);
-                return true;
+                // False means the slot is already a row (primary key); take the next millisecond.
+                for (var shifts = 0; shifts < 100; shifts++, atUtc = atUtc.AddMilliseconds(1))
+                {
+                    if (PermitStore.Add(characterId, zoneGroupId, atUtc))
+                        return true;
+                }
+
+                Logger.Error("No free slot to store the dungeon pass of character {0} for zone group {1}", characterId, zoneGroupId);
+                return false;
             }
             catch (Exception ex)
             {
@@ -1414,7 +1423,8 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
 
         foreach (var p in pending)
         {
-            if (TryStorePermit(p.CharacterId, p.ZoneGroupId, p.At))
+            var at = p.At;
+            if (TryStorePermit(p.CharacterId, p.ZoneGroupId, ref at))
                 continue;
             lock (_lock)
                 UnsavedPermits.Add(p);

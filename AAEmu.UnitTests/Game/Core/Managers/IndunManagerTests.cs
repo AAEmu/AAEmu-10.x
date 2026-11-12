@@ -67,8 +67,15 @@ public class IndunManagerTests
                 .Select(r => (r.ZoneGroupId, r.At, r.SpentAt)).ToList();
 
         // DATETIME(3): the store keeps whole milliseconds.
-        public void Add(uint characterId, uint zoneGroupId, DateTime atUtc) =>
-            Rows.Add((characterId, zoneGroupId, atUtc.AddTicks(-(atUtc.Ticks % TimeSpan.TicksPerMillisecond)), null));
+        // Like INSERT IGNORE on the primary key: false when the row already exists.
+        public bool Add(uint characterId, uint zoneGroupId, DateTime atUtc)
+        {
+            atUtc = atUtc.AddTicks(-(atUtc.Ticks % TimeSpan.TicksPerMillisecond));
+            if (Rows.Any(r => r.CharacterId == characterId && r.ZoneGroupId == zoneGroupId && r.At == atUtc))
+                return false;
+            Rows.Add((characterId, zoneGroupId, atUtc, null));
+            return true;
+        }
 
         public void MarkSpent(uint characterId, uint zoneGroupId, DateTime spentAtUtc)
         {
@@ -139,11 +146,11 @@ public class IndunManagerTests
         public void MarkSpent(uint characterId, uint zoneGroupId, DateTime spentAtUtc) =>
             Inner.MarkSpent(characterId, zoneGroupId, spentAtUtc);
 
-        public void Add(uint characterId, uint zoneGroupId, DateTime atUtc)
+        public bool Add(uint characterId, uint zoneGroupId, DateTime atUtc)
         {
             if (_failuresLeft-- > 0)
                 throw new InvalidOperationException("db down");
-            Inner.Add(characterId, zoneGroupId, atUtc);
+            return Inner.Add(characterId, zoneGroupId, atUtc);
         }
 
         public void Clear(uint characterId, uint zoneGroupId) => Inner.Clear(characterId, zoneGroupId);
@@ -172,6 +179,19 @@ public class IndunManagerTests
         manager.LoadPermitRegistrations(1001);
 
         await Assert.That(store.Inner.Rows.Count).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task APassWhoseSlotIsTakenInTheStore_MovesToTheNextMillisecond()
+    {
+        // Memory is empty (the login load failed) but the store already holds a pass at that millisecond.
+        var store = new MemoryPermitStore();
+        var at = DateTime.UtcNow;
+        store.Add(1001, 158, at);
+
+        ManagerWith(store).RecordPermit(1001, 158, at);
+
+        await Assert.That(store.Rows.Select(r => r.At).Distinct().Count()).IsEqualTo(2);
     }
 
     [Test]
