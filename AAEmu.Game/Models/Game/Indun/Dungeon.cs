@@ -469,9 +469,6 @@ public class Dungeon : IPreparedIndunInstance
         if (IsClosing())
             return RefuseEntry(character);
 
-        if (FinishedLoading)
-            ApplyPickedDifficulty(character);
-
         IndunEntryVerdict verdict;
         var enterNow = false;
         lock (_lock)
@@ -483,7 +480,10 @@ public class Dungeon : IPreparedIndunInstance
                 PlayersWithAccess.Add(character.Id);
                 enterNow = FinishedLoading;
                 if (enterNow)
+                {
+                    ApplyPickedDifficulty(character);
                     AdmitToWorldUnderLock(character);
+                }
                 else
                     EnterRequests.Add(character);
             }
@@ -548,18 +548,16 @@ public class Dungeon : IPreparedIndunInstance
     {
         Logger.Info($"[Dungeon] Adding player {character.Name} to dungeon {_zoneInstanceId.InstanceId}, {_zoneInstanceId.ZoneId}");
 
-        // Refused before anything is consumed, so a closing copy keeps the player's difficulty pick.
-        if (IsClosing())
-            return RefuseEntry(character);
-
-        ApplyPickedDifficulty(character);
-
+        // The pick is taken only once the entry is admitted, so a refusal keeps it.
         bool admitted;
         lock (_lock)
         {
             admitted = !_ending.IsClosing;
             if (admitted)
+            {
+                ApplyPickedDifficulty(character);
                 AdmitToWorldUnderLock(character);
+            }
         }
 
         if (!admitted)
