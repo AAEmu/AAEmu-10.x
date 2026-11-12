@@ -28,4 +28,42 @@ public class InstanceTowerDefHostDropRulesTests
         await Assert.That(WorldIntegration.ConsumeInstanceTowerDefHostDropped(0, 178)).IsFalse();
         await Assert.That(WorldIntegration.ConsumeInstanceTowerDefHostDropped(1, 0)).IsFalse();
     }
+
+    [Test]
+    [NotInParallel]
+    public async Task FinishedMarker_DoesNotOutliveItsWorld()
+    {
+        const uint instanceId = 900002;
+        const uint towerDefId = 202;
+        var original = WorldIntegration.InstanceWorldExists;
+        try
+        {
+            WorldIntegration.InstanceWorldExists = _ => true;
+            WorldIntegration.MarkInstanceTowerDefFinished(instanceId, towerDefId);
+
+            WorldIntegration.ClearInstanceTowerDefMarkers(instanceId);
+
+            await Assert.That(WorldIntegration.ConsumeInstanceTowerDefFinished(instanceId, towerDefId)).IsFalse();
+        }
+        finally { WorldIntegration.InstanceWorldExists = original; }
+    }
+
+    [Test]
+    [NotInParallel]
+    public async Task FinishedMarker_FromARemovedWorld_IsNotRecorded()
+    {
+        const uint instanceId = 900003;
+        const uint towerDefId = 202;
+        var original = WorldIntegration.InstanceWorldExists;
+        try
+        {
+            WorldIntegration.InstanceWorldExists = _ => false;
+
+            WorldIntegration.MarkInstanceTowerDefFinished(instanceId, towerDefId);
+
+            WorldIntegration.InstanceWorldExists = _ => true;
+            await Assert.That(WorldIntegration.ConsumeInstanceTowerDefFinished(instanceId, towerDefId)).IsFalse();
+        }
+        finally { WorldIntegration.InstanceWorldExists = original; }
+    }
 }

@@ -777,9 +777,22 @@ public static class WorldIntegration
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<(uint InstanceId, uint TowerDefId), byte>
         InstanceTowerDefFinished = new();
 
+    /// <summary>Whether a copy's world is still registered. A completion from a removed world is dropped.</summary>
+    public static Func<uint, bool> InstanceWorldExists { get; set; } =
+        id => AAEmu.Game.Core.Managers.World.WorldManager.Instance.HasWorld(id);
+
+    /// <summary>Drops the tower-run markers of a copy whose world was removed; its instance id is reused.</summary>
+    public static void ClearInstanceTowerDefMarkers(uint instanceId)
+    {
+        foreach (var key in InstanceTowerDefFinished.Keys.Where(k => k.InstanceId == instanceId))
+            InstanceTowerDefFinished.TryRemove(key, out _);
+        foreach (var key in InstanceTowerDefHostDropped.Keys.Where(k => k.InstanceId == instanceId))
+            InstanceTowerDefHostDropped.TryRemove(key, out _);
+    }
+
     public static void MarkInstanceTowerDefFinished(uint instanceId, uint towerDefId)
     {
-        if (instanceId == 0 || towerDefId == 0)
+        if (instanceId == 0 || towerDefId == 0 || !InstanceWorldExists(instanceId))
             return;
         InstanceTowerDefFinished[(instanceId, towerDefId)] = 0;
     }

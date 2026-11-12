@@ -735,6 +735,9 @@ public class WorldManager(
         }
     }
 
+    /// <summary>Whether a world instance is registered (no log when it is not).</summary>
+    public bool HasWorld(uint worldInstanceId) => _worlds.ContainsKey(worldInstanceId);
+
     /// <summary>
     /// Gets a world by it's instanceId
     /// </summary>
@@ -1516,6 +1519,7 @@ public class WorldManager(
     {
         if (_worlds.TryRemove(worldInstanceId, out _))
         {
+            global::AAEmu.Game.WorldIntegration.ClearInstanceTowerDefMarkers(worldInstanceId);
             global::AAEmu.Game.WorldIntegration.OnWorldInstanceRemoved?.Invoke(worldInstanceId);
         }
         else
