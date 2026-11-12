@@ -29,8 +29,8 @@ public class SummonDoodad : IWorldInteraction
         var position = doodad.Transform.Local.Position;
         // Plot summons usually target a location taken from their caster, so the caster is the summoner.
         var summoner = target as Npc ?? caster as Npc;
-        var unliftedZ = SummonedDoodadPlacement.UnliftedZ(position, summoner?.ZoneSpawnPoint);
-        var groundZ = SummonedDoodadPlacement.GroundZ(unliftedZ, WorldManager.Instance.GetHeight(doodad.Transform));
+        var groundZ = SummonedDoodadPlacement.PlacedZ(
+            position, summoner?.ZoneSpawnPoint, WorldManager.Instance.GetHeight(doodad.Transform), summoner != null);
         if (groundZ != position.Z)
             doodad.Transform.Local.SetHeight(groundZ);
         doodad.InitDoodad();

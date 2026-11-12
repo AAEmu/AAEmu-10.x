@@ -16,6 +16,13 @@ public static class SummonedDoodadPlacement
         return above > 0f && above <= MaxSnapDistance ? terrainZ : summonZ;
     }
 
+    /// <summary>
+    /// Where a summon stands: only an NPC summoner's spawn lift is corrected, so a player's summon keeps the
+    /// height it was aimed at.
+    /// </summary>
+    public static float PlacedZ(Vector3 summon, Vector3? zoneSpawn, float terrainZ, bool summonerIsNpc)
+        => summonerIsNpc ? GroundZ(UnliftedZ(summon, zoneSpawn), terrainZ) : summon.Z;
+
     /// <summary>Farther than this from its spawn point, the summoner has moved and its spawn says nothing.</summary>
     public const float SameSpotMetres = 1f;
 

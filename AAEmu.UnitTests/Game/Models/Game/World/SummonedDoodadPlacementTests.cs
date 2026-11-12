@@ -63,4 +63,19 @@ public class SummonedDoodadPlacementTests
     {
         await Assert.That(SummonedDoodadPlacement.UnliftedZ(new Vector3(10f, 20f, 101.6f), null)).IsEqualTo(101.6f);
     }
+
+    [Test]
+    public async Task PlayerSummon_NearTerrain_KeepsItsHeight()
+    {
+        // A dock, stair or deck under a player summon is not in the terrain read.
+        await Assert.That(SummonedDoodadPlacement.PlacedZ(new Vector3(10f, 20f, 101.4f), null, 100.2f, summonerIsNpc: false))
+            .IsEqualTo(101.4f);
+    }
+
+    [Test]
+    public async Task NpcSummon_NearTerrain_SnapsDown()
+    {
+        await Assert.That(SummonedDoodadPlacement.PlacedZ(new Vector3(10f, 20f, 101.4f), null, 100.2f, summonerIsNpc: true))
+            .IsEqualTo(100.2f);
+    }
 }
