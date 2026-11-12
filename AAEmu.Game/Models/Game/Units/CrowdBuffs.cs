@@ -1,6 +1,8 @@
 ﻿using System.Collections.Concurrent;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
+using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Templates;
 
@@ -74,13 +76,22 @@ public static class CrowdBuffs
         return reached.Count > 0 || !granted.IsEmpty;
     }
 
+    /// <summary>The player a unit acts for; a summoned NPC carries only the player's id.</summary>
+    internal static Character ResolveOwner(Unit holder, Func<uint, Character> findCharacter)
+    {
+        var owner = holder.GetOwnerCharacter();
+        if (owner == null && holder is Npc { OwnerId: > 0 } summon)
+            owner = findCharacter(summon.OwnerId);
+        return owner != null && owner != holder ? owner : null;
+    }
+
     private static bool Reached(Unit holder, BuffTemplate source)
     {
         var check = new CrowdCheck(
             CrowdBuffRules.CheckBuffId(source.Id, source.CrowdCheckBuffId, source.CrowdCheckBuffTagId),
             source.CrowdCheckBuffTagId, source.CrowdNumber, source.CrowdFriendly, source.CrowdHostile, source.CrowdCheckOwner);
 
-        return CrowdBuffRules.Reached<Unit>(holder, holder.GetOwnerCharacter() is { } owner && owner != holder ? owner : null,
+        return CrowdBuffRules.Reached<Unit>(holder, ResolveOwner(holder, id => WorldManager.Instance.GetCharacterById(id)),
             WorldManager.GetAround<Unit>(holder, source.CrowdRadius),
             unit => unit.Buffs != null && CrowdBuffRules.HoldsCheck(check, unit.Buffs.CheckBuff, unit.Buffs.CheckBuffTag),
             holder.GetRelationStateTo, check);
