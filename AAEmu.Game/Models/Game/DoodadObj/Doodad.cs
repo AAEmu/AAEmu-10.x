@@ -18,6 +18,8 @@ using AAEmu.Game.Models.Game.DoodadObj.Templates;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.Quests.Static;
+using AAEmu.Game.Models.Game.Skills;
+using AAEmu.Game.Models.Game.Skills.Templates;
 using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.World;
 using AAEmu.Game.Models.Tasks.Doodads;
@@ -894,6 +896,29 @@ public class Doodad : BaseUnit
             Use(caster, 0);
     }
 
+    /// <summary>
+    /// A next_phase -1 use that is one player choice among several keeps the doodad, unless the use or the skill
+    /// it schedules (<see cref="DoodadFuncUse.SkillId"/>) hands out items.
+    /// </summary>
+    internal virtual bool KeepsAsChoice(DoodadFunc func) =>
+        func.FuncType == nameof(DoodadFuncUse)
+        && KeepsAsChoice(func, DoodadManager.Instance.GetFuncsForGroup(FuncGroupId),
+            DoodadManager.Instance.GetFuncTemplate, SkillManager.Instance.GetSkillTemplate);
+
+    internal static bool KeepsAsChoice(DoodadFunc func, IEnumerable<DoodadFunc> group,
+        Func<uint, string, DoodadFuncTemplate> funcTemplate, Func<uint, SkillTemplate> skillTemplate)
+    {
+        if (func.FuncType != nameof(DoodadFuncUse))
+            return false;
+
+        var scheduledSkillId = funcTemplate(func.FuncId, func.FuncType) is DoodadFuncUse use ? use.SkillId : 0;
+        var grantsItems = new[] { func.SkillId, scheduledSkillId }.Any(id =>
+            id != 0 && SkillItemGrantRules.GrantsItems(skillTemplate(id), skillTemplate));
+
+        return DoodadStayOnPhaseRules.KeepsDoodad(func.FuncType, func.NextPhase,
+            group.Select(f => (f.FuncType, f.NextPhase)), grantsItems);
+    }
+
     private bool CompleteFunc(BaseUnit caster, DoodadFunc func, uint skillId)
     {
         if (func.SoundId > 0)
@@ -922,7 +947,12 @@ public class Doodad : BaseUnit
                 // We don't need to change phase, we stay in the current phase.
                 // The check is needed for Windstone id=1473. A system doodad (permanent world fixture such
                 // as a faction statue) is never consumed by a repeatable use on its final phase.
-                if (!HasOnlyGroupKindStart() && Template?.SystemDoodad != true)
+                if (KeepsAsChoice(func))
+                {
+                    // Stays in this phase: no phase change, so its timer is not restarted.
+                    ToNextPhase = false;
+                }
+                else if (!HasOnlyGroupKindStart() && Template?.SystemDoodad != true)
                 {
                     if (FuncTask != null)
                     {
