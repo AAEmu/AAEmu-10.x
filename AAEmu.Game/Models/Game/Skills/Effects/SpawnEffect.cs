@@ -86,6 +86,18 @@ public class SpawnEffect : EffectTemplate
     internal static float ResolvePosDistance(float distanceMin, float distanceMax) =>
         SpawnScatterRules.Distance(distanceMin, distanceMax, Random.Shared.Next(0, 1001));
 
+    /// <summary>The spawn's yaw: facing its orientation unit when placed around it, else that unit's own yaw.</summary>
+    private float ResolveSpawnYaw(BaseUnit positionUnit, BaseUnit orientationUnit, float x, float y)
+    {
+        var unitYaw = orientationUnit.Transform.World.Rotation.Z + OriAngle.DegToRad();
+        var center = orientationUnit.Transform.World.Position;
+        var distance = System.Numerics.Vector2.Distance(new(x, y), new(center.X, center.Y));
+        if (!SpawnOrientationRules.FacesOrientationUnit(ReferenceEquals(orientationUnit, positionUnit), distance))
+            return unitYaw;
+
+        return SpawnOrientationRules.FacingYaw(x, y, center.X, center.Y, OriAngle);
+    }
+
     /// <summary>
     /// The Z a row's ray cast starts from: the anchor's Z raised by <c>ray_off_set</c>.
     /// </summary>
@@ -238,12 +250,13 @@ public class SpawnEffect : EffectTemplate
             return;
         }
 
+        // Same scatter over the row's angle and distance range as the local path.
         var (x, y) = MathUtil.AddDistanceToFrontDeg(
-            PosDistance,
+            ResolvePosDistance(PosDistance, PosDistanceMax),
             positionRelativeToUnit.Transform.World.Position.X,
             positionRelativeToUnit.Transform.World.Position.Y,
-            PosAngle);
-        var yaw = orientationRelativeToUnit.Transform.World.Rotation.Z + OriAngle.DegToRad();
+            ResolvePosAngle(PosAngle, PosAngleMax));
+        var yaw = ResolveSpawnYaw(positionRelativeToUnit, orientationRelativeToUnit, x, y);
         // Portal/rift casters sit high for the client ball drop. SpawnEffect rows for ground
         // army (enable_ray_cast) must land on terrain — otherwise units freeze at air Z.
         var z = ResolveSpawnZ(
@@ -255,12 +268,14 @@ public class SpawnEffect : EffectTemplate
 
         npc.Transform = positionRelativeToUnit.Transform.CloneDetached(npc);
         npc.Transform.Local.SetPosition(x, y, z, 0f, 0f, yaw);
-        npc.OwnerId = caster switch
+        var summonerCharacterId = caster switch
         {
             Character character => character.Id,
             Npc creatorNpc => creatorNpc.OwnerId,
-            _ => default
+            _ => 0u
         };
+        npc.OwnerId = SummonCompanionRules.OwnerIdFor(
+            summonerCharacterId, UseSummonerFaction, npc.Template?.VisibleToCreatorOnly == true);
         if (UseSummonerFaction && caster is Unit summoner)
             npc.Faction = summoner.Faction;
 
@@ -279,6 +294,13 @@ public class SpawnEffect : EffectTemplate
             WorldIntegration.DeleteNpcMirror(npc, false);
             return;
         }
+
+        if (DespawnOnCreatorDeath && caster is Npc creator)
+            npc.Deleted += CreatorBoundSpawns.Bind(creator, npc, spawn =>
+            {
+                if (spawn is Npc { IsDead: false } child)
+                    WorldIntegration.DeleteNpcMirror(child, true);
+            });
 
         if (SummonCompanionRules.ShouldFollowSummoner(caster is Character, MateStateId, UseSummonerFaction)
             && caster is Character followOwner)

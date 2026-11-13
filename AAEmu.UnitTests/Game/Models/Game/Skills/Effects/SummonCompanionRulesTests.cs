@@ -88,4 +88,21 @@ public class SummonCompanionRulesTests
         await Assert.That(SummonCompanionRules.IsPlayerSummonedCompanion(
             isWorldAuthored: true, ownerId: 8, characterId: 0)).IsFalse();
     }
+
+    [Test]
+    public async Task OwnerIdFor_ScriptedSpawn_BelongsToNobody()
+    {
+        // Songsong (doodad_func_spawns 190) and its waves (spawn_effects 4915-4931) are not companions.
+        await Assert.That(SummonCompanionRules.OwnerIdFor(1001, useSummonerFaction: false, visibleToCreatorOnly: false))
+            .IsEqualTo(0u);
+    }
+
+    [Test]
+    public async Task OwnerIdFor_CompanionOrCreatorOnly_BelongsToTheSummoner()
+    {
+        await Assert.That(SummonCompanionRules.OwnerIdFor(1001, useSummonerFaction: true, visibleToCreatorOnly: false))
+            .IsEqualTo(1001u);
+        await Assert.That(SummonCompanionRules.OwnerIdFor(1001, useSummonerFaction: false, visibleToCreatorOnly: true))
+            .IsEqualTo(1001u);
+    }
 }

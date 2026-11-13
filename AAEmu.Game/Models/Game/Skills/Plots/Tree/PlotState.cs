@@ -83,6 +83,7 @@ public class PlotState(
 
     public Skill ActiveSkill { get; set; } = skill;
     public Unit Caster { get; set; } = caster as Unit;
+    public bool CasterAliveAtStart { get; } = caster is Unit { IsDead: false };
     public SkillCaster CasterCaster { get; set; } = casterCaster;
     public BaseUnit Target { get; set; } = target;
     public SkillCastTarget TargetCaster { get; set; } = targetCaster;

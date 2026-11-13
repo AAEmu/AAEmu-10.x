@@ -43,6 +43,7 @@ public interface IBuffs
     Buff GetEffectByTemplate(BuffTemplate template);
     Buff GetEffectFromBuffId(uint id);
     List<Buff> GetEffectsByType(Type effectType);
+    Buff GetActiveTaunt();
     bool HasEffectsMatchingCondition(Func<Buff, bool> predicate);
     IEnumerable<Buff> GetEffectsMatchingCondition(Func<Buff, bool> predicate);
     void RemoveAllEffects();

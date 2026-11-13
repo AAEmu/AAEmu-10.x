@@ -140,4 +140,40 @@ public class SkillUseConditionRulesTests
         await Assert.That(SkillUseConditionRules.AllowsTarget(false, false, targetIsDead: true)).IsTrue();
         await Assert.That(SkillUseConditionRules.AllowsTarget(false, false, targetIsDead: false)).IsTrue();
     }
+
+    [Test]
+    public async Task ScriptedNpc_StunnedBySpawnBuff_StillRunsItsScript()
+    {
+        // Island Songsong (22076) spawns with 32711 (stun + root, 180 s); its OnSpawn wave script 51149 must run.
+        var state = SkillUseConditionRules.ForScriptedCaster(State(stunned: true, asleep: true, silenced: true));
+
+        await Assert.That(SkillUseConditionRules.Evaluate(AliveOnly, state)).IsNull();
+    }
+
+    [Test]
+    public async Task ScriptedNpc_StillCannotCastWhenDead()
+    {
+        var state = SkillUseConditionRules.ForScriptedCaster(State(dead: true, stunned: true));
+
+        await Assert.That(SkillUseConditionRules.Evaluate(AliveOnly, state)).IsEqualTo(SkillResult.SourceDied);
+    }
+
+    [Test]
+    public async Task AiCast_ByAStunnedNpc_IsStillRefused()
+    {
+        // An InCombat npc_skill is the NPC's own pick, not its script: stun, sleep and silence apply.
+        var state = SkillUseConditionRules.ForCast(State(stunned: true), playerSide: false, scriptedCast: false);
+
+        await Assert.That(SkillUseConditionRules.Evaluate(AliveOnly, state)).IsNotNull();
+    }
+
+    [Test]
+    public async Task ScriptedCast_ByAStunnedNpc_Runs_ButNotByAPlayer()
+    {
+        var npc = SkillUseConditionRules.ForCast(State(stunned: true), playerSide: false, scriptedCast: true);
+        var player = SkillUseConditionRules.ForCast(State(stunned: true), playerSide: true, scriptedCast: true);
+
+        await Assert.That(SkillUseConditionRules.Evaluate(AliveOnly, npc)).IsNull();
+        await Assert.That(SkillUseConditionRules.Evaluate(AliveOnly, player)).IsNotNull();
+    }
 }

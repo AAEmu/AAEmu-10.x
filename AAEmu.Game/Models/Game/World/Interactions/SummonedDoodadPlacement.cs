@@ -1,0 +1,48 @@
+using System.Numerics;
+using AAEmu.Game.Models.Game.Char;
+using AAEmu.Game.Models.Game.NPChar;
+using AAEmu.Game.Models.Game.Units;
+
+namespace AAEmu.Game.Models.Game.World.Interactions;
+
+/// <summary>Where a summoned doodad stands: on the terrain when its summoner hovers just above it.</summary>
+public static class SummonedDoodadPlacement
+{
+    /// <summary>Farther above the terrain than this, the summon is on something else (deck, roof, bridge).</summary>
+    public const float MaxSnapDistance = 2f;
+
+    public static float GroundZ(float summonZ, float terrainZ)
+    {
+        if (terrainZ <= 0f)
+            return summonZ;
+        var above = summonZ - terrainZ;
+        return above > 0f && above <= MaxSnapDistance ? terrainZ : summonZ;
+    }
+
+    /// <summary>
+    /// Where a summon stands: only an NPC summoner's spawn lift is corrected, so a player's summon keeps the
+    /// height it was aimed at.
+    /// </summary>
+    public static float PlacedZ(Vector3 summon, Vector3? zoneSpawn, float terrainZ, bool summonerIsNpc)
+        => summonerIsNpc ? GroundZ(UnliftedZ(summon, zoneSpawn), terrainZ) : summon.Z;
+
+    /// <summary>The NPC whose spawn lift a summon may need corrected; a player caster never qualifies.</summary>
+    public static Npc SummonerNpc(BaseUnit caster, BaseUnit target)
+        => caster is Character ? null : target as Npc ?? caster as Npc;
+
+    /// <summary>Farther than this from its spawn point, the summoner has moved and its spawn says nothing.</summary>
+    public const float SameSpotMetres = 1f;
+
+    /// <summary>
+    /// A summon at the summoner's zone spawn point (recorded only when the mirror could not be grounded) stands on
+    /// the ground under it: the spawn height less the dedicate's spawn lift, however the summoner has bobbed since.
+    /// </summary>
+    public static float UnliftedZ(Vector3 summon, Vector3? zoneSpawn)
+    {
+        if (zoneSpawn is not { } spawn)
+            return summon.Z;
+        var sideways = Vector2.Distance(new Vector2(summon.X, summon.Y), new Vector2(spawn.X, spawn.Y));
+        var groundZ = spawn.Z - MirrorHeightRules.DedicateSpawnLiftMetres;
+        return sideways <= SameSpotMetres && MathF.Abs(summon.Z - groundZ) <= MaxSnapDistance ? groundZ : summon.Z;
+    }
+}

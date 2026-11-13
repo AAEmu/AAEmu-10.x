@@ -52,6 +52,7 @@ public class UnitStateBuffSnapshotTests
     }
 
     [Test]
+    [NotInParallel]
     public async Task SnapshotRetirementOnlyRelaysEndedEligibleWorldBuffs()
     {
         const uint zone = 310144;
@@ -85,6 +86,33 @@ public class UnitStateBuffSnapshotTests
     }
 
     [Test]
+    [NotInParallel]
+    public async Task SnapshotThatAlreadyEndedABuffRelaysItsRemovalAfterMarking()
+    {
+        const uint zone = 310145;
+        var owner = new Character(new UnitCustomModelParams()) { ObjId = 1698, Level = 40 };
+        var buff = Add(owner, 23, BuffKind.Good);
+        var written = new List<UnitStateBuffSerializer.SnapshotEntry>();
+        UnitStateBuffSerializer.Write(new PacketStream(), owner, written);
+        var originalRelay = AAEmu.Game.WorldIntegration.RelayBuffRemovedToZone;
+        var removals = new List<(uint Owner, uint Index)>();
+        try
+        {
+            // Ended after the body was written but before the snapshot was recorded.
+            buff.State = EffectState.Finished;
+            AAEmu.Game.WorldIntegration.RelayBuffRemovedToZone = (id, index) => removals.Add((id, index));
+            PlayerEnterService.MarkSnapshotAndRetireEnded(zone, 0, owner.ObjId, written);
+            await Assert.That(removals).IsEquivalentTo(new[] { (owner.ObjId, buff.Index) });
+        }
+        finally
+        {
+            AAEmu.Game.WorldIntegration.RelayBuffRemovedToZone = originalRelay;
+            ZoneBuffRegistry.ResetZone(zone, 0);
+        }
+    }
+
+    [Test]
+    [NotInParallel]
     [Arguments(1698u, false)]
     [Arguments(0u, true)]
     public async Task SnapshotRetirementRejectsUnrelayedOrInvalidOwner(uint ownerId, bool relayed)

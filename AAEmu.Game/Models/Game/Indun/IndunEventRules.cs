@@ -7,10 +7,7 @@ namespace AAEmu.Game.Models.Game.Indun;
 /// </summary>
 public static class IndunEventRules
 {
-    /// <summary>
-    /// One dungeon NPC death raises <c>WorldEvents.OnUnitKilled</c> twice (Unit.ReduceCurrentHp and
-    /// Unit.DoDie, which Npc.DoDie calls through base). The first raise per object id counts.
-    /// </summary>
+    /// <summary>A kill counts once per object id, however often it is reported.</summary>
     public static bool ShouldFireKill(ISet<uint> firedObjIds, uint objId) => firedObjIds.Add(objId);
 
     /// <summary>A combat end counts once per combat start of that object id.</summary>

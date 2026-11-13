@@ -9,6 +9,7 @@ using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.GameData;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Models.Game.Crafts;
+using AAEmu.Game.Models.Game.DoodadObj;
 using AAEmu.Game.Models.Game.DoodadObj.Static;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Game.Housing;
@@ -620,6 +621,7 @@ public class CSStartSkillPacket() : GamePacket(CSOffsets.CSStartSkillPacket, 1)
                          template.TargetType, SkillManager.Instance.GetSkillTags(skillId)))
                 character.ResetSkillCooldown(skillId, true);
             Logger.Warn("ZoneAuthority Use failed skillId={0} result={1} caster={2}", skillId, skillResult, casterUnit.ObjId);
+            DropStaleDoodadTarget(character, skillCastTarget, skillResult);
             return;
         }
 
@@ -648,6 +650,19 @@ public class CSStartSkillPacket() : GamePacket(CSOffsets.CSStartSkillPacket, 1)
         Logger.Info("ZoneAuthority Use+WZ skillId={0} tl={1} plotOnly={2} hasPlot={3} castMs={4} auto={5} caster={6}",
             skillId, skill.TlId, template.PlotOnly, template.Plot != null, template.CastingTime, character.IsAutoAttack,
             casterUnit.ObjId);
+    }
+
+    private static void DropStaleDoodadTarget(Character character, SkillCastTarget target, SkillResult result)
+    {
+        if (target is not SkillCastDoodadTarget doodadTarget)
+            return;
+
+        var exists = character.ParentWorld?.GetDoodad(doodadTarget.ObjId) != null;
+        if (!StaleDoodadTargetRules.IsStale(result, doodadTarget.ObjId, exists))
+            return;
+
+        Logger.Info("Dropping stale doodad {0} from {1}'s client", doodadTarget.ObjId, character.Name);
+        character.SendPacket(new SCDoodadRemovedPacket(doodadTarget.ObjId));
     }
 
     private static Mate FindActiveMateForSkill(Character character, uint skillId)

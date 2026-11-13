@@ -1,3 +1,4 @@
+using AAEmu.Game.Models.Game.Units;
 using AAEmu.Game.Models.Game.World;
 
 namespace AAEmu.UnitTests.Game.Models.Game.World;
@@ -65,4 +66,28 @@ public class AreaTriggerCloutRulesTests
         await Assert.That(AreaTriggerCloutRules.MayTickAfterDelete(deleted: true)).IsFalse();
     }
 
+    [Test]
+    public async Task TargetMaxCount_KeepsTheCasterOverNearerUnits()
+    {
+        // Island crop clout 5328 (target_max_count 1): the harvester, not the spawner NPCs around the crop.
+        var harvester = new Unit { ObjId = 888 };
+        var spawnerA = new Unit { ObjId = 959 };
+        var spawnerB = new Unit { ObjId = 929 };
+        var distance = new Dictionary<Unit, double> { [harvester] = 2.5, [spawnerA] = 0.5, [spawnerB] = 1.0 };
+
+        var picked = AreaTriggerCloutRules.Targets([spawnerA, spawnerB, harvester], harvester, 1, u => distance[u]);
+
+        await Assert.That(picked).IsEquivalentTo(new[] { harvester });
+    }
+
+    [Test]
+    public async Task NoTargetMaxCount_KeepsEveryone()
+    {
+        var a = new Unit { ObjId = 1 };
+        var b = new Unit { ObjId = 2 };
+
+        var picked = AreaTriggerCloutRules.Targets([a, b], a, 0, _ => 0d);
+
+        await Assert.That(picked.Count).IsEqualTo(2);
+    }
 }

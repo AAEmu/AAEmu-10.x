@@ -15,6 +15,9 @@ public static class MirrorHeightRules
     /// </summary>
     public const float MaxMirrorSnapMetres = 0.5f;
 
+    /// <summary>How far the dedicate lifts a spawn off the ground it stands on.</summary>
+    public const float DedicateSpawnLiftMetres = 0.5f;
+
     /// <summary>
     /// The World spawner's own tolerance. Its positions come from the spawn files, are authored on the
     /// terrain, and can sit up to a metre off the bilinear read; that is a different question from a

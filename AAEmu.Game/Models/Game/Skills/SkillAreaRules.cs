@@ -135,8 +135,8 @@ public static class SkillAreaRules
     /// slot — nearby doodads never receive <c>OnSkillHit</c> (Whalesong curse-mine reveal).
     /// Source-applied effects still use the caster directly; this only trims <c>possibleTargets</c>.
     /// </remarks>
-    public static bool ExcludeCasterFromSelfAreaHits(SkillTargetType targetType, float areaRadius)
-        => targetType == SkillTargetType.Self && areaRadius > 0f;
+    public static bool ExcludeCasterFromSelfAreaHits(SkillTargetType targetType, float areaRadius, int targetAreaCount)
+        => targetType == SkillTargetType.Self && areaRadius > 0f && targetAreaCount > 0;
 
     /// <summary>
     /// Whether <c>target_area_count</c> should also truncate doodad hits.
@@ -187,11 +187,23 @@ public static class SkillAreaRules
         }
 
         if (sortOrigin != null)
-            units = units.OrderBy(t => t.GetDistanceTo(sortOrigin)).Take(targetAreaCount).ToList();
+            units = KeepNearest(units, sortOrigin, targetAreaCount, t => t.GetDistanceTo(sortOrigin));
         else
             units = units.Take(targetAreaCount).ToList();
 
         units.AddRange(doodads);
         return units;
     }
+
+    /// <summary>
+    /// Cuts a gathered area down to <c>target_area_count</c>: the unit the cast was aimed at keeps its slot,
+    /// the rest go by distance. Without this, a unit standing on the target can take its place.
+    /// </summary>
+    public static List<BaseUnit> KeepNearest(
+        IEnumerable<BaseUnit> gathered, BaseUnit castTarget, int count, Func<BaseUnit, double> distance)
+        => gathered
+            .OrderBy(unit => ReferenceEquals(unit, castTarget) ? 0 : 1)
+            .ThenBy(distance)
+            .Take(count)
+            .ToList();
 }

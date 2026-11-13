@@ -64,6 +64,15 @@ public class BuffStackRulesTests
     }
 
     [Test]
+    public async Task InstancePerApplication_TransformsOnTheArrivalThatReachesTheCeiling()
+    {
+        // 32704 Productivity (rule 7, max 2 -> 32705): "upon reaching 2 stacks", i.e. the second harvest.
+        await Assert.That(BuffStackRules.TransformsOnArrival(1, 2, 32705)).IsTrue();
+        await Assert.That(BuffStackRules.TransformsOnArrival(0, 2, 32705)).IsFalse();
+        await Assert.That(BuffStackRules.TransformsOnArrival(1, 2, 0)).IsFalse();
+    }
+
+    [Test]
     public async Task ShouldTransform_FiresAtTheCeilingWhenATransformIsNamed()
     {
         // Tension 5793 → line-broken 5794 at 20. Sail trim has no transform and must stay put.

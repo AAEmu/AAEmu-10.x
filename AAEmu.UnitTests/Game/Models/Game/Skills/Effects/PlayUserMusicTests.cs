@@ -374,6 +374,7 @@ public class PlayUserMusicTests : IDisposable
         public Buff GetEffectByTemplate(BuffTemplate template) => null;
         public Buff GetEffectFromBuffId(uint id) => null;
         public List<Buff> GetEffectsByType(Type effectType) => [];
+        public Buff GetActiveTaunt() => null;
         public bool HasEffectsMatchingCondition(Func<Buff, bool> predicate) => false;
         public IEnumerable<Buff> GetEffectsMatchingCondition(Func<Buff, bool> predicate) => [];
         public void RemoveAllEffects() => _active.Clear();

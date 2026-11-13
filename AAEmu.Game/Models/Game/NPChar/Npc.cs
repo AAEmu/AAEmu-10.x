@@ -101,6 +101,9 @@ public partial class Npc : Unit
     /// </summary>
     public float? ZoneSpawnScale { get; set; }
 
+    /// <summary>The zone's spawn point when the mirror could not be grounded (its Z still carries the spawn lift).</summary>
+    public System.Numerics.Vector3? ZoneSpawnPoint { get; set; }
+
     public override float Scale => ZoneSpawnScale ?? Template.Scale;
 
     public override byte RaceGender => (byte)(16 * Template.Gender + Template.Race);
@@ -1931,6 +1934,12 @@ public partial class Npc : Unit
     /// same graph on the zone. <c>plot_only</c> graphs run on every zone mirror; the rest only on
     /// priority/event mirrors (<see cref="OnSpawnPlotWorldGate"/>).
     /// </summary>
+    /// <summary>A plot effect that creates or removes World-owned objects.</summary>
+    private static bool IsWorldSummonEffect(AAEmu.Game.Models.Game.Skills.Plots.PlotEventEffect effect) =>
+        effect.ActualType == nameof(NpcSpawnerSpawnEffect) ||
+        OnSpawnPlotWorldGate.ActsOnWorldObjects(
+            SkillManager.Instance.GetEffectTemplate(effect.ActualId, effect.ActualType));
+
     public void CastOnSpawnPlotSkills()
     {
         if (!WorldIntegration.ZoneAuthority)
@@ -1955,7 +1964,10 @@ public partial class Npc : Unit
                     isPriorityMirror: isPriorityMirror,
                     hasPlot: skill.Template.Plot != null,
                     plotOnly: skill.Template.PlotOnly,
-                    directSkillEffectCount: skill.Template.Effects?.Count ?? 0))
+                    directSkillEffectCount: skill.Template.Effects?.Count ?? 0,
+                    summonsWorldObjects: OnSpawnPlotWorldGate.SummonsWorldObjects(
+                        skill.Template.Plot?.EventTemplate, IsWorldSummonEffect),
+                    inDungeonCopy: ParentWorld?.DungeonInstance is { IsSystem: false }))
                 continue;
 
             if (Cooldowns.CheckCooldown(skill.Id))
@@ -1966,6 +1978,7 @@ public partial class Npc : Unit
             // skill_use_param1: delay seconds before OnSpawn graph (Crimson / Lusca stage use 1.0).
             var delaySec = npcSkill.SkillUseParam1;
             skill.SuppressZoneSkillRelay = true;
+            skill.ScriptedCast = true;
             // plot_only / radius-0: plot graph only. Radius > 0 also needs Cast for AoE SkillHit.
             skill.ForcePlotGraphOnly = OnSpawnPlotWorldGate.ShouldForcePlotGraphOnly(
                 skill.Template.PlotOnly,
@@ -2078,6 +2091,7 @@ public partial class Npc : Unit
             // skill_use_param1: delay seconds before the script runs.
             var delaySec = npcSkill.SkillUseParam1;
             skill.SuppressZoneSkillRelay = true;
+            skill.ScriptedCast = true;
             var caster = SkillCaster.GetByType(SkillCasterType.Unit);
             caster.ObjId = ObjId;
             var target = SkillCastTarget.GetByType(SkillCastTargetType.Unit);
@@ -2177,6 +2191,7 @@ public partial class Npc : Unit
 
             var delaySec = npcSkill.SkillUseParam1;
             skill.SuppressZoneSkillRelay = true;
+            skill.ScriptedCast = true;
             var caster = SkillCaster.GetByType(SkillCasterType.Unit);
             caster.ObjId = ObjId;
             var target = SkillCastTarget.GetByType(SkillCastTargetType.Unit);
@@ -2268,8 +2283,13 @@ public partial class Npc : Unit
         base.Spawn();
     }
 
+    /// <summary>Raised once when the NPC is deleted, before it leaves its world.</summary>
+    public event Action Deleted;
+
     public override void Delete()
     {
+        Deleted?.Invoke();
+        Deleted = null;
         base.Delete();
     }
 
