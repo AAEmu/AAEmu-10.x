@@ -4,6 +4,7 @@ using AAEmu.Game.Core.Managers.World;
 using AAEmu.Game.Core.Network.Game;
 using AAEmu.Game.Core.Packets.G2C;
 using AAEmu.Game.GameData;
+using AAEmu.Game.Models.Game.DoodadObj.Static;
 using AAEmu.Game.Models.Game.Housing;
 using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.Units;
@@ -68,8 +69,17 @@ public class CSStartInteractionPacket() : GamePacket(CSOffsets.CSStartInteractio
         }
 
         var unit = character?.ParentWorld?.GetUnit(npcObjId);
-        if (unit is Mate)
+        if (unit is Mate mate)
         {
+            // Right-clicking the mount you are sitting on gets you off it. The client asks the same way it
+            // asks to mount, and answering with the ride skill again left the rider in the saddle.
+            var mateManager = character.ParentWorld.MateManager;
+            if (mateManager.GetIsMounted(character.ObjId, out var seat) == mate)
+            {
+                mateManager.UnMountMate(character, mate.TlId, seat, AttachUnitReason.None);
+                return;
+            }
+
             character.SendPacket(new SCNpcInteractionSkillListPacket(npcObjId, objId, extraInfo, pickId, mouseButton, modifierKeys, [SkillsEnum.SlaveMounting]));
         }
         else if (unit is House house)
