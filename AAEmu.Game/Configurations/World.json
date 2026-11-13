@@ -18,6 +18,12 @@
         "DaysForTaxPayment": 7,
         "IgnoreFallDamageAccessLevel": 100,
         "TeleportLandingToleranceMeters": 20.0,
+        // Extra horizontal reach, in metres, for doodad purchases paid in the listed item
+        // (doodad_func_purchases.coin_item_id). 23633 is the Gilda Star: the Mirage Isle design displays.
+        // Purchases paid in an item that is not listed keep their func skill's range alone.
+        "DoodadCoinPurchaseExtraReachMeters": {
+            "23633": 3.0
+        },
         "GodMode": false,
         "PvEDurabilityLossRate": 1.0,
         "PvPDurabilityLossRate": 1.0,
