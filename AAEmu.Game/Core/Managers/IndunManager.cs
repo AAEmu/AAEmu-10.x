@@ -25,8 +25,8 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
     private Dictionary<uint, Dictionary<uint, DateTime>> CreateHistory { get; } = [];
     /// <summary>How many IVT_RESET tickets this character has bought today per zone group.</summary>
     private Dictionary<uint, Dictionary<uint, int>> ResetPurchaseCount { get; } = [];
-    /// <summary>Extra daily enters from IVT_PERMIT tickets (lifetime of process / daily window).</summary>
-    private Dictionary<uint, Dictionary<uint, int>> PermitBonusCount { get; } = [];
+    /// <summary>When each IVT_PERMIT pass was registered, per zone group; only today's count (UTC day).</summary>
+    private Dictionary<uint, Dictionary<uint, List<DateTime>>> PermitRegistrations { get; } = [];
     // ReSharper disable once ChangeFieldTypeToSystemThreadingLock
     private readonly object _lock = new();
     internal Func<DateTime> AdmissionUtcNow { get; set; } = () => ServerCalendar.UtcNow;
@@ -1074,6 +1074,7 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
 
     public bool CheckEntryAttemptCount(uint characterId, uint zoneGroupId, IndunZone indunZone, bool addAsNewEnty)
     {
+        DateTime? spentAt = null;
         lock (_lock)
         {
             if (!EntryHistory.ContainsKey(characterId))
@@ -1085,15 +1086,18 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
                 zoneAndEntries.Add(zoneGroupId, []);
 
             var entriesList = zoneAndEntries.GetValueOrDefault(zoneGroupId);
+            // Whole milliseconds, as stored, so a reload recognises the same entry.
             var now = ServerCalendar.UtcNow;
-            var usedToday = IndunEntryRules.CountEntriesInDailyWindow(entriesList, now);
-            var permitBonus = GetPermitBonusUnlocked(characterId, zoneGroupId);
-            var permitted = IndunEntryRules.EffectivePermittedCount(indunZone.EnterCount, permitBonus);
+            now = now.AddTicks(-(now.Ticks % TimeSpan.TicksPerMillisecond));
+            var usedToday = IndunEntryRules.CountEntriesInDailyWindow(entriesList, now, DailyZoneOf(zoneGroupId));
+            var permitsUsed = GetPermitsUsedUnlocked(characterId, zoneGroupId, now);
+            var needsPermit = indunZone.PermitEnterCountItemId != 0;
 
-            if (usedToday >= permitted)
+            if (!IndunEntryRules.CanEnter(indunZone.EnterCount, needsPermit, usedToday, permitsUsed))
             {
                 Logger.Warn(
-                    $"Requesting instance too many daily entries ({usedToday} / {permitted}), characterId: {characterId}, zoneGroupId: {zoneGroupId}");
+                    $"Requesting instance refused: {usedToday} of {indunZone.EnterCount} entries used, {permitsUsed} passes " +
+                    $"(pass needed: {needsPermit}), characterId: {characterId}, zoneGroupId: {zoneGroupId}");
                 return false;
             }
 
@@ -1101,10 +1105,29 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
             {
                 entriesList.Add(now);
                 Logger.Warn($"Added entry for player {characterId} in zone {zoneGroupId}, Count is now {entriesList.Count}");
+                spentAt = needsPermit ? now : null;
             }
-
-            return true;
         }
+
+        if (spentAt is { } spent)
+        {
+            for (var attempt = 1; attempt <= 3; attempt++)
+            {
+                try
+                {
+                    PermitStore.MarkSpent(characterId, zoneGroupId, spent);
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex,
+                        "Could not store the spent dungeon pass of character {0} for zone group {1} (try {2}); it will count as unspent after a restart",
+                        characterId, zoneGroupId, attempt);
+                }
+            }
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -1171,16 +1194,14 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
 
                 var used = 0;
                 if (zoneAndEntries != null && zoneAndEntries.TryGetValue(zone.ZoneGroupId, out var entries))
-                    used = IndunEntryRules.CountEntriesInDailyWindow(entries, now);
+                    used = IndunEntryRules.CountEntriesInDailyWindow(entries, now,
+                        IndunEntryRules.DailyTimeZone(zone.UseUtcEntranceTimes));
 
-                var resetCount = GetResetPurchasesUnlocked(characterId, zone.ZoneGroupId);
-                var permitBonus = GetPermitBonusUnlocked(characterId, zone.ZoneGroupId);
-                records.Add(new InstanceVisitCountRecord(
-                    ZoneGroupId: (int)zone.ZoneGroupId,
-                    InstanceCatalogId: zone.InstanceCatalogId,
-                    UsedCount: used,
-                    ResetCount: resetCount,
-                    PermittedCount: IndunEntryRules.EffectivePermittedCount(zone.EnterCount, permitBonus)));
+                records.Add(IndunEntryRules.VisitRow(
+                    zoneManager.GetVisitRowZoneKey(zone.ZoneGroupId),
+                    used,
+                    GetResetPurchasesUnlocked(characterId, zone.ZoneGroupId),
+                    GetPermitsUsedUnlocked(characterId, zone.ZoneGroupId, now)));
             }
         }
 
@@ -1232,6 +1253,8 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
         return null;
     }
 
+    private readonly IndunTicketPurchase _ticketPurchase = new();
+
     private bool TryBuyResetTicket(Character character, IndunZone zone)
     {
         if (zone.ResetItemId == 0)
@@ -1240,57 +1263,57 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
             return false;
         }
 
-        int resetCount;
-        int cost;
-        lock (_lock)
-        {
-            resetCount = GetResetPurchasesUnlocked(character.Id, zone.ZoneGroupId);
-            if (!IndunEntryRules.CanBuyReset(resetCount, zone.ResetLimit))
+        var cost = 0;
+        InstanceVisitCountRecord row = default;
+        var bought = _ticketPurchase.Run(character.Id,
+            canBuy: () =>
             {
+                lock (_lock)
+                {
+                    var resetCount = GetResetPurchasesUnlocked(character.Id, zone.ZoneGroupId);
+                    if (IndunEntryRules.CanBuyReset(resetCount, zone.ResetLimit))
+                    {
+                        cost = IndunEntryRules.ResetTicketCost(resetCount, zone.ResetItemIncreaseScale);
+                        return true;
+                    }
+                }
+
                 character.SendErrorMessage(ErrorMessageType.InstanceVisitLimit);
                 return false;
-            }
-
-            cost = IndunEntryRules.ResetTicketCost(resetCount, zone.ResetItemIncreaseScale);
-        }
-
-        var consumed = character.Inventory.Bag.ConsumeItem(
-            Models.Game.Items.Actions.ItemTaskType.ConsumeIndunTicket,
-            zone.ResetItemId,
-            cost,
-            null);
-        if (consumed < cost)
-        {
-            character.SendErrorMessage(ErrorMessageType.NotEnoughItem);
-            return false;
-        }
-
-        InstanceVisitCountRecord row;
-        lock (_lock)
-        {
-            if (!ResetPurchaseCount.ContainsKey(character.Id))
-                ResetPurchaseCount[character.Id] = [];
-            ResetPurchaseCount[character.Id][zone.ZoneGroupId] = resetCount + 1;
-
-            // RESET clears today's used entries for this zone group (visit count refresh).
-            if (EntryHistory.TryGetValue(character.Id, out var byZone) &&
-                byZone.TryGetValue(zone.ZoneGroupId, out var entries))
+            },
+            pay: () => Pay(character, zone.ResetItemId, cost),
+            register: () =>
             {
-                var dayStart = IndunEntryRules.DailyWindowStartUtc(ServerCalendar.UtcNow);
-                entries.RemoveAll(t =>
+                lock (_lock)
                 {
-                    var utc = t.Kind switch
-                    {
-                        DateTimeKind.Utc => t,
-                        DateTimeKind.Local => t.ToUniversalTime(),
-                        _ => DateTime.SpecifyKind(t, DateTimeKind.Utc)
-                    };
-                    return utc >= dayStart;
-                });
-            }
+                    if (!ResetPurchaseCount.ContainsKey(character.Id))
+                        ResetPurchaseCount[character.Id] = [];
+                    ResetPurchaseCount[character.Id][zone.ZoneGroupId] =
+                        GetResetPurchasesUnlocked(character.Id, zone.ZoneGroupId) + 1;
 
-            row = BuildVisitRowUnlocked(character.Id, zone, ServerCalendar.UtcNow);
-        }
+                    // RESET clears today's used entries for this zone group (visit count refresh).
+                    if (EntryHistory.TryGetValue(character.Id, out var byZone) &&
+                        byZone.TryGetValue(zone.ZoneGroupId, out var entries))
+                    {
+                        var dayStart = IndunEntryRules.DailyWindowStartUtc(ServerCalendar.UtcNow,
+                            IndunEntryRules.DailyTimeZone(zone.UseUtcEntranceTimes));
+                        entries.RemoveAll(t =>
+                        {
+                            var utc = t.Kind switch
+                            {
+                                DateTimeKind.Utc => t,
+                                DateTimeKind.Local => t.ToUniversalTime(),
+                                _ => DateTime.SpecifyKind(t, DateTimeKind.Utc)
+                            };
+                            return utc >= dayStart;
+                        });
+                    }
+
+                    row = BuildVisitRowUnlocked(character.Id, zone, ServerCalendar.UtcNow);
+                }
+            });
+        if (!bought)
+            return false;
 
         character.SendPacket(new Core.Packets.G2C.SCInstanceVisitCountChangePacket(row));
         Logger.Info(
@@ -1307,26 +1330,41 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
             return false;
         }
 
-        var consumed = character.Inventory.Bag.ConsumeItem(
-            Models.Game.Items.Actions.ItemTaskType.ConsumeIndunTicket,
-            zone.PermitEnterCountItemId,
-            1,
-            null);
-        if (consumed < 1)
-        {
-            character.SendErrorMessage(ErrorMessageType.NotEnoughItem);
-            return false;
-        }
+        InstanceVisitCountRecord row = default;
+        var passAt = default(DateTime);
+        var bought = _ticketPurchase.Run(character.Id,
+            canBuy: () =>
+            {
+                lock (_lock)
+                {
+                    if (IndunEntryRules.CanRegisterPermit(
+                            zone.EnterCount, GetPermitsUsedUnlocked(character.Id, zone.ZoneGroupId, ServerCalendar.UtcNow)))
+                        return true;
+                }
 
-        InstanceVisitCountRecord row;
-        lock (_lock)
-        {
-            if (!PermitBonusCount.ContainsKey(character.Id))
-                PermitBonusCount[character.Id] = [];
-            PermitBonusCount[character.Id].TryGetValue(zone.ZoneGroupId, out var bonus);
-            PermitBonusCount[character.Id][zone.ZoneGroupId] = bonus + 1;
-            row = BuildVisitRowUnlocked(character.Id, zone, ServerCalendar.UtcNow);
-        }
+                character.SendErrorMessage(ErrorMessageType.InstanceVisitLimit);
+                return false;
+            },
+            store: () =>
+            {
+                if (TryStorePermit(character.Id, zone.ZoneGroupId, ServerCalendar.UtcNow, out passAt))
+                    return true;
+
+                character.SendErrorMessage(ErrorMessageType.InternalError);
+                return false;
+            },
+            pay: () => Pay(character, zone.PermitEnterCountItemId, 1),
+            unstore: () => DiscardPermit(character.Id, zone.ZoneGroupId, passAt),
+            register: () =>
+            {
+                lock (_lock)
+                {
+                    AddPermitUnlocked(character.Id, zone.ZoneGroupId, passAt);
+                    row = BuildVisitRowUnlocked(character.Id, zone, ServerCalendar.UtcNow);
+                }
+            });
+        if (!bought)
+            return false;
 
         character.SendPacket(new Core.Packets.G2C.SCInstanceVisitCountChangePacket(row));
         Logger.Info(
@@ -1335,20 +1373,160 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
         return true;
     }
 
+    internal IIndunPermitStore PermitStore { get; init; } = new MySqlIndunPermitStore();
+
+    /// <summary>Stores a pass and registers it in memory; false when it could not be stored.</summary>
+    internal bool RecordPermit(uint characterId, uint zoneGroupId, DateTime atUtc)
+    {
+        if (!TryStorePermit(characterId, zoneGroupId, atUtc, out var stored))
+            return false;
+        lock (_lock)
+            AddPermitUnlocked(characterId, zoneGroupId, stored);
+        return true;
+    }
+
+    /// <summary>
+    /// Writes the pass row, taking the next free millisecond when the slot is taken. Done before the ticket is
+    /// paid, so nothing paid for lives only in memory.
+    /// </summary>
+    private bool TryStorePermit(uint characterId, uint zoneGroupId, DateTime atUtc, out DateTime stored)
+    {
+        // Whole milliseconds, as stored, so a reload at the next login recognises the same pass.
+        atUtc = atUtc.AddTicks(-(atUtc.Ticks % TimeSpan.TicksPerMillisecond));
+        lock (_lock)
+        {
+            while (PermitRegistrations.TryGetValue(characterId, out var byZone) &&
+                   byZone.TryGetValue(zoneGroupId, out var taken) && taken.Contains(atUtc))
+                atUtc = atUtc.AddMilliseconds(1);
+        }
+
+        stored = atUtc;
+        for (var attempt = 1; attempt <= 3; attempt++)
+        {
+            try
+            {
+                // False means the slot is already a row (primary key); take the next millisecond.
+                for (var shifts = 0; shifts < 100; shifts++, atUtc = atUtc.AddMilliseconds(1))
+                {
+                    if (!PermitStore.Add(characterId, zoneGroupId, atUtc))
+                        continue;
+                    stored = atUtc;
+                    return true;
+                }
+
+                Logger.Error("No free slot to store the dungeon pass of character {0} for zone group {1}", characterId, zoneGroupId);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Could not store the dungeon pass of character {0} for zone group {1} (try {2})",
+                    characterId, zoneGroupId, attempt);
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Takes back a stored pass whose ticket could not be paid.</summary>
+    private void DiscardPermit(uint characterId, uint zoneGroupId, DateTime atUtc)
+    {
+        lock (_lock)
+        {
+            if (PermitRegistrations.TryGetValue(characterId, out var byZone) && byZone.TryGetValue(zoneGroupId, out var list))
+                list.Remove(atUtc);
+        }
+
+        for (var attempt = 1; attempt <= 3; attempt++)
+        {
+            try
+            {
+                PermitStore.Remove(characterId, zoneGroupId, atUtc);
+                return;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Could not remove the unpaid dungeon pass of character {0} for zone group {1} (try {2})",
+                    characterId, zoneGroupId, attempt);
+            }
+        }
+    }
+
+    /// <summary>Brings back the passes a character paid for (the daily window spans at most two calendar days).</summary>
+    public void LoadPermitRegistrations(uint characterId)
+    {
+        IReadOnlyList<(uint ZoneGroupId, DateTime At, DateTime? SpentAt)> rows;
+        try
+        {
+            rows = PermitStore.Load(characterId, ServerCalendar.UtcNow.AddDays(-2));
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Could not load the dungeon passes of character {0}", characterId);
+            return;
+        }
+
+        lock (_lock)
+        {
+            foreach (var (zoneGroupId, at, spentAt) in rows)
+            {
+                AddPermitUnlocked(characterId, zoneGroupId, at);
+                if (spentAt is { } spent)
+                    AddEntryUnlocked(characterId, zoneGroupId, spent);
+            }
+        }
+    }
+
+    private void AddEntryUnlocked(uint characterId, uint zoneGroupId, DateTime atUtc)
+    {
+        if (!EntryHistory.TryGetValue(characterId, out var byZone))
+            EntryHistory[characterId] = byZone = [];
+        if (!byZone.TryGetValue(zoneGroupId, out var entries))
+            byZone[zoneGroupId] = entries = [];
+        if (!entries.Contains(atUtc))
+            entries.Add(atUtc);
+    }
+
+    private void AddPermitUnlocked(uint characterId, uint zoneGroupId, DateTime atUtc)
+    {
+        if (!PermitRegistrations.TryGetValue(characterId, out var byZone))
+            PermitRegistrations[characterId] = byZone = [];
+        if (!byZone.TryGetValue(zoneGroupId, out var registered))
+            byZone[zoneGroupId] = registered = [];
+        if (!registered.Contains(atUtc))
+            registered.Add(atUtc);
+    }
+
+    private static bool Pay(Character character, uint itemId, int count)
+    {
+        var consumed = character.Inventory.Bag.ConsumeItem(
+            Models.Game.Items.Actions.ItemTaskType.ConsumeIndunTicket, itemId, count, null);
+        if (consumed >= count)
+            return true;
+
+        character.SendErrorMessage(ErrorMessageType.NotEnoughItem);
+        return false;
+    }
+
+    /// <summary>The character's current visit row for one dungeon, for SCInstanceVisitCountChange.</summary>
+    public InstanceVisitCountRecord GetVisitRow(uint characterId, IndunZone zone)
+    {
+        lock (_lock)
+            return BuildVisitRowUnlocked(characterId, zone, ServerCalendar.UtcNow);
+    }
+
     private InstanceVisitCountRecord BuildVisitRowUnlocked(uint characterId, IndunZone zone, DateTime now)
     {
         var used = 0;
         if (EntryHistory.TryGetValue(characterId, out var zoneAndEntries) &&
             zoneAndEntries.TryGetValue(zone.ZoneGroupId, out var entries))
-            used = IndunEntryRules.CountEntriesInDailyWindow(entries, now);
+            used = IndunEntryRules.CountEntriesInDailyWindow(entries, now,
+                IndunEntryRules.DailyTimeZone(zone.UseUtcEntranceTimes));
 
-        return new InstanceVisitCountRecord(
-            ZoneGroupId: (int)zone.ZoneGroupId,
-            InstanceCatalogId: zone.InstanceCatalogId,
-            UsedCount: used,
-            ResetCount: GetResetPurchasesUnlocked(characterId, zone.ZoneGroupId),
-            PermittedCount: IndunEntryRules.EffectivePermittedCount(
-                zone.EnterCount, GetPermitBonusUnlocked(characterId, zone.ZoneGroupId)));
+        return IndunEntryRules.VisitRow(
+            zoneManager.GetVisitRowZoneKey(zone.ZoneGroupId),
+            used,
+            GetResetPurchasesUnlocked(characterId, zone.ZoneGroupId),
+            GetPermitsUsedUnlocked(characterId, zone.ZoneGroupId, now));
     }
 
     private int GetResetPurchasesUnlocked(uint characterId, uint zoneGroupId)
@@ -1358,42 +1536,42 @@ public class IndunManager(ITickManager tickManager, IWorldManager worldManager, 
         return byZone.GetValueOrDefault(zoneGroupId);
     }
 
-    private int GetPermitBonusUnlocked(uint characterId, uint zoneGroupId)
-    {
-        if (!PermitBonusCount.TryGetValue(characterId, out var byZone))
-            return 0;
-        return byZone.GetValueOrDefault(zoneGroupId);
-    }
+    private int GetPermitsUsedUnlocked(uint characterId, uint zoneGroupId, DateTime now) =>
+        PermitRegistrations.TryGetValue(characterId, out var byZone) && byZone.TryGetValue(zoneGroupId, out var registered)
+            ? IndunEntryRules.CountEntriesInDailyWindow(registered, now, DailyZoneOf(zoneGroupId))
+            : 0;
+
+    private static TimeZoneInfo DailyZoneOf(uint zoneGroupId) =>
+        IndunEntryRules.DailyTimeZone(IndunGameData.Instance.GetDungeonZone(zoneGroupId)?.UseUtcEntranceTimes ?? true);
 
     /// <summary>
-    /// GM/ops: forget a character's daily dungeon entry history, so the visit cap stops blocking
-    /// (the gate behind <c>ErrorMessageType.InstanceVisitLimit</c>).
+    /// GM/ops: forget a character's daily dungeon entries and registered passes, so neither visit cap blocks
+    /// (the gates behind <c>ErrorMessageType.InstanceVisitLimit</c>).
     /// </summary>
     /// <param name="characterId">Whose history to drop.</param>
     /// <param name="zoneGroupId">A single zone group, or 0 to clear every group for that character.</param>
     /// <returns>How many entry timestamps were dropped.</returns>
     public int ClearEntryHistory(uint characterId, uint zoneGroupId)
     {
+        int entries;
         lock (_lock)
         {
-            if (!EntryHistory.TryGetValue(characterId, out var byZone))
-                return 0;
-
-            if (zoneGroupId != 0)
-            {
-                var dropped = byZone.TryGetValue(zoneGroupId, out var one) ? one.RemoveAll(_ => true) : 0;
-                Logger.Info("ClearEntryHistory character={0} zoneGroup={1} dropped={2}",
-                    characterId, zoneGroupId, dropped);
-                return dropped;
-            }
-
-            var total = 0;
-            foreach (var entries in byZone.Values)
-                total += entries.Count;
-            byZone.Clear();
-            Logger.Info("ClearEntryHistory character={0} all zone groups, dropped={1}", characterId, total);
-            return total;
+            entries = IndunEntryRules.ClearDaily(EntryHistory, characterId, zoneGroupId);
+            var passes = IndunEntryRules.ClearDaily(PermitRegistrations, characterId, zoneGroupId);
+            Logger.Info("ClearEntryHistory character={0} zoneGroup={1} entries={2} passes={3}",
+                characterId, zoneGroupId, entries, passes);
         }
+
+        try
+        {
+            PermitStore.Clear(characterId, zoneGroupId);
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "Could not clear the stored dungeon passes of character {0}", characterId);
+        }
+
+        return entries;
     }
 
     private void InfoAttempt()

@@ -142,6 +142,7 @@ public class CSSelectCharacterPacket() : GamePacket(CSOffsets.CSSelectCharacterP
                 FavoritePortalCapacityRules.GetBonus(character)));
             Connection.SendPacket(new SCWorldRestrictOwnerChangePacket(false));
             Connection.SendPacket(new SCPlayerGameDataPacket(character));
+            IndunManager.Instance.LoadPermitRegistrations(character.Id);
             Connection.SendPacket(new SCInstanceVisitCountsPacket(
                 IndunManager.Instance.GetVisitCountRecords(character.Id)));
             // The instance window's own list: the portals of the world the character just entered. The client

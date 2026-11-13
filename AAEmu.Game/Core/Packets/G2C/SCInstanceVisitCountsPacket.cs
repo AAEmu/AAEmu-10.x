@@ -7,12 +7,16 @@ namespace AAEmu.Game.Core.Packets.G2C;
 public class SCInstanceVisitCountsPacket(IReadOnlyList<InstanceVisitCountRecord> records = null)
     : GamePacket(SCOffsets.SCInstanceVisitCountsPacket, 1)
 {
+    /// <summary>The client's visit-count list holds this many rows.</summary>
+    public const int MaxRows = 50;
+
     private readonly IReadOnlyList<InstanceVisitCountRecord> _records = records ?? [];
 
     public override PacketStream Write(PacketStream stream)
     {
-        stream.Write(_records.Count);
-        foreach (var row in _records)
+        var rows = _records.Take(MaxRows).ToList();
+        stream.Write(rows.Count);
+        foreach (var row in rows)
             WriteVisitRow(stream, row);
 
         return stream;
@@ -20,8 +24,8 @@ public class SCInstanceVisitCountsPacket(IReadOnlyList<InstanceVisitCountRecord>
 
     internal static void WriteVisitRow(PacketStream stream, InstanceVisitCountRecord row)
     {
-        stream.Write(row.ZoneGroupId);
-        stream.Write(row.InstanceCatalogId);
+        stream.Write(row.ZoneId);
+        stream.Write(row.Data);
         stream.Write(row.UsedCount);
         stream.Write(row.ResetCount);
         stream.Write(row.PermittedCount);

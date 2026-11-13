@@ -43,6 +43,238 @@ public class IndunManagerTests
     }
 
     [Test]
+    public async Task VisitRow_CountsAnEntryAsSoonAsItIsCharged()
+    {
+        // The island entry was charged but the client only learned of it at the next character select.
+        var manager = new IndunManager(
+            Mock.Of<ITickManager>().Object,
+            Mock.Of<IWorldManager>().Object,
+            Mock.Of<IZoneManager>().Object,
+            Mock.Of<ITeamManager>().Object);
+        var island = new IndunZone { ZoneGroupId = 158, EnterCount = 2 };
+
+        manager.CheckEntryAttemptCount(1001, 158, island, true);
+
+        await Assert.That(manager.GetVisitRow(1001, island).UsedCount).IsEqualTo(1);
+    }
+
+    private sealed class MemoryPermitStore : IIndunPermitStore
+    {
+        public readonly List<(uint CharacterId, uint ZoneGroupId, DateTime At, DateTime? SpentAt)> Rows = [];
+
+        public IReadOnlyList<(uint ZoneGroupId, DateTime At, DateTime? SpentAt)> Load(uint characterId, DateTime sinceUtc) =>
+            Rows.Where(r => r.CharacterId == characterId && r.At >= sinceUtc)
+                .Select(r => (r.ZoneGroupId, r.At, r.SpentAt)).ToList();
+
+        // DATETIME(3): the store keeps whole milliseconds.
+        // Like INSERT IGNORE on the primary key: false when the row already exists.
+        public bool Add(uint characterId, uint zoneGroupId, DateTime atUtc)
+        {
+            atUtc = atUtc.AddTicks(-(atUtc.Ticks % TimeSpan.TicksPerMillisecond));
+            if (Rows.Any(r => r.CharacterId == characterId && r.ZoneGroupId == zoneGroupId && r.At == atUtc))
+                return false;
+            Rows.Add((characterId, zoneGroupId, atUtc, null));
+            return true;
+        }
+
+        public void Remove(uint characterId, uint zoneGroupId, DateTime atUtc) =>
+            Rows.RemoveAll(r => r.CharacterId == characterId && r.ZoneGroupId == zoneGroupId && r.At == atUtc);
+
+        public void MarkSpent(uint characterId, uint zoneGroupId, DateTime spentAtUtc)
+        {
+            var i = Rows.FindIndex(r => r.CharacterId == characterId && r.ZoneGroupId == zoneGroupId && r.SpentAt == null);
+            if (i >= 0)
+                Rows[i] = Rows[i] with { SpentAt = spentAtUtc.AddTicks(-(spentAtUtc.Ticks % TimeSpan.TicksPerMillisecond)) };
+        }
+
+        public void Clear(uint characterId, uint zoneGroupId) =>
+            Rows.RemoveAll(r => r.CharacterId == characterId && (zoneGroupId == 0 || r.ZoneGroupId == zoneGroupId));
+    }
+
+    private static IndunManager ManagerWith(IIndunPermitStore store) =>
+        new(Mock.Of<ITickManager>().Object, Mock.Of<IWorldManager>().Object, Mock.Of<IZoneManager>().Object,
+            Mock.Of<ITeamManager>().Object) { PermitStore = store };
+
+    [Test]
+    public async Task APaidPass_ComesBackAfterAWorldRestart()
+    {
+        // The pass item is used up when it is registered; a restart before entering must not lose it.
+        var store = new MemoryPermitStore();
+        var island = new IndunZone { ZoneGroupId = 158, EnterCount = 2, UseUtcEntranceTimes = true };
+        ManagerWith(store).RecordPermit(1001, 158, DateTime.UtcNow);
+
+        var afterRestart = ManagerWith(store);
+        afterRestart.LoadPermitRegistrations(1001);
+        afterRestart.LoadPermitRegistrations(1001);
+
+        await Assert.That(afterRestart.GetVisitRow(1001, island).PermittedCount).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task ARelog_DoesNotCountAPassTwice()
+    {
+        var store = new MemoryPermitStore();
+        var island = new IndunZone { ZoneGroupId = 158, EnterCount = 2, UseUtcEntranceTimes = true };
+        var manager = ManagerWith(store);
+        manager.RecordPermit(1001, 158, DateTime.UtcNow.AddTicks(1234));
+
+        manager.LoadPermitRegistrations(1001);
+
+        await Assert.That(manager.GetVisitRow(1001, island).PermittedCount).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task TwoPurchasesInTheSameMillisecond_AreTwoPasses()
+    {
+        var store = new MemoryPermitStore();
+        var island = new IndunZone { ZoneGroupId = 158, EnterCount = 2, UseUtcEntranceTimes = true };
+        var manager = ManagerWith(store);
+        var at = DateTime.UtcNow;
+
+        manager.RecordPermit(1001, 158, at);
+        manager.RecordPermit(1001, 158, at);
+
+        await Assert.That(manager.GetVisitRow(1001, island).PermittedCount).IsEqualTo(2);
+        await Assert.That(store.Rows.Count).IsEqualTo(2);
+    }
+
+    private sealed class FlakyPermitStore(int failures, int markFailures = 0) : IIndunPermitStore
+    {
+        public readonly MemoryPermitStore Inner = new();
+        private int _failuresLeft = failures;
+        private int _markFailuresLeft = markFailures;
+
+        public IReadOnlyList<(uint ZoneGroupId, DateTime At, DateTime? SpentAt)> Load(uint characterId, DateTime sinceUtc) =>
+            Inner.Load(characterId, sinceUtc);
+
+        public void MarkSpent(uint characterId, uint zoneGroupId, DateTime spentAtUtc)
+        {
+            if (_markFailuresLeft-- > 0)
+                throw new InvalidOperationException("db down");
+            Inner.MarkSpent(characterId, zoneGroupId, spentAtUtc);
+        }
+
+        public void Remove(uint characterId, uint zoneGroupId, DateTime atUtc) =>
+            Inner.Remove(characterId, zoneGroupId, atUtc);
+
+        public bool Add(uint characterId, uint zoneGroupId, DateTime atUtc)
+        {
+            if (_failuresLeft-- > 0)
+                throw new InvalidOperationException("db down");
+            return Inner.Add(characterId, zoneGroupId, atUtc);
+        }
+
+        public void Clear(uint characterId, uint zoneGroupId) => Inner.Clear(characterId, zoneGroupId);
+
+        public void Heal() => _failuresLeft = 0;
+    }
+
+    [Test]
+    public async Task APassWhoseWriteFailsOnce_IsStoredOnRetry()
+    {
+        var store = new FlakyPermitStore(1);
+
+        ManagerWith(store).RecordPermit(1001, 158, DateTime.UtcNow);
+
+        await Assert.That(store.Inner.Rows.Count).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task APassThatCannotBeStored_IsRefusedAndNeverLivesOnlyInMemory()
+    {
+        var store = new FlakyPermitStore(100);
+        var island = new IndunZone { ZoneGroupId = 158, EnterCount = 2, UseUtcEntranceTimes = true };
+        var manager = ManagerWith(store);
+
+        var stored = manager.RecordPermit(1001, 158, DateTime.UtcNow);
+
+        await Assert.That(stored).IsFalse();
+        await Assert.That(manager.GetVisitRow(1001, island).PermittedCount).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task APassWhoseSlotIsTakenInTheStore_MovesToTheNextMillisecond()
+    {
+        // Memory is empty (the login load failed) but the store already holds a pass at that millisecond.
+        var store = new MemoryPermitStore();
+        var at = DateTime.UtcNow;
+        store.Add(1001, 158, at);
+
+        ManagerWith(store).RecordPermit(1001, 158, at);
+
+        await Assert.That(store.Rows.Select(r => r.At).Distinct().Count()).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task APassUsedToEnter_StaysSpentAfterAWorldRestart()
+    {
+        var store = new MemoryPermitStore();
+        var dungeon = new IndunZone { ZoneGroupId = 158, EnterCount = 1, PermitEnterCountItemId = 9, UseUtcEntranceTimes = true };
+        var before = ManagerWith(store);
+        before.RecordPermit(1001, 158, DateTime.UtcNow);
+        before.CheckEntryAttemptCount(1001, 158, dungeon, true);
+
+        var afterRestart = ManagerWith(store);
+        afterRestart.LoadPermitRegistrations(1001);
+        var allowed = afterRestart.CheckEntryAttemptCount(1001, 158, dungeon, false);
+
+        await Assert.That(allowed).IsFalse();
+    }
+
+    [Test]
+    public async Task ASpentMarkWhoseWriteFailsOnce_IsStoredOnRetry()
+    {
+        var store = new FlakyPermitStore(0, markFailures: 1);
+        var dungeon = new IndunZone { ZoneGroupId = 158, EnterCount = 1, PermitEnterCountItemId = 9, UseUtcEntranceTimes = true };
+        var manager = ManagerWith(store);
+        manager.RecordPermit(1001, 158, DateTime.UtcNow);
+
+        manager.CheckEntryAttemptCount(1001, 158, dungeon, true);
+
+        await Assert.That(store.Inner.Rows.Single().SpentAt).IsNotNull();
+    }
+
+    [Test]
+    public async Task AnUnusedPass_StillAllowsOneEntryAfterAWorldRestart()
+    {
+        var store = new MemoryPermitStore();
+        var dungeon = new IndunZone { ZoneGroupId = 158, EnterCount = 1, PermitEnterCountItemId = 9, UseUtcEntranceTimes = true };
+        ManagerWith(store).RecordPermit(1001, 158, DateTime.UtcNow);
+
+        var afterRestart = ManagerWith(store);
+        afterRestart.LoadPermitRegistrations(1001);
+
+        await Assert.That(afterRestart.CheckEntryAttemptCount(1001, 158, dungeon, false)).IsTrue();
+    }
+
+    [Test]
+    public async Task ARelog_DoesNotCountASpentPassAsASecondEntry()
+    {
+        var store = new MemoryPermitStore();
+        var dungeon = new IndunZone { ZoneGroupId = 158, EnterCount = 2, PermitEnterCountItemId = 9, UseUtcEntranceTimes = true };
+        var manager = ManagerWith(store);
+        manager.RecordPermit(1001, 158, DateTime.UtcNow);
+        manager.RecordPermit(1001, 158, DateTime.UtcNow);
+        manager.CheckEntryAttemptCount(1001, 158, dungeon, true);
+
+        manager.LoadPermitRegistrations(1001);
+
+        await Assert.That(manager.GetVisitRow(1001, dungeon).UsedCount).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task ClearingEntryHistory_AlsoForgetsStoredPasses()
+    {
+        var store = new MemoryPermitStore();
+        var manager = ManagerWith(store);
+        manager.RecordPermit(1001, 158, DateTime.UtcNow);
+
+        manager.ClearEntryHistory(1001, 158);
+
+        await Assert.That(store.Rows).IsEmpty();
+    }
+
+    [Test]
     public void Initialize_SubscribesToTickManager()
     {
         var mockTick = Mock.Of<ITickManager>();

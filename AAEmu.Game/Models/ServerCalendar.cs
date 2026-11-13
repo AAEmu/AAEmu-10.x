@@ -3,6 +3,8 @@ namespace AAEmu.Game.Models;
 /// <summary>
 /// Single wall-clock source for day/week boundaries on World.
 /// Always UTC (GMT). Restarts do not invent a local midnight — next fire is absolute UTC.
+/// Exception: a dungeon with <c>instances.use_utc = f</c> counts its daily entries from the server's local midnight
+/// (<see cref="Game.Indun.IndunEntryRules.DailyTimeZone"/>).
 /// </summary>
 public static class ServerCalendar
 {

@@ -321,6 +321,14 @@ CREATE TABLE IF NOT EXISTS `character_active_buffs` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Stores active buffs across player sessions';
 
 
+CREATE TABLE IF NOT EXISTS `character_indun_permits` (
+  `character_id`  INT UNSIGNED NOT NULL COMMENT 'Character who registered the pass',
+  `zone_group_id` INT UNSIGNED NOT NULL COMMENT 'indun_zones.zone_group_id',
+  `registered_at` DATETIME(3) NOT NULL COMMENT 'UTC time the pass was registered',
+  `spent_at`      DATETIME(3) NULL COMMENT 'UTC time the pass was used to enter; NULL while unspent',
+  PRIMARY KEY (`character_id`, `zone_group_id`, `registered_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Registered dungeon passes';
+
 CREATE TABLE IF NOT EXISTS `character_favorite_crafts` (
   `owner` int unsigned NOT NULL COMMENT 'Character id',
   `craft_type` int unsigned NOT NULL COMMENT 'Craft recipe id from game content',

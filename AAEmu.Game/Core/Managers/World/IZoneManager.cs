@@ -15,6 +15,7 @@ public interface IZoneManager : ILoadable
     Zone GetZoneByKey(uint zoneKey);
     ZoneGroup GetZoneGroupById(uint zoneId);
     List<uint> GetZoneKeysInZoneGroupById(uint zoneGroupId);
+    uint GetVisitRowZoneKey(uint zoneGroupId);
     uint GetTargetIdByZoneId(uint zoneId);
     Vector2 GetZoneOriginCell(uint zoneId);
     Vector3 ConvertToWorldCoordinates(uint zoneId, Vector3 point);
