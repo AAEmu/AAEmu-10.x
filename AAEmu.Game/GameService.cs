@@ -16,6 +16,7 @@ using AAEmu.Game.IO;
 using AAEmu.Game.Models;
 using AAEmu.Game.Models.Game;
 using AAEmu.Game.Models.Tasks.Network;
+using AAEmu.Game.Models.Tasks.Skills;
 using AAEmu.Game.Utils.Scripts;
 
 using Microsoft.Extensions.Hosting;
@@ -156,6 +157,9 @@ public sealed class GameService : IHostedService, IDisposable
 
         // Mirror interest: AOI cull + flush pending UnitStates (retail; not 1/s drip).
         TaskManager.Instance.Schedule(new MirrorSpawnStreamTask(), TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(250));
+
+        // Crowd buffs follow holders gathering and splitting up.
+        TaskManager.Instance.Schedule(new CrowdBuffTask(), TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(2));
 
         // MirrorMovementStreamTask (synthetic idle SCUnitMovements self-stands) is INTENTIONALLY NOT scheduled.
         // Verified 2026-07-19: those stands cause clean System:Quit; Ping/Pong alone keeps the channel alive.

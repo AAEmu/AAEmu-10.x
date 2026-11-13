@@ -39,6 +39,7 @@ public interface IBuffs
     /// <summary>Every live instance <paramref name="casterKey"/> holds of <paramref name="buffId"/>.</summary>
     List<Buff> GetLiveInstancesForCaster(uint buffId, uint casterKey);
     IEnumerable<Buff> GetBuffsRequiring(uint buffId);
+    List<Buff> GetCrowdSources();
     Buff GetEffectByIndex(uint index);
     Buff GetEffectByTemplate(BuffTemplate template);
     Buff GetEffectFromBuffId(uint id);

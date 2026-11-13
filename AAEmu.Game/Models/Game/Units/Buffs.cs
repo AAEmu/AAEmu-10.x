@@ -395,6 +395,14 @@ public class Buffs : IBuffs
         return null;
     }
 
+    public List<Buff> GetCrowdSources()
+    {
+        lock (_lock)
+        {
+            return _effects.Where(b => b?.Template is { CrowdBuffId: > 0 }).ToList();
+        }
+    }
+
     public IEnumerable<Buff> GetBuffsRequiring(uint buffId)
     {
         // Create a copy of the list of effects to avoid changing the list while iterating
@@ -1041,6 +1049,9 @@ public class Buffs : IBuffs
         // hands a packet to the zone. A refused or absorbed application leaves InUse false and is skipped.
         if (buff.InUse && TauntRules.ForcesTarget(buff.Template.Taunt, buff.Template.TauntWithTopAggro))
             buff.ApplyTaunt();
+
+        if (buff.InUse && GetOwner() is Unit crowdOwner)
+            CrowdBuffs.OnBuffApplied(crowdOwner, buff.Template);
     }
 
     private uint AllocateIndex()
