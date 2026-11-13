@@ -7,4 +7,6 @@ public class DefaultSkill
     public SkillTemplate Template { get; set; }
     public byte Slot { get; set; }
     public bool AddToSlot { get; set; }
+
+    public byte SkillBookCategoryId { get; set; }
 }

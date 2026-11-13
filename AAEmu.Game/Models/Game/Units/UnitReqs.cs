@@ -169,8 +169,10 @@ public class UnitReqs
             case UnitReqsKindType.EquipShield:
                 var hasShield = unit?.Equipment.GetItemBySlot((int)EquipmentItemSlot.Offhand)?.Template
                     is WeaponTemplate { HoldableTemplate.SlotTypeId: (uint)EquipmentItemSlotType.Shield };
-                var offhandDisabled = unit?.Buffs.HasEffectsMatchingCondition(
-                    effect => effect.Template.DisarmamentOffHand) ?? false;
+                var offhandDisabled = (unit?.Buffs.HasEffectsMatchingCondition(
+                                          effect => effect.Template.DisarmamentOffHand) ?? false) ||
+                                      CharTransformCombatRules.IsSlotDisarmed(
+                                          unit?.IsCharTransformed ?? false, EquipmentItemSlot.Offhand);
                 var shieldRequirementMet = Value1 switch
                 {
                     0 => !hasShield,
@@ -261,7 +263,9 @@ public class UnitReqs
                                                   rangedWeapon?.Template is WeaponTemplate rangedTemplate &&
                                                   rangedTemplate.HoldableTemplate.Id == requiredHoldableId;
                     var rangedSlotDisabled = unit.Buffs.HasEffectsMatchingCondition(
-                        effect => effect.Template.DisarmamentRanged);
+                                                 effect => effect.Template.DisarmamentRanged) ||
+                                             CharTransformCombatRules.IsSlotDisarmed(
+                                                 unit.IsCharTransformed, EquipmentItemSlot.Ranged);
                     if (hasRequiredRangedWeapon && !rangedSlotDisabled)
                         return Ret(SkillResultKeys.ok, true);
 

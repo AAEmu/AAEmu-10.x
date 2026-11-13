@@ -203,7 +203,7 @@ public static class SpecialEffectOwnershipRules
         [SpecialType.AuctionPostAuthority] = SpecialEffectOwnership.Unsupported, // 117: 1 row, buff trigger only
         [SpecialType.RevertItemLook] = SpecialEffectOwnership.Unsupported, // 119: 2 rows, 2 skills
         [SpecialType.RechargeItemSkill] = SpecialEffectOwnership.Unsupported, // 120: 3 rows, 3 skills
-        [SpecialType.RechargeItemRndAttrUnitModifier] = SpecialEffectOwnership.Unsupported, // 124: 4 rows, 4 skills
+        [SpecialType.RechargeItemRndAttrUnitModifier] = SpecialEffectOwnership.Gameplay, // 124: 4 rows, 4 skills
         [SpecialType.GainGachaLootPackItem] = SpecialEffectOwnership.Unsupported, // 133: 3 rows, 3 skills, all values zero
         [SpecialType.ExpandDecoLimit] = SpecialEffectOwnership.Unsupported, // 137: 2 rows; SCHousingDecoLimitExpanded exists, no house limit model
         [SpecialType.LearnSpecialAbility] = SpecialEffectOwnership.Unsupported, // 141: 1 row, skill 33995

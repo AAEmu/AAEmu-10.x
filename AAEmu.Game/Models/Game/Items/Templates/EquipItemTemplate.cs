@@ -11,6 +11,10 @@ public class EquipItemTemplate : ItemTemplate
     public int ChargeLifetime { get; set; }
     public int ChargeCount { get; set; } // does not seem to be actually used anywhere in the DB
     public uint RechargeRestrictItemId { get; set; }
+
+    // Synthesis effect lifetime in minutes (0 = permanent) and the item that recharges it.
+    public int RndAttrUnitModifierLifetime { get; set; }
+    public uint RechargeRndAttrRestrictItemId { get; set; }
     public ItemLookConvert ItemLookConvert { get; set; }
     public uint EquipItemSetId { get; set; }
     /// <summary>Default packed ARGB color from 10.0.2.13 <c>dyeable_items.color</c>.</summary>

@@ -1225,6 +1225,8 @@ public class ItemManager(ISkillManager skillManager, IItemIdManager itemIdManage
                             ChargeLifetime = reader.GetInt32("charge_lifetime", 0),
                             ChargeCount = reader.GetInt32("charge_count", 0),
                             RechargeRestrictItemId = reader.GetUInt32("recharge_restrict_item_id", 0),
+                            RndAttrUnitModifierLifetime = reader.GetInt32("rnd_attr_unit_modifier_lifetime", 0),
+                            RechargeRndAttrRestrictItemId = reader.GetUInt32("recharge_rnd_attr_unit_modifier_restrict_item_id", 0),
                             ItemLookConvert = GetWearableItemLookConvert(slotTypeId),
                             EquipItemSetId = reader.GetUInt32("eiset_id", 0),
                             RndAttrCategoryId = reader.GetUInt32("item_rnd_attr_category_id", 0)
@@ -1283,6 +1285,8 @@ public class ItemManager(ISkillManager skillManager, IItemIdManager itemIdManage
                             ChargeLifetime = reader.GetInt32("charge_lifetime", 0),
                             ChargeCount = reader.GetInt32("charge_count", 0),
                             RechargeRestrictItemId = reader.GetUInt32("recharge_restrict_item_id", 0),
+                            RndAttrUnitModifierLifetime = reader.GetInt32("rnd_attr_unit_modifier_lifetime", 0),
+                            RechargeRndAttrRestrictItemId = reader.GetUInt32("recharge_rnd_attr_unit_modifier_restrict_item_id", 0),
                             ItemLookConvert = GetHoldableItemLookConvert(holdableId),
                             EquipItemSetId = reader.GetUInt32("eiset_id", 0),
                             RndAttrCategoryId = reader.GetUInt32("item_rnd_attr_category_id", 0)
@@ -1317,6 +1321,8 @@ public class ItemManager(ISkillManager skillManager, IItemIdManager itemIdManage
                             ChargeLifetime = reader.GetInt32("charge_lifetime", 0),
                             ChargeCount = reader.GetInt32("charge_count", 0),
                             RechargeRestrictItemId = reader.GetUInt32("recharge_restrict_item_id", 0),
+                            RndAttrUnitModifierLifetime = reader.GetInt32("rnd_attr_unit_modifier_lifetime", 0),
+                            RechargeRndAttrRestrictItemId = reader.GetUInt32("recharge_rnd_attr_unit_modifier_restrict_item_id", 0),
                             EquipItemSetId = reader.GetUInt32("eiset_id", 0),
                             RndAttrCategoryId = reader.GetUInt32("item_rnd_attr_category_id", 0)
                         };
@@ -2719,7 +2725,9 @@ public class ItemManager(ISkillManager skillManager, IItemIdManager itemIdManage
                     var parentItemId = reader.GetUInt64("parent_item_id");
                     var container = ItemContainer.CreateByTypeName(containerType, containerOwnerId, slotType, false, null);
                     container.ContainerId = containerId;
-                    container.ContainerSize = containerSize;
+                    container.ContainerSize = container is EquipmentContainer
+                        ? EquipmentContainer.ResolveLoadedSize(containerSize)
+                        : containerSize;
                     container.MateId = containerMateId;
 
                     if (container is ItemBagContainer itemBagContainer)
@@ -3007,7 +3015,7 @@ public class ItemManager(ISkillManager skillManager, IItemIdManager itemIdManage
         } && !template.BindType.HasFlag(ItemBindType.BindOnEquip);
     }
 
-    private static int UpdateItemContainerTimers(TimeSpan delta, ItemContainer itemContainer, Character character)
+    private static int UpdateItemContainerTimers(DateTime now, TimeSpan delta, ItemContainer itemContainer, Character character)
     {
         var res = 0;
         if (itemContainer == null)
@@ -3017,11 +3025,16 @@ public class ItemManager(ISkillManager skillManager, IItemIdManager itemIdManage
         }
 
         var isEquipmentContainer = itemContainer is EquipmentContainer;
+        var synthesisExpired = false;
 
         for (var i = itemContainer.Items.Count - 1; i >= 0; i--)
         {
             var item = itemContainer.Items[i];
             var doExpire = false;
+
+            if (isEquipmentContainer && item is EquipItem worn &&
+                ItemRndAttrLifetimeRules.ExpiredBetween(worn, now - delta, now))
+                synthesisExpired = true;
 
             // Check if buffs need to expire
             if (isEquipmentContainer && item is EquipItem { Template: EquipItemTemplate { RechargeBuffId: > 0 } equipItemTemplate } equipItem)
@@ -3073,15 +3086,20 @@ public class ItemManager(ISkillManager skillManager, IItemIdManager itemIdManage
             }
         }
 
+        // Synthesis effects are only read when gear bonuses are rebuilt; this also resends the slot mask.
+        if (synthesisExpired)
+            character?.UpdateGearBonuses(null, null);
+
         return res;
     }
 
     public void UpdateItemTimers()
     {
         TimeSpan delta;
+        DateTime now;
         lock (ItemTimerLock)
         {
-            var now = DateTime.UtcNow;
+            now = DateTime.UtcNow;
             delta = now - LastTimerCheck;
             LastTimerCheck = now;
         }
@@ -3096,9 +3114,9 @@ public class ItemManager(ISkillManager skillManager, IItemIdManager itemIdManage
         var res = 0;
         foreach (var character in onlinePlayers)
         {
-            res += UpdateItemContainerTimers(delta, character?.Inventory?.Equipment, character);
-            res += UpdateItemContainerTimers(delta, character?.Inventory?.Bag, character);
-            res += UpdateItemContainerTimers(delta, character?.Inventory?.Warehouse, character);
+            res += UpdateItemContainerTimers(now, delta, character?.Inventory?.Equipment, character);
+            res += UpdateItemContainerTimers(now, delta, character?.Inventory?.Bag, character);
+            res += UpdateItemContainerTimers(now, delta, character?.Inventory?.Warehouse, character);
         }
 
         if (res > 0)

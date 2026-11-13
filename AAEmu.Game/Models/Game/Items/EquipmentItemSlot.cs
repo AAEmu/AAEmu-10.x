@@ -29,5 +29,12 @@ public enum EquipmentItemSlot : byte
     Body = 24,
     Beard = 25,
     Backpack = 26,
-    Cosplay = 27
+    Cosplay = 27,
+
+    Stabilizer = 28,
+    Undershirt2 = 29,
+    Underpants2 = 30,
+    CosplayLooks = 31,
+    RaceCosplay = 32,
+    RaceCosplayLooks = 33
 }

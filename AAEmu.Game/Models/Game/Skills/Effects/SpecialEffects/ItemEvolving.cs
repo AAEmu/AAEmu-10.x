@@ -420,6 +420,8 @@ public class ItemEvolving : SpecialEffectAction
         }
 
         equipItem.RndAttrGroupIds = groupIds;
+        if (added.Count > 0)
+            ItemRndAttrLifetimeRules.StartIfNeeded(equipItem, DateTime.UtcNow);
         return added;
     }
 

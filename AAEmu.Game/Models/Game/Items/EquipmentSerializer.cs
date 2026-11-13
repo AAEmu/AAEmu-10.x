@@ -12,7 +12,7 @@ namespace AAEmu.Game.Models.Game.Items;
 // Housing, Mate, and type 7 write full items; Transfer and Shipyard have no normal-slot branch.
 public static class EquipmentSerializer
 {
-    public const int SlotCount = 34; // 10.0.2.13 equip-slot count (AAEmu fills 0..27; 28..33 stay empty)
+    public const int SlotCount = 34; // 10.0.2.13 equip-slot count (enum_equip_slot 0..33)
 
     // The 10.0.2.13 client's equipment helper is also invoked by its Butler state serializer with
     // this raw mode.
@@ -111,7 +111,9 @@ public static class EquipmentSerializer
         ulong slotFlags = 0;
         for (var i = 0; i < SlotCount; i++)
         {
-            if (unit.Equipment.GetItemBySlot(i) is EquipItem equipped && equipped.UsedRndAttrGroupIds.Any())
+            if (unit.Equipment.GetItemBySlot(i) is EquipItem equipped && equipped.UsedRndAttrGroupIds.Any() &&
+                ItemRndAttrLifetimeRules.IsActive(equipped, DateTime.UtcNow) &&
+                CostumeSlotRules.CountsTowardStats((EquipmentItemSlot)i, unit.IsCharTransformed))
                 slotFlags |= 1UL << i;
         }
 

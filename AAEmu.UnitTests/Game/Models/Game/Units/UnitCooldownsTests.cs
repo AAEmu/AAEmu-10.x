@@ -1,4 +1,4 @@
-
+﻿
 using AAEmu.Game.Models.Game.Units;
 
 namespace AAEmu.UnitTests.Game.Models.Game.Units;
@@ -255,5 +255,54 @@ public class UnitCooldownsTests
         }
 
         throw new InvalidOperationException($"Cooldown {skillId} did not expire within the timeout.");
+    }
+
+    [Test]
+    public async Task Restore_KeepsTheOriginalDurationAndTheTimeLeft()
+    {
+        // Daru Transformation 50650: 4 h cooldown, 1 h left at relog.
+        var cooldowns = new UnitCooldowns();
+
+        cooldowns.Restore(50650, 14_400_000, 3_600_000);
+
+        var snapshot = cooldowns.GetActiveSnapshots(10).Single();
+        await Assert.That(snapshot.Duration).IsEqualTo(14_400_000u);
+        await Assert.That(snapshot.Remaining).IsLessThanOrEqualTo(3_600_000u);
+        await Assert.That(snapshot.Remaining).IsGreaterThan(3_590_000u);
+    }
+
+    [Test]
+    public async Task Restore_OfNothingLeft_DoesNothing()
+    {
+        var cooldowns = new UnitCooldowns();
+
+        cooldowns.Restore(50650, 14_400_000, 0);
+
+        await Assert.That(cooldowns.CheckCooldown(50650)).IsFalse();
+    }
+
+    [Test]
+    public async Task RestoreTag_ArmsTheTagWithItsOwnTimeLeft()
+    {
+        var cooldowns = new UnitCooldowns();
+
+        cooldowns.RestoreTag(7, 14_400_000, 3_600_000);
+
+        await Assert.That(cooldowns.CheckTagCooldown([7])).IsTrue();
+        await Assert.That(cooldowns.CheckCooldown(7)).IsFalse();
+    }
+
+    [Test]
+    public async Task ActiveTagSnapshots_KeepALongerTagTimerThanTheReducedSkillTimer()
+    {
+        var cooldowns = new UnitCooldowns();
+        cooldowns.AddCooldown(50650, 10_000, [7]);
+        cooldowns.ApplyCooldownReduction(50650, 0, 50);
+
+        var skill = cooldowns.GetActiveSnapshots(10).Single();
+        var tag = cooldowns.GetActiveTagSnapshots(10).Single();
+
+        await Assert.That(tag.SkillId).IsEqualTo(7u);
+        await Assert.That(tag.Remaining).IsGreaterThan(skill.Remaining);
     }
 }
