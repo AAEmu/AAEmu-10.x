@@ -61,6 +61,7 @@ public class Dungeon : IPreparedIndunInstance
     /// cannot burn the copy's budgets.
     /// </summary>
     private DateTime? _copyStartUtc;
+    private readonly IndunCopyEnding _ending = new(AppConfiguration.Instance.Dungeons.CloseWarningSeconds);
     /// <summary>Characters admitted through a match whose client is waiting to be told it has joined this copy.</summary>
     private readonly HashSet<uint> _matchedEntries = [];
     /// <summary>Matched players being walked through the copy's opening, by character id.</summary>
@@ -270,14 +271,14 @@ public class Dungeon : IPreparedIndunInstance
         {
             if (!IndunInstancePhaseRules.TryGetClockOrigin(_copyStartUtc, out var origin))
                 return IndunInstancePhase.None;
-            return IndunInstancePhaseRules.PhaseAt(_indunZone.Option, origin, DateTime.UtcNow);
+            return IndunInstancePhaseRules.PhaseAt(_indunZone.Option, origin, DateTime.UtcNow, _ending.ScriptEndedUtc);
         }
     }
 
     /// <summary>Whole seconds left in the copy's current phase; 0 when it has no clock or has finished.</summary>
     public int PhaseSecondsRemaining =>
         IndunInstancePhaseRules.TryGetClockOrigin(_copyStartUtc, out var origin)
-            ? IndunInstancePhaseRules.SecondsRemaining(_indunZone.Option, origin, DateTime.UtcNow)
+            ? IndunInstancePhaseRules.SecondsRemaining(_indunZone.Option, origin, DateTime.UtcNow, _ending.ScriptEndedUtc)
             : 0;
 
     /// <summary>
@@ -295,17 +296,27 @@ public class Dungeon : IPreparedIndunInstance
             return null;
 
         var now = DateTime.UtcNow;
-        var phase = IndunInstancePhaseRules.PhaseAt(option, copyStart, now);
+        if (World != null && WorldIntegration.ConsumeInstanceTowerDefFinished(World.Id, option.TowerDefId))
+            _ending.MarkScriptEnded(now);
+
+        var step = _ending.Step(option, copyStart, now);
+        var phase = step.Phase;
         if (phase != _lastPhase)
         {
             _lastPhase = phase;
-            Logger.Info(
-                "[{0}] instance phase → {1} ({2}s left of this phase)",
-                World, phase, IndunInstancePhaseRules.SecondsRemaining(option, copyStart, now));
+            Logger.Info("[{0}] instance phase → {1} ({2}s left of this phase)", World, phase, step.SecondsLeft);
         }
 
         if (_zoneKey == 0 || World == null)
             return null;
+
+        if (!IsSystem && step.WarnSeconds is { } warnAt)
+            BroadcastToPlayers(new SCNoticeMessagePacket(3, System.Drawing.Color.Yellow,
+                AppConfiguration.Instance.Dungeons.CloseWarningNoticeMs,
+                IndunCloseWarningRules.Message(warnAt, AppConfiguration.Instance.Dungeons.CloseWarningMessage)));
+
+        if (phase == IndunInstancePhase.Finished && !IsSystem)
+            return step.Close ? CloseFinishedCopy : null;
 
         // Only a host drop (not force_end / deadline) may clear the started flag. Deadline also removes
         // the run from RunningInstances while ShouldStartScript is still true in the End phase.
@@ -354,6 +365,31 @@ public class Dungeon : IPreparedIndunInstance
                 }
             }
         };
+    }
+
+    private bool IsClosing()
+    {
+        lock (_lock)
+            return _ending.IsClosing;
+    }
+
+    /// <summary>The copy's time is up: everyone goes back to where they entered from, then the copy goes.</summary>
+    private void CloseFinishedCopy()
+    {
+        var world = World;
+        if (world == null)
+            return;
+
+        Logger.Info($"[{world}] instance finished; returning its players and closing the copy");
+        // Entries stopped when the closing step ran; the lock waits out an AddPlayer already inside it.
+        List<Character> present;
+        lock (_lock)
+            present = world.GetAllCharacters().ToList();
+        foreach (var character in present)
+            character.Events.OnDungeonLeave(world, new OnDungeonLeaveArgs { Player = character });
+
+        if (World != null && !DestroyDungeon())
+            Logger.Warn($"[{world}] failed to close the finished copy");
     }
 
     /// <summary>
@@ -430,29 +466,67 @@ public class Dungeon : IPreparedIndunInstance
             return true;
         }
         
-        if (ShouldChargeDailyEntry(_chargedEntryIds.Contains(character.Id)))
+        if (IsClosing())
+            return RefuseEntry(character);
+
+        IndunEntryVerdict verdict;
+        var enterNow = false;
+        byte? picked = null;
+        lock (_lock)
         {
-            if (!IndunManager.Instance.CheckEntryAttemptCount(character.Id, GetZoneGroupId, _indunZone, true))
+            // The closing check and the charge share the lock the closing step runs under.
+            verdict = _ending.TryAdmit(() => ChargeEntry(character));
+            if (verdict == IndunEntryVerdict.Admitted)
             {
+                PlayersWithAccess.Add(character.Id);
+                enterNow = FinishedLoading;
+                if (enterNow)
+                {
+                    picked = TakePickedDifficulty(character);
+                    AdmitToWorldUnderLock(character);
+                }
+                else
+                    EnterRequests.Add(character);
+            }
+        }
+
+        switch (verdict)
+        {
+            case IndunEntryVerdict.CopyClosing:
+                return RefuseEntry(character);
+            case IndunEntryVerdict.OverLimit:
                 Logger.Info($"[{World}] Player {character.Name} did too many dungeon attempts.");
                 character.SendErrorMessage(ErrorMessageType.InstanceVisitLimit);
                 return false;
-            }
-
-            _chargedEntryIds.Add(character.Id);
         }
 
-        PlayersWithAccess.Add(character.Id);
-        if (FinishedLoading)
+        if (enterNow)
         {
-            AddPlayer(character);
+            ApplyDifficulty(picked);
+            CompleteEntry(character);
         }
         else
-        {
             character.SendPacket(new SCProcessingInstancePacket((int)_zoneInstanceId.ZoneId));
-            EnterRequests.Add(character);
-        }
         return true;
+    }
+
+    private bool ChargeEntry(Character character)
+    {
+        if (!ShouldChargeDailyEntry(_chargedEntryIds.Contains(character.Id)))
+            return true;
+        if (!IndunManager.Instance.CheckEntryAttemptCount(character.Id, GetZoneGroupId, _indunZone, true))
+            return false;
+
+        _chargedEntryIds.Add(character.Id);
+        return true;
+    }
+
+    /// <summary>Tells a player the copy is closing; it takes no entry and costs none.</summary>
+    private bool RefuseEntry(Character character)
+    {
+        Logger.Info($"[{World}] Player {character?.Name} arrived after the copy began closing.");
+        character?.SendErrorMessage(ErrorMessageType.NoServerInstanceResource);
+        return false;
     }
 
     /// <summary>
@@ -474,26 +548,60 @@ public class Dungeon : IPreparedIndunInstance
     /// Add player to Dungeon
     /// </summary>
     /// <param name="character"></param>
-    public void AddPlayer(Character character)
+    public bool AddPlayer(Character character)
     {
         Logger.Info($"[Dungeon] Adding player {character.Name} to dungeon {_zoneInstanceId.InstanceId}, {_zoneInstanceId.ZoneId}");
 
-        // A pick made in the H-window before entering lands on the first copy this character enters.
-        if (Difficult is null && IndunManager.Instance.TryTakeSelectedDifficult(character.Id, out var pickedDifficult))
-            SetDifficult(pickedDifficult);
-
+        // The pick is taken only once the entry is admitted, so a refusal keeps it.
+        bool admitted;
+        byte? picked = null;
         lock (_lock)
         {
-            if (!World.HasCharacter(character.Id))
+            admitted = !_ending.IsClosing;
+            if (admitted)
             {
-                World.AddObject(character);
-            }
-            else
-            {
-                Logger.Info($"[Dungeon] Player {character.Name} already exists in dungeon {_zoneInstanceId.InstanceId}, {_zoneInstanceId.ZoneId}. Most likely an error in logic?");
+                picked = TakePickedDifficulty(character);
+                AdmitToWorldUnderLock(character);
             }
         }
 
+        if (!admitted)
+            return RefuseEntry(character);
+
+        ApplyDifficulty(picked);
+        CompleteEntry(character);
+        return true;
+    }
+
+    /// <summary>A pick made in the H-window before entering lands on the first copy this character enters.</summary>
+    private byte? TakePickedDifficulty(Character character)
+    {
+        if (Difficult is null && IndunManager.Instance.TryTakeSelectedDifficult(character.Id, out var pickedDifficult))
+            return pickedDifficult;
+        return null;
+    }
+
+    // Outside _lock: SetDifficult raises the difficulty event, which runs an indun action chain.
+    private void ApplyDifficulty(byte? picked)
+    {
+        if (picked is { } difficult)
+            SetDifficult(difficult);
+    }
+
+    private void AdmitToWorldUnderLock(Character character)
+    {
+        if (!World.HasCharacter(character.Id))
+        {
+            World.AddObject(character);
+        }
+        else
+        {
+            Logger.Info($"[Dungeon] Player {character.Name} already exists in dungeon {_zoneInstanceId.InstanceId}, {_zoneInstanceId.ZoneId}. Most likely an error in logic?");
+        }
+    }
+
+    private void CompleteEntry(Character character)
+    {
         // Force despawn all mates of the player in the old world
         character.ParentWorld?.MateManager?.RemoveAndDespawnAllActiveOwnedMates(character);
 

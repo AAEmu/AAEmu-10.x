@@ -23,4 +23,11 @@ public static class ReturnTeleportRules
 
     public static uint LoadWorldId(uint portalWorldId, uint defaultWorldTemplateId) =>
         portalWorldId != 0 ? portalWorldId : defaultWorldTemplateId;
+
+    /// <summary>
+    /// A return point in the zone the character is in while inside a copy (a dungeon's own portal) lands in
+    /// that copy; the zone does not exist in the main world.
+    /// </summary>
+    public static bool StaysInCurrentCopy(uint destZoneId, uint currentZoneId, uint currentInstanceId) =>
+        currentInstanceId != 0 && destZoneId != 0 && destZoneId == currentZoneId;
 }

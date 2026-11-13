@@ -697,6 +697,9 @@ public static class WorldIntegration
     /// </summary>
     public static Func<string, uint, uint, string> TriggerTowerDef { get; set; }
 
+    /// <summary>GM: (towerDefId, copy world id, step) jumps that copy's run to the step.</summary>
+    public static Func<uint, uint, uint, bool> ForceInstanceTowerDefWave { get; set; }
+
     /// <summary>Schedule overview for the <c>towerdef list</c> action, one line per event.</summary>
     public static Func<IEnumerable<string>> DescribeTowerDefs { get; set; }
 
@@ -756,7 +759,7 @@ public static class WorldIntegration
     /// <summary>Record that this copy's tower run ended because its dedicate disconnected.</summary>
     public static void MarkInstanceTowerDefHostDropped(uint instanceId, uint towerDefId)
     {
-        if (instanceId == 0 || towerDefId == 0)
+        if (instanceId == 0 || towerDefId == 0 || !InstanceWorldExists(instanceId))
             return;
         InstanceTowerDefHostDropped[(instanceId, towerDefId)] = 0;
     }
@@ -769,6 +772,36 @@ public static class WorldIntegration
         instanceId != 0
         && towerDefId != 0
         && InstanceTowerDefHostDropped.TryRemove((instanceId, towerDefId), out _);
+
+    /// <summary>One-shot markers for instance tower runs that played their last step to the end.</summary>
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<(uint InstanceId, uint TowerDefId), byte>
+        InstanceTowerDefFinished = new();
+
+    /// <summary>Whether a copy's world is still registered. A completion from a removed world is dropped.</summary>
+    public static Func<uint, bool> InstanceWorldExists { get; set; } =
+        id => AAEmu.Game.Core.Managers.World.WorldManager.Instance.HasWorld(id);
+
+    /// <summary>Drops the tower-run markers of a copy whose world was removed; its instance id is reused.</summary>
+    public static void ClearInstanceTowerDefMarkers(uint instanceId)
+    {
+        foreach (var key in InstanceTowerDefFinished.Keys.Where(k => k.InstanceId == instanceId))
+            InstanceTowerDefFinished.TryRemove(key, out _);
+        foreach (var key in InstanceTowerDefHostDropped.Keys.Where(k => k.InstanceId == instanceId))
+            InstanceTowerDefHostDropped.TryRemove(key, out _);
+    }
+
+    public static void MarkInstanceTowerDefFinished(uint instanceId, uint towerDefId)
+    {
+        if (instanceId == 0 || towerDefId == 0 || !InstanceWorldExists(instanceId))
+            return;
+        InstanceTowerDefFinished[(instanceId, towerDefId)] = 0;
+    }
+
+    /// <summary>True once when this copy's tower run has finished; the copy then starts its end window.</summary>
+    public static bool ConsumeInstanceTowerDefFinished(uint instanceId, uint towerDefId) =>
+        instanceId != 0
+        && towerDefId != 0
+        && InstanceTowerDefFinished.TryRemove((instanceId, towerDefId), out _);
 
     /// <summary>
     /// Broadcast a finished SC body (opcode + body only) to in-world clients only.

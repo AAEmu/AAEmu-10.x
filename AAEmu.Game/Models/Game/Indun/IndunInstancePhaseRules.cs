@@ -26,22 +26,27 @@ public enum IndunInstancePhase
 /// </remarks>
 public static class IndunInstancePhaseRules
 {
-    public static IndunInstancePhase PhaseAt(IndunZoneOption option, DateTime startUtc, DateTime nowUtc)
+    public static IndunInstancePhase PhaseAt(
+        IndunZoneOption option, DateTime startUtc, DateTime nowUtc, DateTime? scriptEndedUtc = null)
     {
-        var (phase, _) = StateAt(option, startUtc, nowUtc);
+        var (phase, _) = StateAt(option, startUtc, nowUtc, scriptEndedUtc);
         return phase;
     }
 
     /// <summary>Whole seconds left in the current phase; 0 for <see cref="IndunInstancePhase.None"/> / <see cref="IndunInstancePhase.Finished"/>.</summary>
-    public static int SecondsRemaining(IndunZoneOption option, DateTime startUtc, DateTime nowUtc)
+    public static int SecondsRemaining(
+        IndunZoneOption option, DateTime startUtc, DateTime nowUtc, DateTime? scriptEndedUtc = null)
     {
-        var (_, remaining) = StateAt(option, startUtc, nowUtc);
+        var (_, remaining) = StateAt(option, startUtc, nowUtc, scriptEndedUtc);
         return remaining;
     }
 
-    /// <summary>The phase and the whole seconds left in it, computed in one pass.</summary>
+    /// <summary>
+    /// The phase and the whole seconds left in it, computed in one pass. A tower_def run that finished
+    /// (<paramref name="scriptEndedUtc"/>) ends the play phase there and opens the end window.
+    /// </summary>
     public static (IndunInstancePhase Phase, int SecondsRemaining) StateAt(
-        IndunZoneOption option, DateTime startUtc, DateTime nowUtc)
+        IndunZoneOption option, DateTime startUtc, DateTime nowUtc, DateTime? scriptEndedUtc = null)
     {
         var ready = Math.Max(0, option.ReadySeconds);
         var play = Math.Max(0, option.PlaySeconds);
@@ -55,6 +60,8 @@ public static class IndunInstancePhaseRules
 
         var readyBoundary = (double)ready;
         var playBoundary = readyBoundary + play;
+        if (scriptEndedUtc is { } ended)
+            playBoundary = Math.Min(playBoundary, Math.Max(readyBoundary, (ended - startUtc).TotalSeconds));
         var endBoundary = playBoundary + end;
 
         if (elapsed < readyBoundary)
