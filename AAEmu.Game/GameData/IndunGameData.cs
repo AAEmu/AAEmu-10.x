@@ -191,9 +191,11 @@ public class IndunGameData : Singleton<IndunGameData>, IGameDataLoader
         var hasTrigger = _instanceRewardKindsWithDeliveryTrigger != null &&
                          _instanceRewardKindsWithDeliveryTrigger.Contains(instanceRewardKindId);
 
+        // A copy scores its players through instance_gain_rules (Dungeon.RecordGainPoints).
+        var hasScoreSource = GetInstanceGainRules(instanceId).Count > 0;
         return InstanceRewardTaxonomyRules.Classify(
             instanceId, instanceRewardKindId, kindName, rewards, difficulties, roundCount,
-            teamSizes, hasDisplaySurface, hasTrigger, runtimeDifficulty);
+            teamSizes, hasDisplaySurface, hasTrigger, runtimeDifficulty, hasScoreSource);
     }
 
     /// <summary>Fixed-size <c>instance_factions</c> teams of an instance; empty when none are shipped.</summary>

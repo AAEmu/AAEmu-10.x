@@ -15,6 +15,7 @@ using AAEmu.Game.Models.Game.CommonFarm.Static;
 using AAEmu.Game.Models.Game.DoodadObj.Funcs;
 using AAEmu.Game.Models.Game.DoodadObj.Static;
 using AAEmu.Game.Models.Game.DoodadObj.Templates;
+using AAEmu.Game.Models.Game.Indun;
 using AAEmu.Game.Models.Game.Items;
 using AAEmu.Game.Models.Game.Items.Actions;
 using AAEmu.Game.Models.Game.Quests.Static;
@@ -1145,7 +1146,7 @@ public class Doodad : BaseUnit
 
                 // the phase change packet call must be after the phase functions to have the correct FuncGroupId in the packet
                 BroadcastPacket(new SCDoodadPhaseChangedPacket(this), true); // change the phase to display doodad
-                RaiseDungeonPhaseChanged();
+                RaiseDungeonPhaseChanged(caster);
 
                 return stop; // if true, it did not pass the check for the quest (it must be aborted)
             });
@@ -1156,17 +1157,23 @@ public class Doodad : BaseUnit
         }
     }
 
+    private readonly DoodadPhaseEntries _dungeonPhaseEntries = new();
+
     /// <summary>
     /// Indun copies subscribe <see cref="WorldEvents.OnDoodadPhaseChanged"/> (indun_event_doodad_phase_changeds,
     /// 14 rows). The open world has no subscriber, so only a dungeon world is raised. The round timer is read
     /// here, once, so that every subscriber of one phase change gates on the same value: the first action
     /// chain ends the round, and a subscriber reading the timer live would see it already stopped.
     /// </summary>
-    private void RaiseDungeonPhaseChanged()
+    private void RaiseDungeonPhaseChanged(BaseUnit caster)
     {
         var world = ParentWorld;
         if (world?.DungeonInstance == null)
             return;
+
+        // A repeat walk of the phase the doodad already sits in is not another harvest.
+        if (_dungeonPhaseEntries.IsNewEntry(FuncGroupId))
+            world.DungeonInstance.RecordGainPoints(caster, this);
 
         world.Events.OnDoodadPhaseChanged(world, new OnDoodadPhaseChangedArgs
         {

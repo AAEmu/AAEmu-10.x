@@ -24,10 +24,11 @@ public class InstanceRewardTaxonomyRulesTests
         bool trigger = true,
         byte? runtimeDifficulty = null,
         uint kind = Kind,
-        string kindName = "synthetic_kind") =>
+        string kindName = "synthetic_kind",
+        bool scoreSource = false) =>
         InstanceRewardTaxonomyRules.Classify(
             InstanceId, kind, kindName, rewards,
-            difficulties ?? [], roundCount, teamSizes ?? [], displaySurface, trigger, runtimeDifficulty);
+            difficulties ?? [], roundCount, teamSizes ?? [], displaySurface, trigger, runtimeDifficulty, scoreSource);
 
     [Test]
     public async Task DifficultyBacked_IsDeliverableWhenATriggerIsAuthored()
@@ -153,6 +154,19 @@ public class InstanceRewardTaxonomyRulesTests
         await Assert.That(verdict.SelectionSourceProven).IsFalse();
         await Assert.That(verdict.DeliverableNow).IsFalse();
         await Assert.That(verdict.Blocker).IsEqualTo(InstanceRewardBlocker.MissingScoreSource);
+    }
+
+    [Test]
+    public async Task RankBacked_WithAScoreSource_IsDeliverable()
+    {
+        // Island of Abundance (instance 80): soldier_rank bands 1-4, scored by its instance_gain_rules.
+        var rewards = new[] { Reward(1, 1, 1), Reward(2, 2, 2), Reward(3, 3, 3), Reward(4, 4, 4), Reward(5, 1, 4) };
+
+        var verdict = Classify(rewards, teamSizes: [4], displaySurface: true, scoreSource: true);
+
+        await Assert.That(verdict.Classification).IsEqualTo(InstanceRewardSelectionClass.RankBacked);
+        await Assert.That(verdict.DeliverableNow).IsTrue();
+        await Assert.That(verdict.Blocker).IsEqualTo(InstanceRewardBlocker.None);
     }
 
     [Test]

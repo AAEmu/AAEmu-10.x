@@ -44,7 +44,8 @@ public static class InstanceRewardTaxonomyRules
         IReadOnlyCollection<int> teamSizes,
         bool hasDisplayRankingSurface,
         bool deliveryTriggerAuthored,
-        byte? runtimeDifficulty)
+        byte? runtimeDifficulty,
+        bool hasScoreSource = false)
     {
         ArgumentNullException.ThrowIfNull(rewards);
         ArgumentNullException.ThrowIfNull(authoredDifficulties);
@@ -92,10 +93,15 @@ public static class InstanceRewardTaxonomyRules
 
         if (TryResolveRankBacked(rewards, teamSizes, hasDisplayRankingSurface, out var teamSize))
         {
+            // The rank is per player, so the verdict carries no single selection value.
+            var deliverable = hasScoreSource && deliveryTriggerAuthored;
+            var blocker = !hasScoreSource ? InstanceRewardBlocker.MissingScoreSource
+                : deliveryTriggerAuthored ? InstanceRewardBlocker.None
+                : InstanceRewardBlocker.MissingDeliveryTrigger;
             return Verdict(instanceId, instanceRewardKindId, kindName,
-                InstanceRewardSelectionClass.RankBacked, InstanceRewardBlocker.MissingScoreSource,
-                selectionSourceProven: false, deliveryTriggerAuthored,
-                deliverableNow: false, selectionValue: 0);
+                InstanceRewardSelectionClass.RankBacked, blocker,
+                selectionSourceProven: hasScoreSource, deliveryTriggerAuthored,
+                deliverableNow: deliverable, selectionValue: 0);
         }
 
         return Verdict(instanceId, instanceRewardKindId, kindName,
