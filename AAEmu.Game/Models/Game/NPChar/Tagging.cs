@@ -1,4 +1,5 @@
 ﻿using AAEmu.Game.Models.Game.Units;
+using AAEmu.Game.Models.Game.Units.Static;
 using AAEmu.Game.Models.Game.Char;
 using AAEmu.Game.Core.Managers;
 using AAEmu.Game.Core.Managers.World;
@@ -46,6 +47,17 @@ public class Tagging(Unit owner)
         // _totalDamage = 0;
     }
 
+    /// <summary>
+    /// Whether a hit that just changed an NPC's health is a killing blow to record as a tag: damage
+    /// (not a GM kill, a pet capture or any other removal) by another unit took it from alive to dead,
+    /// and nobody holds tag rights yet. <see cref="AddTagger"/> then resolves the attacker to the
+    /// character behind it, or ignores it when there is none (an NPC guard).
+    /// </summary>
+    public static bool KillingBlowTags(bool hasTagger, uint tagTeam, BaseUnit attacker, BaseUnit victim,
+        int oldHp, int newHp, KillReason killReason) =>
+        killReason == KillReason.Damage && oldHp > 0 && newHp <= 0
+        && !hasTagger && tagTeam == 0 && attacker is Unit && !ReferenceEquals(attacker, victim);
+
     public void AddTagger(Unit checkUnit, int damage)
     {
         lock (_lock)
@@ -54,6 +66,12 @@ public class Tagging(Unit owner)
             if (checkUnit is Units.Mate mate)
             {
                 checkUnit = WorldManager.Instance.GetCharacterByObjId(mate.OwnerObjId) ?? checkUnit;
+            }
+            // A vehicle's hits count for the character firing it: the driver of an ownerless world cannon
+            // (quest 1401's Andelph cannons), otherwise the vehicle's owner.
+            else if (checkUnit is Units.Slave slave)
+            {
+                checkUnit = (Unit)(slave.CombatSide as Character) ?? slave.GetOwnerCharacter() ?? checkUnit;
             }
 
             if (checkUnit is Character player)

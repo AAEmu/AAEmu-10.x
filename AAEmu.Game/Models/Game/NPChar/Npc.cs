@@ -1061,6 +1061,22 @@ public partial class Npc : Unit
         //Equip = new Item[28];
     }
 
+    public override void PostUpdateCurrentHp(BaseUnit attackerBase, int oldHpValue, int newHpValue, KillReason killReason = KillReason.Damage)
+    {
+        // DamageEffect records a hit for tagging only after ReduceCurrentHp returns, so the blow that
+        // kills an NPC nobody has tagged yet (a one-shot from full health) reached DoDie untagged. Record
+        // it here, where the damage lands, for the health it took: the tag goes to whoever stands behind
+        // the attacker (the character, a pet's owner, the gunner of a world-spawned cannon - quest 1401's
+        // Andelph cannons kill golems in one shot), with party sharing. DoDie itself does not tag: several
+        // callers hand it a killer who landed no blow (the zone death mirror's nearest player, a GM kill,
+        // a pet capture), and a tag is loot rights.
+        if (Tagging.KillingBlowTags(CharacterTagging.Tagger != null, CharacterTagging.TagTeam, attackerBase, this,
+                oldHpValue, newHpValue, killReason))
+            CharacterTagging.AddTagger((Unit)attackerBase, oldHpValue - newHpValue);
+
+        base.PostUpdateCurrentHp(attackerBase, oldHpValue, newHpValue, killReason);
+    }
+
     public override void DoDie(BaseUnit killer, KillReason killReason)
     {
         var eligiblePlayers = new HashSet<Character>();
