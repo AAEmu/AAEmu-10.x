@@ -27,6 +27,7 @@ using AAEmu.Game.Models.Game.NPChar;
 using AAEmu.Game.Models.Game.StreamAoi;
 using AAEmu.Game.Models.Game.Skills;
 using AAEmu.Game.Models.Game.Skills.Buffs;
+using AAEmu.Game.Models.Game.Skills.Effects;
 using AAEmu.Game.Models.Game.Skills.SkillControllers;
 using AAEmu.Game.Models.Game.Slaves;
 using AAEmu.Game.Models.Game.Static;
@@ -966,13 +967,6 @@ public partial class Character : Unit, ICharacter
     /// Active for the rest of that UTC day.
     /// </summary>
     public DateTime LastMobilizationNotRecvTime { get; set; }
-
-    /// <summary>
-    /// Body to restore when a CharTransformEffect polymorph ends. Set on the first transform only, so a
-    /// second one applied on top cannot overwrite the original and leave the player stuck in a borrowed model.
-    /// Deliberately not persisted — a transform does not survive a relog.
-    /// </summary>
-    public uint? PreTransformModelId { get; set; }
 
     /// <summary>
     /// Current crime points (/50)
@@ -4101,6 +4095,7 @@ public partial class Character : Unit, ICharacter
                         Mp = reader.GetInt32("mp")
                     };
                     character.ModelParams.ClearUnusedVisualRaceOverride((byte)character.Race);
+                    VisualRaceBodyParts.ClearTransientVisualRace(character.ModelParams);
                     character._savedHp = character.Hp; // save for later
                     character._savedMp = character.Mp;
                     // character.LaborPower = reader.GetInt16("labor_power");
@@ -4235,6 +4230,7 @@ public partial class Character : Unit, ICharacter
                     character.Race = (Race)reader.GetByte("race");
                     character.Gender = (Gender)reader.GetByte("gender");
                     character.ModelParams.ClearUnusedVisualRaceOverride((byte)character.Race);
+                    VisualRaceBodyParts.ClearTransientVisualRace(character.ModelParams);
                     character.Level = reader.GetByte("level");
                     character.Experience = reader.GetInt32("experience");
                     character.RecoverableExp = reader.GetInt32("recoverable_exp");
@@ -4817,6 +4813,7 @@ public partial class Character : Unit, ICharacter
             Appellations?.Save(connection, transaction);
             // Save active buffs that should persist across logout (SaveRuleId > 0)
             Buffs?.SaveActiveBuffs(connection, transaction, Id);
+            CharacterSkillCooldowns.Save(connection, transaction, this);
             portalSaveVersion = Portals?.Save(connection, transaction) ?? 0;
             Friends?.Save(connection, transaction);
             Blocked?.Save(connection, transaction);
@@ -4845,6 +4842,7 @@ public partial class Character : Unit, ICharacter
         if (this != character) // Never send to self, or the client crashes
         {
             character.SendPacket(new SCUnitStatePacket(this));
+            CharTransformEffect.ShowFormTo(this, character);
             // Initialize the faction transition for newly visible remote characters.
             if (Faction != null && Faction.Id != FactionsEnum.Invalid)
                 character.SendPacket(new SCUnitFactionChangedPacket(
@@ -5201,6 +5199,9 @@ public partial class Character : Unit, ICharacter
         BreathTick(delta);
         CheckPlayerInactivity(delta);
     }
+
+    /// <summary>Set once the saved skill cooldowns are back; until then a save must leave them alone.</summary>
+    public bool SkillCooldownsLoaded { get; set; }
 
     public override Character GetOwnerCharacter()
     {

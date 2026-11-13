@@ -403,6 +403,13 @@ public class Unit : BaseUnit, IUnit
     public virtual byte RaceGender => 0;
     public UnitCustomModelParams ModelParams { get; set; } = new();
     public byte ActiveWeapon { get; set; }
+
+    // Character transform (Daru) state; not persisted.
+    public bool IsCharTransformed { get; set; }
+    public byte CharTransformRace { get; set; }
+    public byte CharTransformGender { get; set; }
+    public DateTime LastCharTransformRefusalNoticeUtc { get; set; } = DateTime.MinValue;
+
     public bool IdleStatus { get; set; }
     public bool ForceAttack { get; set; }
     public bool Invisible { get; set; }
