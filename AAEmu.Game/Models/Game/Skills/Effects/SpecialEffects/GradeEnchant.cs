@@ -229,6 +229,7 @@ public class GradeEnchant : SpecialEffectAction
             // hear the new grade. A worn piece also reports the equip watch.
             CollectionsManager.Instance.DiscoverInPlaceChange(character, item.TemplateId, item.Grade,
                 item.SlotType == SlotType.Equipment);
+            RefreshWornPiece(character, item);
         }
 
         if (cost > 0)
@@ -264,6 +265,47 @@ public class GradeEnchant : SpecialEffectAction
         Logger.Debug("GradeEnchant: {0} item {1} grade {2} -> {3} ({4}), charm {5}, cost {6}",
             character.Name, item.Id, initialGrade, itemBroken ? initialGrade : item.Grade, result,
             charmItem?.TemplateId ?? 0, cost);
+    }
+
+    /// <summary>
+    /// A grade that moved in place on a worn piece. Gear bonuses are totalled when a piece is equipped and not
+    /// again, so the ones that follow the grade - the synthesis lines, the per-grade item buff and the armour grade
+    /// buff - would stay at the old grade until a re-equip or relog. They are re-totalled here as synthesis and
+    /// awakening do, after the worn pieces' item buffs are taken off (<see cref="TakeOffWornItemBuffs"/>), and the
+    /// cached gear score, which counts the grade too, is cleared. A piece in the bag is in neither sum, and a break
+    /// needs nothing here: taking the piece out of the equipment does both.
+    /// </summary>
+    internal static void RefreshWornPiece(Character character, Item item)
+    {
+        if (item.SlotType != SlotType.Equipment)
+            return;
+
+        TakeOffWornItemBuffs(character);
+        character.UpdateGearBonuses(null, null);
+        character.InvalidateGearScore();
+    }
+
+    /// <summary>
+    /// The re-total takes off only the item buffs tagged as equipment buffs (156) before it puts each worn piece's
+    /// current one back. Eleven gradable pieces (41026 Cold Flames Hood, 39724 Prime Stealthfang Spear, 44227 Radiant
+    /// Homecoming Necklace ...) have untagged per-grade buffs under the independent stack rule, each buff its own
+    /// family: the old grade's stayed on beside the new one, and 39724's, which stacks to 5, grew on every re-total.
+    /// So every grade's buff of each piece the re-total puts back is taken off first, and so is the item's own buff,
+    /// which the grades without a row of their own fall back on.
+    /// </summary>
+    private static void TakeOffWornItemBuffs(Character character)
+    {
+        foreach (var worn in character.Equipment.Items)
+        {
+            if (worn?.Template == null || worn.Template.BuffId == 0)
+                continue;
+
+            foreach (var buffId in ItemGameData.Instance.GetItemBuffIds(worn.TemplateId).Append(worn.Template.BuffId).Distinct())
+            {
+                if (character.Buffs.CheckBuff(buffId))
+                    character.Buffs.RemoveBuff(buffId);
+            }
+        }
     }
 
     /// <summary>
