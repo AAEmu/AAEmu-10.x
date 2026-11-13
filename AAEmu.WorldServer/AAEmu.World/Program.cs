@@ -80,6 +80,7 @@ public static class Program
         var zoneHost = new ZoneHostSupervisor(appConfig.ZoneHost);
         WorldIntegration.ZoneHostSpawnEnabled = appConfig.ZoneHost.Enabled;
         WorldIntegration.TryStartInstanceZoneHost = zoneHost.TryStart;
+        NpcSpawnRelay.IsSupervisedCopy = zoneHost.IsHosting;
         WorldIntegration.PlantInstanceLevelDoodads = world =>
         {
             // Level-pack modes own the full cell plant; Json keeps the narrow quest-talk fill.

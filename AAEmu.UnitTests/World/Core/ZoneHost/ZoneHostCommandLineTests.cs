@@ -178,7 +178,8 @@ public class ZoneHostSupervisorTests
             config,
             factory,
             fileExists: _ => true,
-            ensureDirectory: _ => { });
+            ensureDirectory: _ => { },
+            writeFile: (_, _) => { });
         var first = new WorldInstance(new WorldTemplate { Name = "instance_howling_abyss" }, 0, true, 7);
         var second = new WorldInstance(new WorldTemplate { Name = "instance_howling_abyss" }, 0, true, 8);
 
@@ -209,7 +210,8 @@ public class ZoneHostSupervisorTests
             config,
             factory,
             fileExists: _ => true,
-            ensureDirectory: _ => { });
+            ensureDirectory: _ => { },
+            writeFile: (_, _) => { });
         var world = new WorldInstance(new WorldTemplate { Name = "instance_howling_abyss" }, 0, true, 9);
         await Assert.That(supervisor.TryStart(world)).IsFalse();
         await Assert.That(factory.LastSpec).IsNotNull();

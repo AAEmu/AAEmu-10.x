@@ -156,7 +156,8 @@ public class ZoneHostWarmSupervisorTests
             config,
             factory,
             fileExists: _ => true,
-            ensureDirectory: _ => { });
+            ensureDirectory: _ => { },
+            writeFile: (_, _) => { });
         supervisor.ConfigureWarmWorldFactory(
             templateName =>
             {

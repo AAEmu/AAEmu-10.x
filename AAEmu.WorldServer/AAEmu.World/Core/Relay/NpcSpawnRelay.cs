@@ -45,6 +45,11 @@ public class NpcSpawnRelay
 
     private static readonly int ObjectIdHoldMs = ParseObjectIdHoldMs();
 
+    /// <summary>Whether an instance id is a copy the zone host supervisor started; wired at startup.</summary>
+    internal static Func<uint, bool> IsSupervisedCopy { get; set; } = _ => false;
+
+    private static readonly CopyObjectIdHold CopyHeldIds = new(instanceId => IsSupervisedCopy(instanceId));
+
     private static readonly int RecentRemovalHoldMs = ParseRecentRemovalHoldMs();
 
     private readonly record struct RecentZoneNpcRemoval(
@@ -178,7 +183,7 @@ public class NpcSpawnRelay
             connection.Units.TryRemove(bcId);
         }
 
-        ScheduleObjectIdRelease(bcId);
+        ScheduleObjectIdRelease(bcId, connection);
     }
 
     /// <summary>Test seam: true while a forced/complete remove is holding this bcId out of the pool.</summary>
@@ -616,7 +621,7 @@ public class NpcSpawnRelay
         NpcStateSent.TryRemove(MarkerKey(connection.ZoneId, connection.InstanceId, bcId), out _);
         WorldIntegration.OnZoneNpcRemove?.Invoke(bcId);
         if (wasZoneAuthoredNpc || hadMirror)
-            ScheduleObjectIdRelease(bcId);
+            ScheduleObjectIdRelease(bcId, connection);
     }
 
     private static void RememberRemoval(
@@ -690,10 +695,20 @@ public class NpcSpawnRelay
             return false;
         }
 
+        // Live again: the mirror teardown releases it, so the copy's hold must not release it a second time.
+        CopyHeldIds.Unhold(connection, bcId);
+
         Logger.Info(
             "Rematerialized orphan zone caster bc={0} tpl={1} zoneId={2} for ZWStartSkill",
             bcId, spawn.TemplateId, connection.ZoneId);
         return true;
+    }
+
+    /// <summary>Returns the ids a closed copy's zone connection was holding to the pool.</summary>
+    public static void ReleaseCopyHeldIds(ZoneConnection connection)
+    {
+        foreach (var bcId in CopyHeldIds.Release(connection, connection.InstanceId))
+            ScheduleObjectIdRelease(bcId);
     }
 
     /// <summary>
@@ -701,9 +716,12 @@ public class NpcSpawnRelay
     /// ProcessFreeUnits has had time to clear the slot. Immediate reuse was the Crimson portal
     /// SCUnitsRemoved path (reused bc=1053 while dedic still owned the id).
     /// </summary>
-    private static void ScheduleObjectIdRelease(uint bcId)
+    private static void ScheduleObjectIdRelease(uint bcId, ZoneConnection? liveConnection = null)
     {
         if (bcId == 0 || !ObjectIdManager.IsZoneUnitId(bcId))
+            return;
+
+        if (liveConnection != null && CopyHeldIds.TryHold(liveConnection, liveConnection.InstanceId, bcId))
             return;
 
         if (ObjectIdHoldMs <= 0)
