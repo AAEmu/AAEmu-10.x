@@ -39,6 +39,16 @@ public class MateManager(WorldInstance parentWorldInstance)
     }
 
     /// <summary>
+    /// Manually lists a mate as its owner's active one, without spawning it (used for tests only)
+    /// </summary>
+    /// <param name="ownerId"></param>
+    /// <param name="mate"></param>
+    internal void SetActiveMate(uint ownerId, Mate mate)
+    {
+        _activeMates[ownerId] = [mate];
+    }
+
+    /// <summary>
     /// Gets an active pet by it's TlId
     /// </summary>
     /// <param name="tlId"></param>
