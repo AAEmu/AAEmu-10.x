@@ -1250,6 +1250,7 @@ public partial class Npc : Unit
         MentoringChestRestorationService.PrepareForBossDeath(this);
 
         base.DoDie(killer, killReason);
+        RunZoneDeathDoodadPlots();
         ClearAllAggroTargetsAndCheckCombatState();
         // AggroTable.Clear();
         CharacterTagging.ClearAllTaggers();
@@ -2265,6 +2266,7 @@ public partial class Npc : Unit
         // Kill-quota credit is once per life; respawn (or any reuse of this instance) starts a new life.
         ResetTowerDefKillQuotaNotification();
         ResetMentoringChestPreparation();
+        ResetZoneDeathDoodadPlots();
         base.Spawn();
     }
 

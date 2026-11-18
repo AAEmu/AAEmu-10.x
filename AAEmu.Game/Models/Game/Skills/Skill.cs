@@ -287,6 +287,35 @@ public class Skill
     }
 
     /// <summary>
+    /// Only Npc's validated, single World-owned OnDeath object graph calls this. An ordinary
+    /// Skill.Use would reject the corpse under source_alive=2. Do not
+    /// weaken player or general cast gates, or relay the same death graph back to the zone.
+    /// </summary>
+    internal async Task RunNpcDeathDoodadPlotAsync(Npc corpse)
+    {
+        if (corpse == null || !corpse.IsDead || Template?.Plot == null)
+            return;
+        SuppressZoneSkillRelay = true;
+        ForcePlotGraphOnly = true;
+        TlId = SkillTlIdManager.GetNextId(corpse);
+        PlotCastTlId = TlId;
+        try
+        {
+            await Template.Plot.RunAsync(corpse, new SkillCasterUnit(corpse.ObjId), corpse,
+                new SkillCastUnitTarget(corpse.ObjId), new SkillObject(), this, PlotCastTlId);
+        }
+        finally
+        {
+            // PlotTree normally releases it; an early graph exception must not leak a TL id.
+            if (TlId != 0)
+            {
+                SkillTlIdManager.ReleaseId(TlId);
+                TlId = 0;
+            }
+        }
+    }
+
+    /// <summary>
     /// Runs the skill and returns it's error code if any
     /// </summary>
     /// <param name="caster"></param>
